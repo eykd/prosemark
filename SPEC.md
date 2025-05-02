@@ -79,6 +79,7 @@ Each node in the hierarchy may contain:
   - `get_combined_content()` - Retrieves all content components (main content, notecard, and notes) combined into a single text
   - `get_ancestry()` - Returns a list of nodes from root to this node's parent (excludes the current node itself)
   - `get_full_path()` - Returns a list of nodes from root to this node (includes the current node itself)
+  - `get_depth()` - Returns an integer representing the depth of the node in the hierarchy (root node has depth 0)
   - `add_metadata(key, value)` - Adds or updates a specific metadata field
   - `get_metadata(key)` - Retrieves a specific metadata field
   - `remove_metadata(key)` - Removes a specific metadata field
