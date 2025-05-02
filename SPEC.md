@@ -205,6 +205,33 @@ project/
 
 The storage adapter interface will be designed to allow switching between these formats or implementing new ones as needed.
 
+### File Naming and Character Handling
+
+When using file-based storage options (particularly the Individual Markdown Files approach), the application will handle file naming challenges as follows:
+
+#### Special Character Handling
+- Replace characters invalid in filenames (`/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`) with underscores (`_`)
+- Preserve spaces in filenames for readability
+- Preserve case sensitivity where supported by the filesystem
+- Handle international characters (Unicode) appropriately for cross-platform compatibility
+- Trim leading/trailing whitespace from titles before creating filenames
+
+#### Conflict Resolution
+- Use the Zettelkasten-style timestamp ID (YYYYMMDDHHmm) as the primary mechanism to avoid conflicts
+- If a conflict still occurs (extremely rare due to timestamp precision):
+  - Append a numeric suffix to the timestamp (e.g., `202405101023-1`)
+  - Increment the suffix until a unique filename is found
+- When importing existing files that don't follow the naming convention:
+  - Generate new IDs for imported content
+  - Maintain a mapping between original and new filenames
+  - Preserve the original filename in metadata
+
+#### Path Length Considerations
+- Monitor total path length to avoid exceeding filesystem limits
+- For extremely long titles, truncate the title portion of the filename (not the ID) if necessary
+- Store the full title in metadata regardless of filename truncation
+- Provide warnings when approaching path length limits
+
 ### File Formats
 
 #### Individual Markdown Node Format
