@@ -42,7 +42,7 @@ Each node in the hierarchy may contain:
   - `move_node(node_id, new_parent_id, position)` - Relocates a node in the hierarchy
   - `delete_node(node_id)` - Removes a node and its children
   - `get_node(node_id)` - Retrieves a specific node
-  - `get_structure()` - Returns the complete document hierarchy
+  - `get_structure()` - Returns the complete document hierarchy as a tree-like structure, starting from the root node and including all descendants with their relationships preserved
 
 #### Node
 - **Attributes**:
