@@ -2,13 +2,13 @@
 
 ## Core Domain Implementation
 
-- [ ] Define and implement the `Node` class
+- [x] Define and implement the `Node` class
   - [x] Write specification for Node class
-  - [ ] Write tests for Node attributes and behavior
-  - [ ] Implement attributes (id, title, notecard, content, notes, metadata, parent, children)
-  - [ ] Write tests for node manipulation methods
-  - [ ] Implement methods for node manipulation (add_child, remove_child, etc.)
-  - [ ] Review for proper type annotations and docstrings
+  - [x] Write tests for Node attributes and behavior
+  - [x] Implement attributes (id, title, notecard, content, notes, metadata, parent, children)
+  - [x] Write tests for node manipulation methods
+  - [x] Implement methods for node manipulation (add_child, remove_child, etc.)
+  - [x] Review for proper type annotations and docstrings
 
 - [ ] Define and implement the `Project` class
   - [ ] Write tests for Project attributes and behavior
