@@ -61,7 +61,7 @@ Each node in the hierarchy may contain:
   - `update_content(content)` - Updates the main content
   - `update_notecard(notecard)` - Updates the notecard
   - `update_notes(notes)` - Updates the notes section
-  - `get_ancestry()` - Returns the full path of ancestors from root to this node
+  - `get_ancestry()` - Returns a list of nodes from root to this node's parent (excludes the current node itself)
 
 #### Relationships
 - A Project contains exactly one root Node
