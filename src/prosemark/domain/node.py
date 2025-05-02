@@ -3,6 +3,11 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+"""Node module for the prosemark document structure.
+
+This module defines the Node class which represents elements in a hierarchical document.
+"""
+
 
 class Node:
     """A node in a hierarchical document structure.
@@ -13,7 +18,7 @@ class Node:
 
     def __init__(
         self,
-        id: str | None = None,
+        node_id: str | None = None,
         title: str = '',
         notecard: str = '',
         content: str = '',
@@ -25,7 +30,7 @@ class Node:
         """Initialize a new Node.
 
         Args:
-            id: Unique identifier for the node. If None, a UUID will be generated.
+            node_id: Unique identifier for the node. If None, a UUID will be generated.
             title: Short descriptive title for the node.
             notecard: Brief summary of the node's content.
             content: Main content of the node.
@@ -35,7 +40,7 @@ class Node:
             children: List of child nodes.
 
         """
-        self.id = id if id is not None else str(uuid.uuid4())
+        self.id = node_id if node_id is not None else str(uuid.uuid4())
         self.title = title
         self.notecard = notecard
         self.content = content
@@ -78,11 +83,7 @@ class Node:
 
         """
         # Find the child node
-        child_node = None
-        if isinstance(child, str):
-            child_node = self.get_child_by_id(child)
-        else:
-            child_node = child
+        child_node = self.get_child_by_id(child) if isinstance(child, str) else child
 
         # Remove the child if found in children list
         if child_node in self.children:
@@ -92,18 +93,18 @@ class Node:
 
         return None
 
-    def get_child_by_id(self, id: str) -> Node | None:
+    def get_child_by_id(self, node_id: str) -> Node | None:
         """Get a child node by its ID.
 
         Args:
-            id: The ID of the child node to find.
+            node_id: The ID of the child node to find.
 
         Returns:
             The child node or None if not found.
 
         """
         for child in self.children:
-            if child.id == id:
+            if child.id == node_id:
                 return child
         return None
 
@@ -147,11 +148,7 @@ class Node:
 
         """
         # Find the child node
-        child_node = None
-        if isinstance(child, str):
-            child_node = self.get_child_by_id(child)
-        else:
-            child_node = child
+        child_node = self.get_child_by_id(child) if isinstance(child, str) else child
 
         # Move the child if found and position is valid
         if child_node in self.children and 0 <= position < len(self.children):
