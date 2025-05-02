@@ -72,6 +72,30 @@ Each node in the hierarchy may contain:
 - A Node can have zero or more child Nodes
 - Nodes form a tree structure with no cycles
 
+### Implementation Details
+
+#### Domain Entities as Pydantic Models
+- All domain entities (Project, Node, etc.) will be implemented as Pydantic models
+- This provides:
+  - Automatic validation of data
+  - Type checking
+  - Serialization/deserialization capabilities
+  - Clear schema definitions
+- Example:
+  ```python
+  from pydantic import BaseModel, Field
+  from typing import Dict, List, Optional
+  
+  class Node(BaseModel):
+      id: str
+      title: str
+      content: str = ""
+      notecard: str = ""
+      notes: str = ""
+      metadata: Dict[str, str] = Field(default_factory=dict)
+      children: List["Node"] = Field(default_factory=list)
+  ```
+
 ### Hexagonal (Ports and Adapters)
 
 For this vertical slice, we'll implement a simplified version of the hexagonal architecture:
