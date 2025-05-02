@@ -45,6 +45,7 @@ Each node in the hierarchy may contain:
   - `get_structure()` - Returns the complete document hierarchy as a tree-like structure, starting from the root node and including all descendants with their relationships preserved
   - `get_all_nodes()` - Returns a list of all nodes in the project in binder order (following the hierarchy traversal)
   - `search_nodes(query, search_in=['title', 'content', 'notecard', 'notes', 'metadata'])` - Searches for nodes matching the query across specified fields, potentially using a search engine like Whoosh for efficient full-text search capabilities
+  - `save()` - Persists the current state of the project to storage using the configured storage adapter
 
 #### Node
 - **Attributes**:
