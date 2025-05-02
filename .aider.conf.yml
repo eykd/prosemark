@@ -13,7 +13,7 @@ model: sonnet
 lint-cmd:
   - "python: uv run ruff format"
   - "python: uv run ruff --fix check"
-  - "python: uv run mypy"
+  - "python: uv run mypy --package-root=src"
 
 ## Enable/disable automatic linting after changes (default: True)
 auto-lint: true
