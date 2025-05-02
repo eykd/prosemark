@@ -220,8 +220,8 @@ plugins = [
 [tool.hatch.build.sources]
 "src" = ""
 
-[tool.hatch.build.targets.wheel.include]
-"src/prosemark/py.typed" = "prosemark/py.typed"
+[tool.hatch.build.targets.wheel]
+include = ["src/prosemark/py.typed"]
 
 
 
