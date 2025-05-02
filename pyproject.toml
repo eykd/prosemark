@@ -1,7 +1,7 @@
 [project]
 name = "prosemark"
 version = "0.1.0"
-description = "Add your description here"
+description = "A command-line tool for planning, organizing, and writing stories using a hierarchical document structure"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -16,6 +16,10 @@ pmk = "prosemark.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.setuptools]
+packages = ["prosemark"]
+package-dir = {"" = "src"}
 
 
 [dependency-groups]
