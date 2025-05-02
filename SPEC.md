@@ -72,6 +72,10 @@ Each node in the hierarchy may contain:
   - `get_notecard()` - Retrieves the notecard
   - `get_notes()` - Retrieves the notes section
   - `get_ancestry()` - Returns a list of nodes from root to this node's parent (excludes the current node itself)
+  - `add_metadata(key, value)` - Adds or updates a specific metadata field
+  - `get_metadata(key)` - Retrieves a specific metadata field
+  - `remove_metadata(key)` - Removes a specific metadata field
+  - `get_all_metadata()` - Retrieves all metadata as a dictionary
 
 #### Relationships
 - A Project contains exactly one root Node
