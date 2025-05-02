@@ -7,35 +7,35 @@
   - [ ] Implement attributes (id, title, notecard, content, notes, metadata, parent, children)
   - [ ] Write tests for node manipulation methods
   - [ ] Implement methods for node manipulation (add_child, remove_child, etc.)
-  - [ ] Add proper type annotations and docstrings
+  - [ ] Review for proper type annotations and docstrings
 
 - [ ] Define and implement the `Project` class
   - [ ] Write tests for Project attributes and behavior
   - [ ] Implement attributes (name, description, root_node, metadata)
   - [ ] Write tests for project manipulation methods
   - [ ] Implement methods for project manipulation (create_node, move_node, etc.)
-  - [ ] Add proper type annotations and docstrings
+  - [ ] Review for proper type annotations and docstrings
 
 ## Storage Implementation
 
 - [ ] Define the `ProjectRepository` interface
   - [ ] Write tests for repository interface contract
   - [ ] Define methods (save, load, list_projects, create_project)
-  - [ ] Add proper type annotations and docstrings
+  - [ ] Review for proper type annotations and docstrings
 
 - [ ] Implement the `MarkdownFileAdapter` class
   - [ ] Write tests for project saving/loading functionality
   - [ ] Implement methods to save/load projects using Markdown files
   - [ ] Write tests for node serialization/deserialization
   - [ ] Implement node serialization/deserialization
-  - [ ] Add proper type annotations and docstrings
+  - [ ] Review for proper type annotations and docstrings
 
 ## CLI Implementation
 
 - [ ] Implement basic CLI structure using Click
   - [ ] Write tests for CLI command structure
   - [ ] Set up command groups and basic error handling
-  - [ ] Add proper type annotations and docstrings
+  - [ ] Review for proper type annotations and docstrings
 
 - [ ] Implement Project Management commands
   - [ ] Write tests for `prosemark init [name]` command
