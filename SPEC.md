@@ -202,6 +202,54 @@ The primary text content of the node goes here.
 This can be multiple paragraphs with full Markdown formatting.
 ```
 
+#### Notecard and Notes File Format
+
+Associated notecard and notes files follow a consistent naming convention and structure:
+
+**Notecard Files**:
+- Named with the node's ID and title followed by `_notecard.md`
+- Example: `202405101023 Chapter 1 Beginning _notecard.md`
+- Contains a simple Markdown document with the notecard content
+- No YAML header required, just plain Markdown content
+- Typically contains a brief summary or outline of the node's purpose
+
+```markdown
+This chapter introduces the protagonist and establishes the main conflict.
+Key points:
+- Character's first day at new job
+- Meeting with antagonist
+- Discovery of the mysterious artifact
+```
+
+**Notes Files**:
+- Named with the node's ID and title followed by `_notes.md`
+- Example: `202405101023 Chapter 1 Beginning _notes.md`
+- Contains a Markdown document with research, references, or author notes
+- May include a simple YAML header for metadata specific to the notes
+- Can contain any supplementary information that doesn't belong in the main content
+
+```markdown
+---
+references:
+  - "Smith, J. (2020). Character Development in Fiction"
+  - "Interview with industry expert, 2024-03-15"
+---
+
+## Research Notes
+- Historical context for the setting: [link to research]
+- Character backstory ideas:
+  * Traumatic childhood event
+  * Military background
+  * Hidden talents
+
+## To-Do
+- [ ] Flesh out the antagonist's motivation
+- [ ] Research more about the artifact's origins
+- [ ] Consider adding a secondary character for comic relief
+```
+
+The separation of content, notecard, and notes allows for focused writing while maintaining all related information in an organized structure.
+
 #### Binder/Outline Format
 
 For the individual files approach, the binder file defines the hierarchical structure:
