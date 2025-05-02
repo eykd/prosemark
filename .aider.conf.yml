@@ -1,0 +1,25 @@
+read:
+  - CONVENTIONS.md
+
+
+## Use architect edit format for the main chat
+architect: true
+
+model: sonnet
+
+## Specify lint commands to run for different languages, eg: "python: flake8 --select=..." (can be used multiple times)
+#lint-cmd: xxx
+## Specify multiple values like this:
+lint-cmd:
+  - uv run ruff format
+  - uv run ruff --fix check
+  - uv run mypy src tests
+
+## Enable/disable automatic linting after changes (default: True)
+auto-lint: true
+
+## Specify command to run tests
+test-cmd: ./scripts/fulltests.sh
+
+## Enable/disable automatic testing after changes (default: False)
+auto-test: true

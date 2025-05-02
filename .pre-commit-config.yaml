@@ -1,0 +1,38 @@
+default_language_version:
+  python: python3.13
+repos:
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-added-large-files
+    - id: check-merge-conflict
+    - id: mixed-line-ending
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.11.8
+  hooks:
+    - id: ruff
+      args: [ --fix ]
+    - id: ruff-format
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.7.2
+  hooks:
+    - id: uv-lock
+- repo: local
+  hooks:
+    - id: mypy-check
+      name: mypy-check
+      entry: uv run mypy src tests
+      language: system
+      types_or:
+      - python
+    - id: pytest-check
+      name: pytest-check
+      entry: uv run ./scripts/fulltests.sh
+      language: system
+      pass_filenames: false
+      types_or:
+        - python
+        - toml

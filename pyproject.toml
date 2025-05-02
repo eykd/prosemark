@@ -1,0 +1,225 @@
+[project]
+name = "prosemark"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.11.4",
+]
+
+
+[project.scripts]
+pmk = "prosemark.cli:main"
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[dependency-groups]
+dev = [
+    "ipython>=9.2.0",
+    "pdbpp>=0.11.6",
+    "pre-commit>=4.2.0",
+]
+test = [
+    "coverage>=7.8.0",
+    "hypothesis>=6.131.9",
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.14.0",
+    "pytest-profiling>=1.8.1",
+    "pytest-random-order>=1.1.1",
+    "pytest-recording>=0.13.3",
+    "pytest-xdist>=3.6.1",
+    "ruff>=0.11.8",
+    "snakeviz>=2.2.2",
+    "syrupy>=4.9.1",
+]
+
+[tool.uv]
+package = true
+
+[tool.uv.workspace]
+members = [
+    "tmp/prosemark",
+]
+
+[tool.ruff]
+# Python linter & formatter
+# https://docs.astral.sh/ruff/
+line-length = 120
+src = ["src"]
+target-version = "py312"
+
+[tool.ruff.lint]
+preview = true
+
+# https://docs.astral.sh/ruff/rules/
+select = [
+    "A",      # https://docs.astral.sh/ruff/rules/#flake8-builtins-a
+    "ANN",    # https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
+    "ARG",    # https://docs.astral.sh/ruff/rules/#flake8-unused-arguments-arg
+    "ASYNC",  # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    "B",      # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "BLE",    # https://docs.astral.sh/ruff/rules/#flake8-blind-except-ble
+    "C4",     # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    "C90",    # https://docs.astral.sh/ruff/rules/#mccabe-c90
+    "COM",    # https://docs.astral.sh/ruff/rules/#flake8-commas-com
+    "D",      # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    "DJ",     # https://docs.astral.sh/ruff/rules/#flake8-django-dj
+    "DTZ",    # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "E",      # https://docs.astral.sh/ruff/rules/#error-e
+    "EM",     # https://docs.astral.sh/ruff/rules/#flake8-errmsg-em
+    "ERA",    # https://docs.astral.sh/ruff/rules/#eradicate-era
+    "EXE",    # https://docs.astral.sh/ruff/rules/#flake8-executable-exe
+    "F",      # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "FA",     # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
+    "FBT",    # https://docs.astral.sh/ruff/rules/#flake8-boolean-trap-fbt
+    "FLY",    # https://docs.astral.sh/ruff/rules/#flynt-fly
+    "FURB",   # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "G",      # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "I",      # https://docs.astral.sh/ruff/rules/#isort-i
+    "ICN",    # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
+    "INP",    # https://docs.astral.sh/ruff/rules/#flake8-no-pep420-inp
+    "INT",    # https://docs.astral.sh/ruff/rules/#flake8-gettext-int
+    "ISC",    # https://docs.astral.sh/ruff/rules/#flake8-implicit-str-concat-isc
+    "LOG",    # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    "N",      # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    "PERF",   # https://docs.astral.sh/ruff/rules/#perflint-perf
+    "PGH",    # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
+    "PIE",    # https://docs.astral.sh/ruff/rules/#flake8-pie-pie
+    # "PL",   # https://docs.astral.sh/ruff/rules/#pylint-pl
+    "PT",     # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "PTH",    # https://docs.astral.sh/ruff/rules/#flake8-use-pathlib-pth
+    "PYI",    # https://docs.astral.sh/ruff/rules/#flake8-pyi-pyi
+    "Q",      # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    "RET",    # https://docs.astral.sh/ruff/rules/#flake8-return-ret
+    "RSE",    # https://docs.astral.sh/ruff/rules/#flake8-raise-rse
+    "RUF",    # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "S",      # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+    "SIM",    # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
+    "SLF",    # https://docs.astral.sh/ruff/rules/#flake8-self-slf
+    "SLOT",   # https://docs.astral.sh/ruff/rules/#flake8-slots-slot
+    "T10",    # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
+    "T20",    # https://docs.astral.sh/ruff/rules/#flake8-print-t20
+    "TCH",    # https://docs.astral.sh/ruff/rules/#flake8-type-checking-tch
+    "TD",     # https://docs.astral.sh/ruff/rules/#flake8-todos-td
+    "TID",    # https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
+    "TRY",    # https://docs.astral.sh/ruff/rules/#tryceratops-try
+    "UP",     # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "W",      # https://docs.astral.sh/ruff/rules/#warning-w
+    "YTT",    # https://docs.astral.sh/ruff/rules/#flake8-2020-ytt
+]
+
+
+ignore = [
+    "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+    "D105",   # https://docs.astral.sh/ruff/rules/undocumented-magic-method/
+    "D106",   # https://docs.astral.sh/ruff/rules/undocumented-public-nested-class/
+    "D107",   # https://docs.astral.sh/ruff/rules/undocumented-public-init/
+    "D203",   # https://docs.astral.sh/ruff/rules/one-blank-line-before-class/
+    "D213",   # https://docs.astral.sh/ruff/rules/multi-line-summary-second-line/
+    "D400",   # https://docs.astral.sh/ruff/rules/ends-in-period/
+    "D401",   # https://docs.astral.sh/ruff/rules/non-imperative-mood/
+    "D404",   # https://docs.astral.sh/ruff/rules/docstring-starts-with-this/
+    "D415",   # https://docs.astral.sh/ruff/rules/ends-in-punctuation/
+    "E501",   # https://docs.astral.sh/ruff/rules/line-too-long/
+    "EM101",  # https://docs.astral.sh/ruff/rules/raw-string-in-exception/
+    "FURB189", # https://docs.astral.sh/ruff/rules/subclass-builtin/
+    "ISC001", # https://docs.astral.sh/ruff/rules/single-line-implicit-string-concatenation/
+    "TD002",  # https://docs.astral.sh/ruff/rules/missing-todo-author/
+    "TD003",  # https://docs.astral.sh/ruff/rules/missing-todo-link/
+    "TRY003", # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/test*.py" = [
+    "S101",
+    "D1",
+    "INP001",
+    "ARG001",
+    "ARG002",
+]
+
+
+"tests/**/conftest.py" = [
+    "S101",
+    "D1",
+    "INP001",
+    "ARG001",
+]
+
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+
+[tool.ruff.format]
+preview = true
+
+quote-style = "single"
+docstring-code-format = true
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+
+[tool.pytest.ini_options]
+# The best Python test runner
+# https://docs.pytest.org/en/latest/contents.html
+
+addopts = [
+    "--cov",
+    "--cov-report=term:skip-covered",
+    "--no-cov-on-fail",
+    "--strict-markers",
+    "--strict-config",
+    "--random-order",
+
+]
+
+markers = [
+    # If you have slow tests that you want to exclude, mark them like so:
+    #     @pytest.mark.slow
+    #     def test_my_slow_test():
+    #         # ...
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+
+[tool.coverage.run]
+# Python test coverage tool
+# https://coverage.readthedocs.io/
+plugins = [
+]
+branch = true
+source = ['src']
+omit = [
+     'tests/*.py',
+     ]
+[tool.coverage.report]
+show_missing = true
+
+[tool.mypy]
+# Python type checking
+# https://www.mypy-lang.org/
+strict = true
+plugins = [
+    "pydantic.mypy",
+]
+
+
+
+[tool.isort]
+# Python import sorter
+# https://pycqa.github.io/isort/
+profile = "black"
