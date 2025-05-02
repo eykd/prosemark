@@ -29,12 +29,51 @@ Each node in the hierarchy may contain:
 
 ## Architecture
 
+### Core Domain Entities
+
+#### Project
+- **Attributes**:
+  - `name`: String - The name of the project
+  - `description`: String - A description of the project
+  - `root_node`: Node - The top-level node of the document hierarchy
+  - `metadata`: Dict - Project-level metadata (creation date, author, etc.)
+- **Methods**:
+  - `create_node(parent_id, title)` - Creates a new node under the specified parent
+  - `move_node(node_id, new_parent_id, position)` - Relocates a node in the hierarchy
+  - `delete_node(node_id)` - Removes a node and its children
+  - `get_node(node_id)` - Retrieves a specific node
+  - `get_structure()` - Returns the complete document hierarchy
+
+#### Node
+- **Attributes**:
+  - `id`: String - Unique identifier (Zettelkasten-style timestamp)
+  - `title`: String - The title of the node
+  - `notecard`: String - Brief description or summary (Markdown)
+  - `content`: String - Main text content (Markdown)
+  - `notes`: String - Additional notes or research (Markdown)
+  - `metadata`: Dict - Node-specific metadata (status, tags, etc.)
+  - `parent`: Node - Reference to parent node
+  - `children`: List[Node] - Ordered list of child nodes
+- **Methods**:
+  - `add_child(node)` - Adds a child node
+  - `remove_child(node_id)` - Removes a child node
+  - `move_child(node_id, position)` - Reorders children
+  - `update_content(content)` - Updates the main content
+  - `update_notecard(notecard)` - Updates the notecard
+  - `update_notes(notes)` - Updates the notes section
+
+#### Relationships
+- A Project contains exactly one root Node
+- Each Node (except the root) has exactly one parent Node
+- A Node can have zero or more child Nodes
+- Nodes form a tree structure with no cycles
+
 ### Hexagonal (Ports and Adapters)
 
 The application follows a hexagonal architecture with:
 
 1. **Core Domain**:
-   - Business entities (Document, Node, etc.)
+   - Business entities (Project, Node, etc.) as defined above
    - Business logic for manipulating the document hierarchy
    - Pure domain logic with no dependencies on external systems
 
@@ -137,9 +176,12 @@ Initial implementation will provide a CLI for:
 ## Development Roadmap
 
 ### Phase 1: Core Domain
-- Define domain entities and relationships
+- Define domain entities and relationships as specified above
 - Implement business logic for document manipulation
-- Define ports for storage and UI
+- Define the following ports:
+  - **Storage Port**: Interface for persisting and retrieving projects
+  - **UI Port**: Interface for user interaction
+  - **Export Port**: Interface for compiling to different formats
 
 ### Phase 2: Initial Adapters
 - Implement Markdown file storage adapter
