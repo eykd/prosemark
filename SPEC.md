@@ -277,8 +277,11 @@ Initial implementation will provide a CLI for:
 
 ## Development Roadmap
 
-### Phase 1: Core Domain
+### Phase 1: Core Domain (Current Priority)
 - Define domain entities and relationships as specified above
+  - Implement Project and Node entities first
+  - Focus on pure business logic with no external dependencies
+  - Follow hexagonal architecture principles from CONVENTIONS.md
 - Implement business logic for document manipulation
 - Define the following ports:
   - **Storage Port**: Interface for persisting and retrieving projects
