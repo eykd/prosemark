@@ -1,12 +1,12 @@
-from __future__ import annotations
-
-import uuid
-from typing import Any
-
 """Node module for the prosemark document structure.
 
 This module defines the Node class which represents elements in a hierarchical document.
 """
+
+from __future__ import annotations
+
+import uuid
+from typing import Any
 
 
 class Node:
