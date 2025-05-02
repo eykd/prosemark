@@ -106,9 +106,9 @@ The application will support multiple storage formats through different adapters
 
 ```
 project/
-  ├── binder.md           # Main outline/structure file
-  ├── 202405101023.md     # Document node with Zettelkasten-style name
-  ├── 202405101045.md     # Another document node
+  ├── _binder.md           # Main outline/structure file
+  ├── 202405101023 Chapter 1 Beginning.md     # Document node with Zettelkasten-style name
+  ├── 202405101045 Scene 1 1.md               # Another document node
   └── ...
 ```
 
@@ -161,38 +161,36 @@ The storage adapter interface will be designed to allow switching between these 
 
 #### Individual Markdown Node Format
 
-When using the individual files approach, each node file will follow this format:
+When using the individual files approach, each node file will follow this format, using a YAML metadata header:
 ```markdown
-# Title of the Node
+---
+type: node
+title: Chapter 1: Beginning
+created: 2024-05-10T10:23:00Z
+status: Draft
+tags: character, protagonist
+notecard: 202405101023 Chapter 1 Beginning _notecard.md
+notes: 202405101023 Chapter 1 Beginning _notes.md
+---
 
-## Notecard
-Brief description or purpose of this node.
-
-## Main Content
 The primary text content of the node goes here.
+
 This can be multiple paragraphs with full Markdown formatting.
-
-## Notes
-Additional notes, research, or comments about this node.
-
-## Metadata
-- Created: 2024-05-10T10:23:00Z
-- Status: Draft
-- Tags: character, protagonist
 ```
 
 #### Binder/Outline Format
 
 For the individual files approach, the binder file defines the hierarchical structure:
+
 ```markdown
 # Project Title
 
 ## Structure
-- [Chapter 1: Beginning](202405101023.md)
-  - [Scene 1.1](202405101045.md)
-  - [Scene 1.2](202405101130.md)
-- [Chapter 2: Middle](202405101210.md)
-  - [Scene 2.1](202405101245.md)
+- [Chapter 1: Beginning](202405101023 Chapter 1 Beginning.md)
+  - [Scene 1.1](202405101045 Scene 1 1.md)
+  - [Scene 1.2](202405101130 Scene 1 2.md)
+- [Chapter 2: Middle](202405101210 Chapter 2 Middle.md)
+  - [Scene 2.1](202405101245 Scene 2 1.md)
 ```
 
 #### Database Schema (SQLite Option)
