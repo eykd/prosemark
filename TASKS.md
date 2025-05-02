@@ -3,47 +3,57 @@
 ## Core Domain Implementation
 
 - [ ] Define and implement the `Node` class
+  - [ ] Write tests for Node attributes and behavior
   - [ ] Implement attributes (id, title, notecard, content, notes, metadata, parent, children)
+  - [ ] Write tests for node manipulation methods
   - [ ] Implement methods for node manipulation (add_child, remove_child, etc.)
   - [ ] Add proper type annotations and docstrings
-  - [ ] Write unit tests for the Node class
 
 - [ ] Define and implement the `Project` class
+  - [ ] Write tests for Project attributes and behavior
   - [ ] Implement attributes (name, description, root_node, metadata)
+  - [ ] Write tests for project manipulation methods
   - [ ] Implement methods for project manipulation (create_node, move_node, etc.)
   - [ ] Add proper type annotations and docstrings
-  - [ ] Write unit tests for the Project class
 
 ## Storage Implementation
 
 - [ ] Define the `ProjectRepository` interface
+  - [ ] Write tests for repository interface contract
   - [ ] Define methods (save, load, list_projects, create_project)
   - [ ] Add proper type annotations and docstrings
 
 - [ ] Implement the `MarkdownFileAdapter` class
+  - [ ] Write tests for project saving/loading functionality
   - [ ] Implement methods to save/load projects using Markdown files
+  - [ ] Write tests for node serialization/deserialization
   - [ ] Implement node serialization/deserialization
   - [ ] Add proper type annotations and docstrings
-  - [ ] Write unit tests for the MarkdownFileAdapter
 
 ## CLI Implementation
 
 - [ ] Implement basic CLI structure using Click
+  - [ ] Write tests for CLI command structure
   - [ ] Set up command groups and basic error handling
   - [ ] Add proper type annotations and docstrings
 
 - [ ] Implement Project Management commands
-  - [ ] `prosemark init [name]` - Create a new project
-  - [ ] Write unit tests for project management commands
+  - [ ] Write tests for `prosemark init [name]` command
+  - [ ] Implement `prosemark init [name]` - Create a new project
 
 - [ ] Implement Node Management commands
-  - [ ] `prosemark add [parent_id] [title]` - Add a new node
-  - [ ] `prosemark remove [node_id]` - Remove a node
-  - [ ] `prosemark move [node_id] [new_parent_id] [position]` - Move a node
-  - [ ] `prosemark show [node_id]` - Display node content
-  - [ ] `prosemark edit [node_id]` - Edit node content
-  - [ ] `prosemark structure` - Display the project structure
-  - [ ] Write unit tests for node management commands
+  - [ ] Write tests for `prosemark add [parent_id] [title]` command
+  - [ ] Implement `prosemark add [parent_id] [title]` - Add a new node
+  - [ ] Write tests for `prosemark remove [node_id]` command
+  - [ ] Implement `prosemark remove [node_id]` - Remove a node
+  - [ ] Write tests for `prosemark move [node_id] [new_parent_id] [position]` command
+  - [ ] Implement `prosemark move [node_id] [new_parent_id] [position]` - Move a node
+  - [ ] Write tests for `prosemark show [node_id]` command
+  - [ ] Implement `prosemark show [node_id]` - Display node content
+  - [ ] Write tests for `prosemark edit [node_id]` command
+  - [ ] Implement `prosemark edit [node_id]` - Edit node content
+  - [ ] Write tests for `prosemark structure` command
+  - [ ] Implement `prosemark structure` - Display the project structure
 
 ## Integration and Testing
 
