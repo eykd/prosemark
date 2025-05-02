@@ -6,14 +6,14 @@ from typing import Any
 
 class Node:
     """A node in a hierarchical document structure.
-    
+
     Represents a single node in the document tree with content, metadata,
     and relationships to other nodes.
     """
 
     def __init__(
         self,
-        id: str | None = None,
+        node_id: str | None = None,
         title: str = '',
         notecard: str = '',
         content: str = '',
@@ -25,7 +25,7 @@ class Node:
         """Initialize a new Node.
 
         Args:
-            id: Unique identifier for the node. If None, a UUID will be generated.
+            node_id: Unique identifier for the node. If None, a UUID will be generated.
             title: Short descriptive title for the node.
             notecard: Brief summary of the node's content.
             content: Main content of the node.
@@ -35,7 +35,7 @@ class Node:
             children: List of child nodes.
 
         """
-        self.id = id if id is not None else str(uuid.uuid4())
+        self.node_id = node_id if node_id is not None else str(uuid.uuid4())
         self.title = title
         self.notecard = notecard
         self.content = content
@@ -92,18 +92,18 @@ class Node:
 
         return None
 
-    def get_child_by_id(self, id: str) -> Node | None:
+    def get_child_by_id(self, node_id: str) -> Node | None:
         """Get a child node by its ID.
 
         Args:
-            id: The ID of the child node to find.
+            node_id: The ID of the child node to find.
 
         Returns:
             The child node or None if not found.
 
         """
         for child in self.children:
-            if child.id == id:
+            if child.node_id == node_id:
                 return child
         return None
 
