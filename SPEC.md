@@ -210,7 +210,7 @@ The storage adapter interface will be designed to allow switching between these 
 When using file-based storage options (particularly the Individual Markdown Files approach), the application will handle file naming challenges as follows:
 
 #### Special Character Handling
-- Replace characters invalid in filenames (`/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`) with underscores (`_`)
+- Replace characters invalid in filenames (`/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`) with spaces (` `)
 - Preserve spaces in filenames for readability
 - Preserve case sensitivity where supported by the filesystem
 - Handle international characters (Unicode) appropriately for cross-platform compatibility
@@ -218,6 +218,7 @@ When using file-based storage options (particularly the Individual Markdown File
 
 #### Conflict Resolution
 - Use the Zettelkasten-style timestamp ID (YYYYMMDDHHmm) as the primary mechanism to avoid conflicts
+- Include the title after the timestamp, with special character handling for filenames
 - If a conflict still occurs (extremely rare due to timestamp precision):
   - Append a numeric suffix to the timestamp (e.g., `202405101023-1`)
   - Increment the suffix until a unique filename is found
@@ -265,6 +266,9 @@ Associated notecard and notes files follow a consistent naming convention and st
 - Typically contains a brief summary or outline of the node's purpose
 
 ```markdown
+---
+type: notecard
+---
 This chapter introduces the protagonist and establishes the main conflict.
 Key points:
 - Character's first day at new job
@@ -281,6 +285,7 @@ Key points:
 
 ```markdown
 ---
+type: notes
 references:
   - "Smith, J. (2020). Character Development in Fiction"
   - "Interview with industry expert, 2024-03-15"
@@ -306,7 +311,9 @@ The separation of content, notecard, and notes allows for focused writing while 
 For the individual files approach, the binder file defines the hierarchical structure:
 
 ```markdown
-# Project Title
+---
+title: Project Title
+---
 
 ## Structure
 - [Chapter 1: Beginning](202405101023 Chapter 1 Beginning.md)
@@ -316,46 +323,6 @@ For the individual files approach, the binder file defines the hierarchical stru
   - [Scene 2.1](202405101245 Scene 2 1.md)
 ```
 
-#### Database Schema (SQLite Option)
-
-When using the SQLite option, the database will include these primary tables:
-- `nodes`: Stores node content, notecards, notes
-- `structure`: Defines parent-child relationships and ordering
-- `metadata`: Stores key-value metadata for nodes and projects
-
-#### JSON/YAML Structure
-
-When using the JSON/YAML option, the structure will follow this pattern:
-```json
-{
-  "project": {
-    "name": "Project Title",
-    "description": "Project description",
-    "metadata": { ... }
-  },
-  "nodes": {
-    "root": {
-      "id": "root",
-      "title": "Project Title",
-      "children": ["202405101023", "202405101210"],
-      "notecard": "",
-      "content": "",
-      "notes": "",
-      "metadata": { ... }
-    },
-    "202405101023": {
-      "id": "202405101023",
-      "title": "Chapter 1: Beginning",
-      "children": ["202405101045", "202405101130"],
-      "notecard": "Brief description",
-      "content": "Main content...",
-      "notes": "Additional notes...",
-      "metadata": { ... }
-    },
-    ...
-  }
-}
-```
 
 ### Storage Selection
 

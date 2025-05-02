@@ -11,9 +11,9 @@ model: sonnet
 #lint-cmd: xxx
 ## Specify multiple values like this:
 lint-cmd:
-  - uv run ruff format
-  - uv run ruff --fix check
-  - uv run mypy src tests
+  - "python: uv run ruff format"
+  - "python: uv run ruff --fix check"
+  - "python: uv run mypy"
 
 ## Enable/disable automatic linting after changes (default: True)
 auto-lint: true
