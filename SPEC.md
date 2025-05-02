@@ -90,13 +90,19 @@ The application follows a hexagonal architecture with:
 
 ## Storage Format
 
-The initial storage adapter will:
-- Store documents as plain Markdown text files
-- Use Zettelkasten-style naming for individual files
+The application will support multiple storage formats through different adapters. The primary considerations for storage include:
+- Performance for large document hierarchies
+- Ease of synchronization across devices
+- Human readability of stored content
+- Version control compatibility
+
+### Storage Options
+
+#### Option 1: Individual Markdown Files (Default)
+- Store each node as a separate Markdown file
+- Use Zettelkasten-style naming (timestamp-based IDs) for files
 - Organize the hierarchy using a main Outline/Binder markdown file
 - Preserve metadata, notecards, and notes using a consistent format
-
-### File Structure
 
 ```
 project/
@@ -106,9 +112,56 @@ project/
   └── ...
 ```
 
-### Node File Format
+**Advantages**:
+- Human-readable files
+- Easy to edit outside the application
+- Works well with version control
+- Simple to implement
 
-Each node file will follow a consistent format:
+**Disadvantages**:
+- May become unwieldy with very large projects
+- Requires additional synchronization consideration
+- Structure changes require updating multiple files
+
+#### Option 2: SQLite Database
+- Store all project data in a single SQLite database file
+- Separate tables for nodes, structure, and metadata
+- Binary storage with transaction support
+
+**Advantages**:
+- Better performance for large projects
+- Atomic transactions for data integrity
+- Simpler synchronization (single file)
+- Efficient querying and filtering
+
+**Disadvantages**:
+- Not human-readable without the application
+- More complex implementation
+- Requires migration strategy for schema changes
+
+#### Option 3: JSON/YAML Bundle
+- Store entire project as a structured JSON or YAML file
+- Hierarchical representation matching the document structure
+- Include all metadata, content, and relationships
+
+**Advantages**:
+- Single file for easier synchronization
+- Still somewhat human-readable
+- Simpler than database implementation
+- Good compatibility with many tools
+
+**Disadvantages**:
+- Performance issues with very large projects
+- Entire file must be read/written for any change
+- Potential for merge conflicts in version control
+
+The storage adapter interface will be designed to allow switching between these formats or implementing new ones as needed.
+
+### File Formats
+
+#### Individual Markdown Node Format
+
+When using the individual files approach, each node file will follow this format:
 ```markdown
 # Title of the Node
 
@@ -128,9 +181,9 @@ Additional notes, research, or comments about this node.
 - Tags: character, protagonist
 ```
 
-### Binder/Outline Format
+#### Binder/Outline Format
 
-The binder file defines the hierarchical structure:
+For the individual files approach, the binder file defines the hierarchical structure:
 ```markdown
 # Project Title
 
@@ -141,6 +194,55 @@ The binder file defines the hierarchical structure:
 - [Chapter 2: Middle](202405101210.md)
   - [Scene 2.1](202405101245.md)
 ```
+
+#### Database Schema (SQLite Option)
+
+When using the SQLite option, the database will include these primary tables:
+- `nodes`: Stores node content, notecards, notes
+- `structure`: Defines parent-child relationships and ordering
+- `metadata`: Stores key-value metadata for nodes and projects
+
+#### JSON/YAML Structure
+
+When using the JSON/YAML option, the structure will follow this pattern:
+```json
+{
+  "project": {
+    "name": "Project Title",
+    "description": "Project description",
+    "metadata": { ... }
+  },
+  "nodes": {
+    "root": {
+      "id": "root",
+      "title": "Project Title",
+      "children": ["202405101023", "202405101210"],
+      "notecard": "",
+      "content": "",
+      "notes": "",
+      "metadata": { ... }
+    },
+    "202405101023": {
+      "id": "202405101023",
+      "title": "Chapter 1: Beginning",
+      "children": ["202405101045", "202405101130"],
+      "notecard": "Brief description",
+      "content": "Main content...",
+      "notes": "Additional notes...",
+      "metadata": { ... }
+    },
+    ...
+  }
+}
+```
+
+### Storage Selection
+
+The storage format will be configurable:
+- Default to individual Markdown files for new projects
+- Allow conversion between formats
+- Support format selection at project creation
+- Provide migration tools for existing projects
 
 ## Compilation
 
@@ -184,7 +286,7 @@ Initial implementation will provide a CLI for:
   - **Export Port**: Interface for compiling to different formats
 
 ### Phase 2: Initial Adapters
-- Implement Markdown file storage adapter
+- Implement Markdown file storage adapter (default option)
 - Develop basic CLI
 - Create simple compilation adapter for Markdown output
 
@@ -192,8 +294,10 @@ Initial implementation will provide a CLI for:
 - Add support for additional output formats
 - Implement search functionality
 - Add version control integration
+- Develop additional storage adapters (SQLite, JSON/YAML)
 
 ### Phase 4: Advanced Features
 - Implement collaboration features
 - Add statistics and analysis tools
 - Develop additional UI options
+- Create synchronization mechanisms for cross-device usage
