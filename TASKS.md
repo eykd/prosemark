@@ -3,6 +3,7 @@
 ## Core Domain Implementation
 
 - [ ] Define and implement the `Node` class
+  - [x] Write specification for Node class
   - [ ] Write tests for Node attributes and behavior
   - [ ] Implement attributes (id, title, notecard, content, notes, metadata, parent, children)
   - [ ] Write tests for node manipulation methods
