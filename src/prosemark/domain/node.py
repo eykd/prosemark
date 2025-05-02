@@ -41,7 +41,7 @@ class Node:
         self.notes = notes
         self.metadata = metadata or {}
         self.parent = parent
-        self.children = []
+        self.children: list[Node] = []
         
         # Add children if provided
         if children:
@@ -95,7 +95,7 @@ class Node:
             List of all descendant nodes.
         """
         # Implementation will be added later
-        pass
+        return []
 
     def get_ancestors(self) -> list[Node]:
         """Get all ancestor nodes recursively.
@@ -104,7 +104,7 @@ class Node:
             List of all ancestor nodes.
         """
         # Implementation will be added later
-        pass
+        return []
 
     def move_child(self, child: Node | str, position: int) -> bool:
         """Move a child node to a new position in the children list.
@@ -117,4 +117,4 @@ class Node:
             True if successful, False otherwise.
         """
         # Implementation will be added later
-        pass
+        return False
