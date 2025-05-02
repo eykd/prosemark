@@ -85,7 +85,7 @@ Each node in the hierarchy may contain:
   ```python
   from pydantic import BaseModel, Field
   from typing import Dict, List, Optional
-  
+
   class Node(BaseModel):
       id: str
       title: str
@@ -219,12 +219,14 @@ title: Project Title
 
 ## Command Line Interface (CLI)
 
-The CLI will be implemented using the `click` framework and will provide the following commands:
+The CLI will be implemented using the `click` framework.
+
+The CLI will treat the current working directory as the project root.
+
+The CLI will provide the following commands:
 
 ### Project Management
 - `prosemark init [name]` - Create a new project
-- `prosemark list` - List available projects
-- `prosemark open [project]` - Open a project
 
 ### Node Management
 - `prosemark add [parent_id] [title]` - Add a new node
