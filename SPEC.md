@@ -50,6 +50,9 @@ Each node in the hierarchy may contain:
     - Automatically generated when a node is created
     - Used as the primary identifier for nodes in the system
     - Ensures chronological ordering and uniqueness
+    - When used in filenames, combined with the node title (e.g., "202405101023 Chapter 1 Beginning.md")
+    - Spaces in titles are preserved in filenames to maintain readability
+    - Special characters in titles are handled appropriately for filesystem compatibility
   - `title`: String - The title of the node
   - `notecard`: String - Brief description or summary (Markdown)
   - `content`: String - Main text content (Markdown)
