@@ -145,19 +145,40 @@ This can be multiple paragraphs with full Markdown formatting.
 
 Associated notecard and notes files follow a consistent naming convention and structure:
 
-**Notecard Files**:
+##### Notecard Files
+
 - Named with the node's ID and title followed by `_notecard.md`
 - Example: `202405101023 Chapter 1 Beginning _notecard.md`
 - Contains a simple Markdown document with the notecard content
 
-**Notes Files**:
+```markdown
+---
+type: notecard
+title: Chapter 1: It begins!
+node: 20245101023 Chapter 1 Beginning.md
+---
+
+These are my briefy summary notes about Chapter 1.
+```
+
+##### Notes Files
+
 - Named with the node's ID and title followed by `_notes.md`
 - Example: `202405101023 Chapter 1 Beginning _notes.md`
 - Contains a Markdown document with research, references, or author notes
 
+``` markdown
+---
+type: notecard
+node: 20245101023 Chapter 1 Beginning.md
+---
+
+These are my in-depth notes about Chapter 1.
+```
+
 #### Binder/Outline Format
 
-The binder file defines the hierarchical structure:
+The binder file defines the hierarchical structure, linking to individual nodes:
 
 ```markdown
 ---
