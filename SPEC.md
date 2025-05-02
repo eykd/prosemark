@@ -75,6 +75,7 @@ Each node in the hierarchy may contain:
   - `get_content()` - Retrieves the main content
   - `get_notecard()` - Retrieves the notecard
   - `get_notes()` - Retrieves the notes section
+  - `get_combined_content()` - Retrieves all content components (main content, notecard, and notes) combined into a single text
   - `get_ancestry()` - Returns a list of nodes from root to this node's parent (excludes the current node itself)
   - `get_full_path()` - Returns a list of nodes from root to this node (includes the current node itself)
   - `add_metadata(key, value)` - Adds or updates a specific metadata field
