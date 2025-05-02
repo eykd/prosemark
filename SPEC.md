@@ -46,7 +46,10 @@ Each node in the hierarchy may contain:
 
 #### Node
 - **Attributes**:
-  - `id`: String - Unique identifier (Zettelkasten-style timestamp)
+  - `id`: String - Unique identifier (Zettelkasten-style timestamp in YYYYMMDDHHmm format, e.g., "202405101023")
+    - Automatically generated when a node is created
+    - Used as the primary identifier for nodes in the system
+    - Ensures chronological ordering and uniqueness
   - `title`: String - The title of the node
   - `notecard`: String - Brief description or summary (Markdown)
   - `content`: String - Main text content (Markdown)
