@@ -70,7 +70,8 @@ class Node:
         """Remove a child node from this node.
 
         Args:
-            child: The node or node ID to remove.
+            child: The node or node ID to remove. If a string is provided,
+                it will be treated as a node ID.
 
         Returns:
             The removed node or None if not found.
@@ -81,11 +82,10 @@ class Node:
         if isinstance(child, str):
             child_node = self.get_child_by_id(child)
         else:
-            if child in self.children:
-                child_node = child
+            child_node = child
 
-        # Remove the child if found
-        if child_node:
+        # Remove the child if found in children list
+        if child_node in self.children:
             self.children.remove(child_node)
             child_node.parent = None
             return child_node
@@ -139,7 +139,8 @@ class Node:
 
         Args:
             child: The node or node ID to move.
-            position: The new position for the child.
+            position: The new position for the child. Must be within valid range
+                of the children list.
 
         Returns:
             True if successful, False otherwise.
@@ -150,11 +151,10 @@ class Node:
         if isinstance(child, str):
             child_node = self.get_child_by_id(child)
         else:
-            if child in self.children:
-                child_node = child
+            child_node = child
 
         # Move the child if found and position is valid
-        if child_node and 0 <= position < len(self.children):
+        if child_node in self.children and 0 <= position < len(self.children):
             self.children.remove(child_node)
             self.children.insert(position, child_node)
             return True
