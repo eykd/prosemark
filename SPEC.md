@@ -72,6 +72,7 @@ Each node in the hierarchy may contain:
   - `update_content(content)` - Updates the main content
   - `update_notecard(notecard)` - Updates the notecard
   - `update_notes(notes)` - Updates the notes section
+  - `update_title(title)` - Updates the node's title and ensures consistency by updating the title in node metadata, associated notecard and notes documents, and the project binder
   - `get_content()` - Retrieves the main content
   - `get_notecard()` - Retrieves the notecard
   - `get_notes()` - Retrieves the notes section
