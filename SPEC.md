@@ -45,7 +45,6 @@ Each node in the hierarchy may contain:
   - `get_structure()` - Returns the complete document hierarchy as a tree-like structure, starting from the root node and including all descendants with their relationships preserved
   - `get_all_nodes()` - Returns a list of all nodes in the project in binder order (following the hierarchy traversal)
   - `search_nodes(query, search_in=['title', 'content', 'notecard', 'notes', 'metadata'])` - Searches for nodes matching the query across specified fields, potentially using a search engine like Whoosh for efficient full-text search capabilities
-  - `save()` - Persists the current state of the project to storage using the configured storage adapter
 
 #### Node
 - **Attributes**:
@@ -111,6 +110,30 @@ The application follows a hexagonal architecture with:
    - UI adapters (CLI, potential GUI)
    - Storage adapters (file system, potential database)
    - Export adapters (HTML, Word, RTF, EPUB)
+
+### Persistence Layer
+
+The persistence layer handles the storage and retrieval of domain entities through appropriate adapters, keeping I/O concerns separate from the domain model.
+
+#### ProjectRepository
+- **Interface**:
+  - `save(project)` - Persists a project to storage
+  - `load(project_id)` - Loads a project from storage
+  - `list_projects()` - Lists available projects
+  - `delete_project(project_id)` - Removes a project from storage
+  - `create_project(name, description)` - Creates a new empty project
+
+#### Storage Adapters
+Storage adapters implement the ProjectRepository interface for specific storage mechanisms:
+- **MarkdownFileAdapter**: Implements storage using individual Markdown files
+- **SQLiteAdapter**: Implements storage using SQLite database
+- **JsonYamlAdapter**: Implements storage using JSON/YAML files
+
+The persistence layer follows these principles:
+- Domain entities have no knowledge of how they are persisted
+- Storage adapters translate between domain entities and storage formats
+- The application configures which storage adapter to use
+- Adapters handle all I/O operations and error conditions
 
 ## Storage Format
 
