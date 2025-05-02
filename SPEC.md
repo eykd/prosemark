@@ -253,6 +253,30 @@ The storage format will be configurable:
 - Support format selection at project creation
 - Provide migration tools for existing projects
 
+### Format Conversion
+
+The application will support converting existing projects between different storage formats:
+
+#### Conversion Capabilities
+- Convert from any supported format to any other supported format
+- Preserve all content, structure, and metadata during conversion
+- Provide both CLI and UI options for format migration
+- Allow selective backup before conversion
+
+#### Conversion Process
+1. **Validation**: Verify the integrity of the source project
+2. **Backup**: Create an automatic backup of the original project
+3. **Conversion**: Transform the project to the target format
+4. **Verification**: Validate the converted project for completeness
+5. **Cleanup**: Remove temporary files and update project references
+
+#### Implementation Considerations
+- Implement adapters with bidirectional conversion support
+- Use a common intermediate representation during conversion
+- Handle edge cases like unsupported features in target formats
+- Provide detailed logs of the conversion process
+- Include rollback capability if conversion fails
+
 ## Compilation
 
 The application will support compiling selected portions of the document hierarchy into various output formats:
