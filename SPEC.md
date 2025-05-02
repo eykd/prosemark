@@ -63,6 +63,7 @@ Each node in the hierarchy may contain:
 - **Methods**:
   - `add_child(node)` - Adds a child node
   - `remove_child(node_id)` - Removes a child node
+  - `get_child(node_id)` - Retrieves a specific child node by ID
   - `move_child(node_id, position)` - Reorders children
   - `update_content(content)` - Updates the main content
   - `update_notecard(notecard)` - Updates the notecard
