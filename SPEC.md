@@ -67,6 +67,8 @@ Each node in the hierarchy may contain:
   - `remove_child(node_id)` - Removes a child node
   - `get_child(node_id)` - Retrieves a specific child node by ID
   - `move_child(node_id, position)` - Reorders children
+  - `has_children()` - Returns a boolean indicating whether the node has any children
+  - `get_child_count()` - Returns the number of children this node has
   - `update_content(content)` - Updates the main content
   - `update_notecard(notecard)` - Updates the notecard
   - `update_notes(notes)` - Updates the notes section
