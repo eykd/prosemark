@@ -68,6 +68,9 @@ Each node in the hierarchy may contain:
   - `update_content(content)` - Updates the main content
   - `update_notecard(notecard)` - Updates the notecard
   - `update_notes(notes)` - Updates the notes section
+  - `get_content()` - Retrieves the main content
+  - `get_notecard()` - Retrieves the notecard
+  - `get_notes()` - Retrieves the notes section
   - `get_ancestry()` - Returns a list of nodes from root to this node's parent (excludes the current node itself)
 
 #### Relationships
