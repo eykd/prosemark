@@ -123,6 +123,67 @@ and the type checker.
 - Fix any typing errors before continuing.
 
 
+## Hexagonal Architecture (Ports and Adapters)
+
+When designing and implementing application components (`*.py`), follow hexagonal architecture principles to separate business logic from external concerns.
+
+- Place core business logic at the center of the application, free from direct dependencies on I/O or external systems.
+- Define clear interfaces (ports) for all external interactions required by the business logic.
+- Implement concrete adapters that fulfill these interfaces for actual external systems.
+- Inject dependencies through constructor parameters or dedicated factory functions.
+- Example port interface: |
+  ```python
+  class UserRepository(Protocol):
+      def get_user(self, user_id: str) -> User:
+          """Retrieves a user by ID."""
+          ...
+      
+      def save_user(self, user: User) -> None:
+          """Persists user data."""
+          ...
+  ```
+- Example adapter implementation: |
+  ```python
+  class PostgresUserRepository:
+      def __init__(self, db_connection: Connection) -> None:
+          self.db_connection = db_connection
+          
+      def get_user(self, user_id: str) -> User:
+          # Implementation using PostgreSQL
+          ...
+      
+      def save_user(self, user: User) -> None:
+          # Implementation using PostgreSQL
+          ...
+  ```
+
+
+## Testing with Hexagonal Architecture
+
+When writing tests for business logic (`*_test.py`), use test doubles (fakes, stubs, mocks) for external dependencies.
+
+- Create in-memory fake implementations of port interfaces for testing.
+- Use stubs to provide predetermined responses for specific test scenarios.
+- Avoid testing the internals of adapters in business logic tests.
+- Test adapters separately with integration tests.
+- Example test with fake repository: |
+  ```python
+  class TestUserService:
+      def test_user_creation(self) -> None:
+          # Arrange
+          fake_repository = InMemoryUserRepository()
+          user_service = UserService(repository=fake_repository)
+          
+          # Act
+          user_id = user_service.create_user("John", "Doe")
+          
+          # Assert
+          created_user = fake_repository.get_user(user_id)
+          assert created_user.first_name == "John"
+          assert created_user.last_name == "Doe"
+  ```
+
+
 ## Testing python code
 
 When writing or editing Python code (`*.py`), ALWAYS write a test first for each change.
