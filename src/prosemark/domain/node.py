@@ -10,14 +10,14 @@ class Node:
     Represents a single node in the document tree with content, metadata,
     and relationships to other nodes.
     """
-    
+
     def __init__(
         self,
         id: str | None = None,
-        title: str = "",
-        notecard: str = "",
-        content: str = "",
-        notes: str = "",
+        title: str = '',
+        notecard: str = '',
+        content: str = '',
+        notes: str = '',
         metadata: dict[str, Any] | None = None,
         parent: Node | None = None,
         children: list[Node] | None = None,
@@ -33,6 +33,7 @@ class Node:
             metadata: Key-value pairs for additional information.
             parent: Reference to the parent node.
             children: List of child nodes.
+
         """
         self.id = id if id is not None else str(uuid.uuid4())
         self.title = title
@@ -42,7 +43,7 @@ class Node:
         self.metadata = metadata or {}
         self.parent = parent
         self.children: list[Node] = []
-        
+
         # Add children if provided
         if children:
             for child in children:
@@ -54,10 +55,11 @@ class Node:
         Args:
             child: The node to add as a child.
             position: Optional position to insert the child. If None, appends to the end.
+
         """
         # Set the parent of the child node
         child.parent = self
-        
+
         # Add the child to the children list
         if position is None:
             self.children.append(child)
@@ -72,6 +74,7 @@ class Node:
 
         Returns:
             The removed node or None if not found.
+
         """
         # Find the child node
         child_node = None
@@ -80,13 +83,13 @@ class Node:
         else:
             if child in self.children:
                 child_node = child
-        
+
         # Remove the child if found
         if child_node:
             self.children.remove(child_node)
             child_node.parent = None
             return child_node
-        
+
         return None
 
     def get_child_by_id(self, id: str) -> Node | None:
@@ -97,6 +100,7 @@ class Node:
 
         Returns:
             The child node or None if not found.
+
         """
         for child in self.children:
             if child.id == id:
@@ -108,6 +112,7 @@ class Node:
 
         Returns:
             List of all descendant nodes.
+
         """
         descendants = []
         for child in self.children:
@@ -120,6 +125,7 @@ class Node:
 
         Returns:
             List of all ancestor nodes.
+
         """
         ancestors = []
         current = self.parent
@@ -137,6 +143,7 @@ class Node:
 
         Returns:
             True if successful, False otherwise.
+
         """
         # Find the child node
         child_node = None
@@ -145,11 +152,11 @@ class Node:
         else:
             if child in self.children:
                 child_node = child
-        
+
         # Move the child if found and position is valid
         if child_node and 0 <= position < len(self.children):
             self.children.remove(child_node)
             self.children.insert(position, child_node)
             return True
-        
+
         return False
