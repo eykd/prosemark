@@ -220,7 +220,7 @@ strict = true
 plugins = [
     "pydantic.mypy",
 ]
-mypy_path = src
+mypy_path = "src"
 
 [tool.hatch.build.sources]
 "src" = ""
