@@ -73,8 +73,21 @@ class Node:
         Returns:
             The removed node or None if not found.
         """
-        # Implementation will be added later
-        pass
+        # Find the child node
+        child_node = None
+        if isinstance(child, str):
+            child_node = self.get_child_by_id(child)
+        else:
+            if child in self.children:
+                child_node = child
+        
+        # Remove the child if found
+        if child_node:
+            self.children.remove(child_node)
+            child_node.parent = None
+            return child_node
+        
+        return None
 
     def get_child_by_id(self, id: str) -> Node | None:
         """Get a child node by its ID.
@@ -85,8 +98,10 @@ class Node:
         Returns:
             The child node or None if not found.
         """
-        # Implementation will be added later
-        pass
+        for child in self.children:
+            if child.id == id:
+                return child
+        return None
 
     def get_descendants(self) -> list[Node]:
         """Get all descendant nodes recursively.
@@ -94,8 +109,11 @@ class Node:
         Returns:
             List of all descendant nodes.
         """
-        # Implementation will be added later
-        return []
+        descendants = []
+        for child in self.children:
+            descendants.append(child)
+            descendants.extend(child.get_descendants())
+        return descendants
 
     def get_ancestors(self) -> list[Node]:
         """Get all ancestor nodes recursively.
@@ -103,8 +121,12 @@ class Node:
         Returns:
             List of all ancestor nodes.
         """
-        # Implementation will be added later
-        return []
+        ancestors = []
+        current = self.parent
+        while current:
+            ancestors.append(current)
+            current = current.parent
+        return ancestors
 
     def move_child(self, child: Node | str, position: int) -> bool:
         """Move a child node to a new position in the children list.
@@ -116,5 +138,18 @@ class Node:
         Returns:
             True if successful, False otherwise.
         """
-        # Implementation will be added later
+        # Find the child node
+        child_node = None
+        if isinstance(child, str):
+            child_node = self.get_child_by_id(child)
+        else:
+            if child in self.children:
+                child_node = child
+        
+        # Move the child if found and position is valid
+        if child_node and 0 <= position < len(self.children):
+            self.children.remove(child_node)
+            self.children.insert(position, child_node)
+            return True
+        
         return False
