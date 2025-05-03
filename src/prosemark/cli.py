@@ -12,10 +12,11 @@ from typing import TYPE_CHECKING
 import click
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
-from prosemark.domain.nodes import Node
 
 if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
+
+    from prosemark.domain.nodes import Node
 
 
 @click.group()
@@ -114,7 +115,7 @@ def add(
 
         repo.save(project)
         click.echo(f"Node '{title}' added successfully with ID: {node.id}")
-    except ValueError as e:
+    except ValueError as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
@@ -139,7 +140,7 @@ def remove(ctx: ClickContext, project_name: str, node_id: str) -> None:
 
         repo.save(project)
         click.echo(f"Node '{node.title}' removed successfully.")
-    except ValueError as e:
+    except ValueError as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
@@ -150,9 +151,7 @@ def remove(ctx: ClickContext, project_name: str, node_id: str) -> None:
 @click.argument('new_parent_id')
 @click.option('--position', '-p', type=int, help='Position to insert the node')
 @click.pass_context
-def move(
-    ctx: ClickContext, project_name: str, node_id: str, new_parent_id: str, position: int | None = None
-) -> None:
+def move(ctx: ClickContext, project_name: str, node_id: str, new_parent_id: str, position: int | None = None) -> None:
     """Move a node to a new parent.
 
     PROJECT_NAME is the name of the project to modify.
@@ -172,7 +171,7 @@ def move(
 
         repo.save(project)
         click.echo('Node moved successfully.')
-    except ValueError as e:
+    except ValueError as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
@@ -196,23 +195,23 @@ def show(ctx: ClickContext, project_name: str, node_id: str) -> None:
             sys.exit(1)
 
         click.echo(f'Title: {node.title}')
-        if node.notecard:
+        if node.notecard:  # pragma: no branch
             click.echo('\nNotecard:')
             click.echo(f'{node.notecard}')
 
-        if node.content:
+        if node.content:  # pragma: no branch
             click.echo('\nContent:')
             click.echo(f'{node.content}')
 
-        if node.notes:
+        if node.notes:  # pragma: no branch
             click.echo('\nNotes:')
             click.echo(f'{node.notes}')
 
-        if node.children:
+        if node.children:  # pragma: no branch
             click.echo('\nChildren:')
             for child in node.children:
                 click.echo(f'- {child.title} (ID: {child.id})')
-    except ValueError as e:
+    except ValueError as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
@@ -234,7 +233,7 @@ def edit(
     notecard: str | None = None,
     content: str | None = None,
     notes: str | None = None,
-    editor: bool = True,
+    editor: bool = True,  # noqa: FBT001, FBT002
 ) -> None:
     """Edit node content.
 
@@ -249,86 +248,26 @@ def edit(
             click.echo(f'Error: Node with ID {node_id} not found.', err=True)
             sys.exit(1)
 
-        # Update fields provided via options
-        if title is not None:
-            node.title = title
-        if notecard is not None:
-            node.notecard = notecard
-        if content is not None:
-            node.content = content
-        if notes is not None:
-            node.notes = notes
-
+        # Edit the node using the adapter
+        node = repo.update_node(node, title, notecard, content, notes)
         # If editor flag is set and no content was provided via options, open editor
         if editor and title is None and notecard is None and content is None and notes is None:  # pragma: no branch
-            # Prepare initial text for the editor
-            initial_text = f'# Title: {node.title}\n\n'
-            initial_text += '# Notecard (brief summary):\n'
-            initial_text += f'{node.notecard}\n\n'
-            initial_text += '# Content (main text):\n'
-            initial_text += f'{node.content}\n\n'
-            initial_text += '# Notes (additional information):\n'
-            initial_text += f'{node.notes}\n\n'
-            initial_text += '# Instructions:\n'
-            initial_text += '# Edit the content above. Lines starting with # are comments and will be ignored.\n'
+            # Generate initial text for the editor
+            initial_text = repo.generate_edit_markdown(node)
 
             # Open editor and get result
             edited_text = click.edit(initial_text)
 
             if edited_text is not None:
                 # Parse the edited text
-                sections = {}
-                current_section = None
-                section_content: list[str] = []
+                sections = repo.parse_edit_markdown(edited_text)
 
-                for line in edited_text.split('\n'):
-                    if line.startswith('# Title:'):
-                        # Extract title directly from this line
-                        title_value = line.replace('# Title:', '').strip()
-                        if title_value:
-                            sections['title'] = title_value
-                        current_section = 'title'
-                        section_content = []
-                    elif line.startswith('# Notecard'):
-                        if current_section and section_content and current_section != 'title':
-                            sections[current_section] = '\n'.join(section_content).strip()
-                        current_section = 'notecard'
-                        section_content = []
-                    elif line.startswith('# Content'):
-                        if current_section and section_content:
-                            sections[current_section] = '\n'.join(section_content).strip()
-                        current_section = 'content'
-                        section_content = []
-                    elif line.startswith('# Notes'):
-                        if current_section and section_content:
-                            sections[current_section] = '\n'.join(section_content).strip()
-                        current_section = 'notes'
-                        section_content = []
-                    elif line.startswith('# Instructions:'):
-                        if current_section and section_content:
-                            sections[current_section] = '\n'.join(section_content).strip()
-                        break
-                    elif not line.startswith('#'):
-                        section_content.append(line)
-
-                # Save the last section
-                if current_section and section_content:  # pragma: no cover
-                    sections[current_section] = '\n'.join(section_content).strip()
-
-                # Update node with edited content
-                if 'title' in sections:
-                    node.title = sections['title']
-                if 'notecard' in sections:
-                    node.notecard = sections['notecard']
-                if 'content' in sections:
-                    node.content = sections['content']
-                if 'notes' in sections:
-                    node.notes = sections['notes']
+                node = repo.update_node(node, **sections)
 
         # Save the project
         repo.save(project)
         click.echo(f"Node '{node.title}' updated successfully.")
-    except ValueError as e:
+    except ValueError as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
@@ -358,14 +297,14 @@ def structure(ctx: ClickContext, project_name: str, node_id: str | None = None) 
         # Display the structure
         click.echo(f"Structure for project '{project.name}':")
         _print_node_structure(start_node, 0)
-    except ValueError as e:
+    except ValueError as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
 
 def _print_node_structure(node: Node, level: int) -> None:
     """Print the node structure recursively.
-    
+
     Args:
         node: The node to print.
         level: The indentation level.

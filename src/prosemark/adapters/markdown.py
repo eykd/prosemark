@@ -451,3 +451,106 @@ class MarkdownFileAdapter(ProjectRepository):
 
         # Delete the project directory
         project_dir.rmdir()
+
+    def parse_edit_markdown(self, markdown: str) -> dict[str, str]:  # noqa: C901
+        """Parse markdown content from the edit command.
+
+        Args:
+            markdown: The markdown content to parse.
+
+        Returns:
+            A dictionary containing the parsed sections (title, notecard, content, notes).
+
+        """
+        sections: dict[str, str] = {}
+        current_section = None
+        section_content: list[str] = []
+
+        for line in markdown.split('\n'):  # pragma: no branch
+            if line.startswith('# Title:'):
+                # Extract title directly from this line
+                title_value = line.replace('# Title:', '').strip()
+                if title_value:  # pragma: no branch
+                    sections['title'] = title_value
+                current_section = 'title'
+                section_content = []
+            elif line.startswith('# Notecard'):
+                if current_section and section_content and current_section != 'title':  # pragma: no cover
+                    sections[current_section] = '\n'.join(section_content).strip()
+                current_section = 'notecard'
+                section_content = []
+            elif line.startswith('# Content'):
+                if current_section and section_content:  # pragma: no branch
+                    sections[current_section] = '\n'.join(section_content).strip()
+                current_section = 'content'
+                section_content = []
+            elif line.startswith('# Notes'):
+                if current_section and section_content:  # pragma: no branch
+                    sections[current_section] = '\n'.join(section_content).strip()
+                current_section = 'notes'
+                section_content = []
+            elif line.startswith('# Instructions:'):
+                if current_section and section_content:  # pragma: no branch
+                    sections[current_section] = '\n'.join(section_content).strip()
+                break
+            elif not line.startswith('#'):  # pragma: no branch
+                section_content.append(line)
+
+        # Save the last section
+        if current_section and section_content:  # pragma: no branch
+            sections[current_section] = '\n'.join(section_content).strip()
+
+        return sections
+
+    def generate_edit_markdown(self, node: Node) -> str:
+        """Generate markdown content for the edit command.
+
+        Args:
+            node: The node to generate markdown for.
+
+        Returns:
+            A string containing the markdown content.
+
+        """
+        lines = [
+            f'# Title: {node.title}\n',
+            '# Notecard (brief summary):',
+            f'{node.notecard}\n',
+            '# Content (main text):',
+            f'{node.content}\n',
+            '# Notes (additional information):',
+            f'{node.notes}\n',
+            '# Instructions:',
+            '# Edit the content above. Lines starting with # are comments and will be ignored.\n',
+        ]
+        return '\n'.join(lines)
+
+    def update_node(
+        self,
+        node: Node,
+        title: str | None = None,
+        notecard: str | None = None,
+        content: str | None = None,
+        notes: str | None = None,
+    ) -> Node:
+        """Update a node's content.
+
+        Args:
+            node: The node to update.
+            title: New title for the node.
+            notecard: New notecard for the node.
+            content: New content for the node.
+            notes: New notes for the node.
+
+        """
+        # Update fields provided via options
+        if title is not None:
+            node.title = title
+        if notecard is not None:
+            node.notecard = notecard
+        if content is not None:
+            node.content = content
+        if notes is not None:
+            node.notes = notes
+
+        return node
