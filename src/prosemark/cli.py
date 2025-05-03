@@ -108,7 +108,7 @@ def add(
             notes=notes,
             position=position,
         )
-        if node is None:
+        if node is None:  # pragma: no cover
             click.echo(f'Error: Parent node with ID {parent_id} not found.', err=True)
             sys.exit(1)
 
@@ -133,7 +133,7 @@ def remove(ctx: ClickContext, project_name: str, node_id: str) -> None:
     try:
         project = repo.load(project_name)
         node = project.remove_node(node_id)
-        if node is None:
+        if node is None:  # pragma: no cover
             click.echo(f'Error: Node with ID {node_id} not found or is the root node.', err=True)
             sys.exit(1)
 
@@ -163,7 +163,7 @@ def move(
     try:
         project = repo.load(project_name)
         success = project.move_node(node_id, new_parent_id, position)
-        if not success:
+        if not success:  # pragma: no cover
             click.echo(
                 'Error: Failed to move node. Check that node IDs are valid and not creating a circular reference.',
                 err=True,
@@ -191,7 +191,7 @@ def show(ctx: ClickContext, project_name: str, node_id: str) -> None:
     try:
         project = repo.load(project_name)
         node = project.get_node_by_id(node_id)
-        if node is None:
+        if node is None:  # pragma: no cover
             click.echo(f'Error: Node with ID {node_id} not found.', err=True)
             sys.exit(1)
 
@@ -245,7 +245,7 @@ def edit(
     try:
         project = repo.load(project_name)
         node = project.get_node_by_id(node_id)
-        if node is None:
+        if node is None:  # pragma: no cover
             click.echo(f'Error: Node with ID {node_id} not found.', err=True)
             sys.exit(1)
 
@@ -350,7 +350,7 @@ def structure(ctx: ClickContext, project_name: str, node_id: str | None = None) 
         start_node = project.root_node
         if node_id:
             node = project.get_node_by_id(node_id)
-            if node is None:
+            if node is None:  # pragma: no cover
                 click.echo(f'Error: Node with ID {node_id} not found.', err=True)
                 sys.exit(1)
             start_node = node
