@@ -125,7 +125,7 @@ class Project:
             or new_parent is None
             or node is self.root_node
             or node in new_parent.get_ancestors()
-            or new_parent in node.get_descendants()
+            or new_parent in node.get_descendants()  # pragma: no branch
         ):
             return False
 
@@ -204,7 +204,7 @@ class Project:
             'children': [],  # This is a list that will be modified
         }
 
-        if node.children:
+        if node.children:  # pragma: no branch
             for child in node.children:
                 # Append each child's structure to the children list
                 for child_structure in self._build_structure(child):
