@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -15,7 +16,7 @@ from prosemark.domain.projects import Project
 
 
 @pytest.fixture
-def temp_dir() -> str:
+def temp_dir() -> Generator[str, None, None]:
     """Create a temporary directory for testing."""
     with tempfile.TemporaryDirectory() as tmpdirname:
         yield tmpdirname
