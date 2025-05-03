@@ -33,14 +33,16 @@
 
 ## CLI Implementation
 
-- [ ] Implement basic CLI structure using Click
-  - [ ] Write tests for CLI command structure
-  - [ ] Set up command groups and basic error handling
-  - [ ] Review for proper type annotations and docstrings
+- [x] Implement basic CLI structure using Click
+  - [x] Write tests for CLI command structure
+  - [x] Set up command groups and basic error handling
+  - [x] Review for proper type annotations and docstrings
 
-- [ ] Implement Project Management commands
-  - [ ] Write tests for `prosemark init [name]` command
-  - [ ] Implement `prosemark init [name]` - Create a new project
+- [x] Implement Project Management commands
+  - [x] Write tests for `prosemark init [name]` command
+  - [x] Implement `prosemark init [name]` - Create a new project
+  - [x] Write tests for `prosemark list` command
+  - [x] Implement `prosemark list` - List available projects
 
 - [ ] Implement Node Management commands
   - [ ] Write tests for `prosemark add [parent_id] [title]` command
