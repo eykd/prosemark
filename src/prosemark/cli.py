@@ -283,14 +283,14 @@ def edit(
 
                 for line in edited_text.split('\n'):
                     if line.startswith('# Title:'):
-                        current_section = 'title'
-                        section_content = []
                         # Extract title directly from this line
                         title_value = line.replace('# Title:', '').strip()
                         if title_value:
                             sections['title'] = title_value
+                        current_section = 'title'
+                        section_content = []
                     elif line.startswith('# Notecard'):
-                        if current_section and section_content:
+                        if current_section and section_content and current_section != 'title':
                             sections[current_section] = '\n'.join(section_content).strip()
                         current_section = 'notecard'
                         section_content = []
