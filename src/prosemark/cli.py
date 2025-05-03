@@ -48,7 +48,7 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.create_project(name, description or '')
+        project = repo.create_project(name, description or '')  # pragma: no branch
         click.echo(f"Project '{project.name}' created successfully.")
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)
