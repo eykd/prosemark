@@ -24,12 +24,12 @@
   - [x] Define methods (save, load, list_projects, create_project, delete_project)
   - [x] Review for proper type annotations and docstrings
 
-- [ ] Implement the `MarkdownFileAdapter` class
-  - [ ] Write tests for project saving/loading functionality
-  - [ ] Implement methods to save/load projects using Markdown files
-  - [ ] Write tests for node serialization/deserialization
-  - [ ] Implement node serialization/deserialization
-  - [ ] Review for proper type annotations and docstrings
+- [x] Implement the `MarkdownFileAdapter` class
+  - [x] Write tests for project saving/loading functionality
+  - [x] Implement methods to save/load projects using Markdown files
+  - [x] Write tests for node serialization/deserialization
+  - [x] Implement node serialization/deserialization
+  - [x] Review for proper type annotations and docstrings
 
 ## CLI Implementation
 
