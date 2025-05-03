@@ -21,7 +21,7 @@
 
 - [x] Define the `ProjectRepository` interface
   - [x] Write tests for repository interface contract
-  - [x] Define methods (save, load, list_projects, create_project)
+  - [x] Define methods (save, load, list_projects, create_project, delete_project)
   - [x] Review for proper type annotations and docstrings
 
 - [ ] Implement the `MarkdownFileAdapter` class
