@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from prosemark.domain.node import Node
+from prosemark.domain.nodes import Node
 
 
 def test_node_initialization() -> None:

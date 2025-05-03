@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from prosemark.domain.node import Node
-from prosemark.domain.project import Project
+from prosemark.domain.nodes import Node
+from prosemark.domain.projects import Project
 
 
 def test_project_initialization() -> None:
