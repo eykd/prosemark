@@ -44,19 +44,19 @@
   - [x] Write tests for `prosemark list` command
   - [x] Implement `prosemark list` - List available projects
 
-- [ ] Implement Node Management commands
-  - [ ] Write tests for `prosemark add [parent_id] [title]` command
-  - [ ] Implement `prosemark add [parent_id] [title]` - Add a new node
-  - [ ] Write tests for `prosemark remove [node_id]` command
-  - [ ] Implement `prosemark remove [node_id]` - Remove a node
-  - [ ] Write tests for `prosemark move [node_id] [new_parent_id] [position]` command
-  - [ ] Implement `prosemark move [node_id] [new_parent_id] [position]` - Move a node
-  - [ ] Write tests for `prosemark show [node_id]` command
-  - [ ] Implement `prosemark show [node_id]` - Display node content
-  - [ ] Write tests for `prosemark edit [node_id]` command
-  - [ ] Implement `prosemark edit [node_id]` - Edit node content
-  - [ ] Write tests for `prosemark structure` command
-  - [ ] Implement `prosemark structure` - Display the project structure
+- [x] Implement Node Management commands
+  - [x] Write tests for `prosemark add [parent_id] [title]` command
+  - [x] Implement `prosemark add [parent_id] [title]` - Add a new node
+  - [x] Write tests for `prosemark remove [node_id]` command
+  - [x] Implement `prosemark remove [node_id]` - Remove a node
+  - [x] Write tests for `prosemark move [node_id] [new_parent_id] [position]` command
+  - [x] Implement `prosemark move [node_id] [new_parent_id] [position]` - Move a node
+  - [x] Write tests for `prosemark show [node_id]` command
+  - [x] Implement `prosemark show [node_id]` - Display node content
+  - [x] Write tests for `prosemark edit [node_id]` command
+  - [x] Implement `prosemark edit [node_id]` - Edit node content
+  - [x] Write tests for `prosemark structure` command
+  - [x] Implement `prosemark structure` - Display the project structure
 
 ## Integration and Testing
 

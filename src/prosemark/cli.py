@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import click
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.domain.nodes import Node
 
 if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
@@ -69,6 +70,307 @@ def list_projects(ctx: ClickContext) -> None:
     click.echo('Available projects:')
     for project in projects:
         click.echo(f'- {project["name"]}')
+
+
+@cli.command()
+@click.argument('project_name')
+@click.argument('parent_id')
+@click.argument('title')
+@click.option('--notecard', '-n', help='Brief summary of the node')
+@click.option('--content', '-c', help='Main content of the node')
+@click.option('--notes', help='Additional notes about the node')
+@click.option('--position', '-p', type=int, help='Position to insert the node')
+@click.pass_context
+def add(
+    ctx: ClickContext,
+    project_name: str,
+    parent_id: str,
+    title: str,
+    notecard: str = '',
+    content: str = '',
+    notes: str = '',
+    position: int | None = None,
+) -> None:
+    """Add a new node to a project.
+
+    PROJECT_NAME is the name of the project to modify.
+    PARENT_ID is the ID of the parent node.
+    TITLE is the title of the new node.
+    """
+    repo = ctx.obj['repo']
+    try:
+        project = repo.load(project_name)
+        node = project.create_node(
+            parent_id=parent_id,
+            title=title,
+            notecard=notecard,
+            content=content,
+            notes=notes,
+            position=position,
+        )
+        if node is None:
+            click.echo(f'Error: Parent node with ID {parent_id} not found.', err=True)
+            sys.exit(1)
+
+        repo.save(project)
+        click.echo(f"Node '{title}' added successfully with ID: {node.id}")
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('project_name')
+@click.argument('node_id')
+@click.pass_context
+def remove(ctx: ClickContext, project_name: str, node_id: str) -> None:
+    """Remove a node from a project.
+
+    PROJECT_NAME is the name of the project to modify.
+    NODE_ID is the ID of the node to remove.
+    """
+    repo = ctx.obj['repo']
+    try:
+        project = repo.load(project_name)
+        node = project.remove_node(node_id)
+        if node is None:
+            click.echo(f'Error: Node with ID {node_id} not found or is the root node.', err=True)
+            sys.exit(1)
+
+        repo.save(project)
+        click.echo(f"Node '{node.title}' removed successfully.")
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('project_name')
+@click.argument('node_id')
+@click.argument('new_parent_id')
+@click.option('--position', '-p', type=int, help='Position to insert the node')
+@click.pass_context
+def move(
+    ctx: ClickContext, project_name: str, node_id: str, new_parent_id: str, position: int | None = None
+) -> None:
+    """Move a node to a new parent.
+
+    PROJECT_NAME is the name of the project to modify.
+    NODE_ID is the ID of the node to move.
+    NEW_PARENT_ID is the ID of the new parent node.
+    """
+    repo = ctx.obj['repo']
+    try:
+        project = repo.load(project_name)
+        success = project.move_node(node_id, new_parent_id, position)
+        if not success:
+            click.echo(
+                'Error: Failed to move node. Check that node IDs are valid and not creating a circular reference.',
+                err=True,
+            )
+            sys.exit(1)
+
+        repo.save(project)
+        click.echo('Node moved successfully.')
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('project_name')
+@click.argument('node_id')
+@click.pass_context
+def show(ctx: ClickContext, project_name: str, node_id: str) -> None:
+    """Display node content.
+
+    PROJECT_NAME is the name of the project.
+    NODE_ID is the ID of the node to display.
+    """
+    repo = ctx.obj['repo']
+    try:
+        project = repo.load(project_name)
+        node = project.get_node_by_id(node_id)
+        if node is None:
+            click.echo(f'Error: Node with ID {node_id} not found.', err=True)
+            sys.exit(1)
+
+        click.echo(f'Title: {node.title}')
+        if node.notecard:
+            click.echo('\nNotecard:')
+            click.echo(f'{node.notecard}')
+
+        if node.content:
+            click.echo('\nContent:')
+            click.echo(f'{node.content}')
+
+        if node.notes:
+            click.echo('\nNotes:')
+            click.echo(f'{node.notes}')
+
+        if node.children:
+            click.echo('\nChildren:')
+            for child in node.children:
+                click.echo(f'- {child.title} (ID: {child.id})')
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('project_name')
+@click.argument('node_id')
+@click.option('--title', '-t', help='New title for the node')
+@click.option('--notecard', '-n', help='New notecard for the node')
+@click.option('--content', '-c', help='New content for the node')
+@click.option('--notes', help='New notes for the node')
+@click.option('--editor/--no-editor', default=True, help='Open in editor')
+@click.pass_context
+def edit(
+    ctx: ClickContext,
+    project_name: str,
+    node_id: str,
+    title: str | None = None,
+    notecard: str | None = None,
+    content: str | None = None,
+    notes: str | None = None,
+    editor: bool = True,
+) -> None:
+    """Edit node content.
+
+    PROJECT_NAME is the name of the project.
+    NODE_ID is the ID of the node to edit.
+    """
+    repo = ctx.obj['repo']
+    try:
+        project = repo.load(project_name)
+        node = project.get_node_by_id(node_id)
+        if node is None:
+            click.echo(f'Error: Node with ID {node_id} not found.', err=True)
+            sys.exit(1)
+
+        # Update fields provided via options
+        if title is not None:
+            node.title = title
+        if notecard is not None:
+            node.notecard = notecard
+        if content is not None:
+            node.content = content
+        if notes is not None:
+            node.notes = notes
+
+        # If editor flag is set and no content was provided via options, open editor
+        if editor and title is None and notecard is None and content is None and notes is None:
+            # Prepare initial text for the editor
+            initial_text = f'# Title: {node.title}\n\n'
+            initial_text += '# Notecard (brief summary):\n'
+            initial_text += f'{node.notecard}\n\n'
+            initial_text += '# Content (main text):\n'
+            initial_text += f'{node.content}\n\n'
+            initial_text += '# Notes (additional information):\n'
+            initial_text += f'{node.notes}\n\n'
+            initial_text += '# Instructions:\n'
+            initial_text += '# Edit the content above. Lines starting with # are comments and will be ignored.\n'
+
+            # Open editor and get result
+            edited_text = click.edit(initial_text)
+
+            if edited_text is not None:
+                # Parse the edited text
+                sections = {}
+                current_section = None
+                section_content = []
+
+                for line in edited_text.split('\n'):
+                    if line.startswith('# Title:'):
+                        current_section = 'title'
+                        section_content = []
+                    elif line.startswith('# Notecard'):
+                        if current_section and section_content:
+                            sections[current_section] = '\n'.join(section_content).strip()
+                        current_section = 'notecard'
+                        section_content = []
+                    elif line.startswith('# Content'):
+                        if current_section and section_content:
+                            sections[current_section] = '\n'.join(section_content).strip()
+                        current_section = 'content'
+                        section_content = []
+                    elif line.startswith('# Notes'):
+                        if current_section and section_content:
+                            sections[current_section] = '\n'.join(section_content).strip()
+                        current_section = 'notes'
+                        section_content = []
+                    elif line.startswith('# Instructions:'):
+                        if current_section and section_content:
+                            sections[current_section] = '\n'.join(section_content).strip()
+                        break
+                    elif not line.startswith('#'):
+                        section_content.append(line)
+
+                # Save the last section
+                if current_section and section_content:
+                    sections[current_section] = '\n'.join(section_content).strip()
+
+                # Update node with edited content
+                if sections.get('title'):
+                    node.title = sections['title']
+                if 'notecard' in sections:
+                    node.notecard = sections['notecard']
+                if 'content' in sections:
+                    node.content = sections['content']
+                if 'notes' in sections:
+                    node.notes = sections['notes']
+
+        # Save the project
+        repo.save(project)
+        click.echo(f"Node '{node.title}' updated successfully.")
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('project_name')
+@click.option('--node-id', '-n', help='ID of the node to start from (defaults to root)')
+@click.pass_context
+def structure(ctx: ClickContext, project_name: str, node_id: str | None = None) -> None:
+    """Display the project structure.
+
+    PROJECT_NAME is the name of the project.
+    """
+    repo = ctx.obj['repo']
+    try:
+        project = repo.load(project_name)
+
+        # If node_id is provided, start from that node
+        start_node = project.root_node
+        if node_id:
+            node = project.get_node_by_id(node_id)
+            if node is None:
+                click.echo(f'Error: Node with ID {node_id} not found.', err=True)
+                sys.exit(1)
+            start_node = node
+
+        # Display the structure
+        click.echo(f"Structure for project '{project.name}':")
+        _print_node_structure(start_node, 0)
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+def _print_node_structure(node: Node, level: int) -> None:
+    """Print the node structure recursively.
+    
+    Args:
+        node: The node to print.
+        level: The indentation level.
+
+    """
+    indent = '  ' * level
+    click.echo(f'{indent}- {node.title} (ID: {node.id})')
+    for child in node.children:
+        _print_node_structure(child, level + 1)
 
 
 def main() -> None:
