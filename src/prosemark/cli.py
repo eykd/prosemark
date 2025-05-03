@@ -13,7 +13,7 @@ import click
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
 
 
@@ -68,7 +68,7 @@ def list(ctx: ClickContext) -> None:
 
     click.echo('Available projects:')
     for project in projects:
-        click.echo(f"- {project['name']}")
+        click.echo(f'- {project["name"]}')
 
 
 def main() -> None:
