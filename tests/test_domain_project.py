@@ -222,3 +222,46 @@ def test_get_structure() -> None:
     chapter2 = next(c for c in structure[0]['children'] if c['title'] == 'Chapter 2')
     assert chapter2['id'] == node2.id
     assert len(chapter2['children']) == 1  # One scene
+
+
+def test_move_node_with_circular_reference() -> None:
+    """Test that moving a node to its own descendant fails."""
+    project = Project(name='Test Project')
+    root_id = project.root_node.id
+
+    # Create a hierarchy
+    folder1 = project.create_node(root_id, title='Folder 1')
+    assert folder1 is not None  # Type assertion for mypy
+    subfolder1 = project.create_node(folder1.id, title='Subfolder 1')
+    assert subfolder1 is not None  # Type assertion for mypy
+
+    # Try to move a parent to its own child (which would create a circular reference)
+    result = project.move_node(folder1.id, subfolder1.id)
+    assert result is False
+
+    # Verify the structure remains unchanged
+    assert folder1.parent is project.root_node
+    assert subfolder1.parent is folder1
+
+
+def test_build_structure_with_empty_node() -> None:
+    """Test building structure with a node that has no children."""
+    project = Project(name='Test Project')
+
+    # Create a node with no children
+    leaf_node = project.create_node(project.root_node.id, title='Leaf Node')
+    assert leaf_node is not None  # Type assertion for mypy
+
+    # Get the structure
+    structure = project.get_structure()
+
+    # Verify the structure
+    assert len(structure) == 1  # Root node
+    assert structure[0]['id'] == project.root_node.id
+    assert len(structure[0]['children']) == 1  # One leaf node
+
+    # Verify the leaf node has an empty children list
+    leaf = structure[0]['children'][0]
+    assert leaf['id'] == leaf_node.id
+    assert leaf['title'] == 'Leaf Node'
+    assert leaf['children'] == []  # Empty children list
