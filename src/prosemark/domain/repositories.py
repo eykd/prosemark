@@ -17,7 +17,7 @@ class ProjectRepository(Protocol):
     Concrete implementations will handle the actual persistence mechanism.
     """
 
-    def save(self, project: Project) -> None:
+    def save(self, project: Project) -> None:  # pragma: no cover
         """Save a project to the repository.
         
         Args:
@@ -29,7 +29,7 @@ class ProjectRepository(Protocol):
         """
         ...
 
-    def load(self, project_id: str) -> Project:
+    def load(self, project_id: str) -> Project:  # pragma: no cover
         """Load a project from the repository.
         
         Args:
@@ -45,7 +45,7 @@ class ProjectRepository(Protocol):
         """
         ...
 
-    def list_projects(self) -> list[dict[str, str]]:
+    def list_projects(self) -> list[dict[str, str]]:  # pragma: no cover
         """List all available projects in the repository.
         
         Returns:
@@ -58,7 +58,7 @@ class ProjectRepository(Protocol):
         """
         ...
 
-    def create_project(self, name: str, description: str = '') -> Project:
+    def create_project(self, name: str, description: str = '') -> Project:  # pragma: no cover
         """Create a new project in the repository.
         
         Args:
@@ -75,7 +75,7 @@ class ProjectRepository(Protocol):
         """
         ...
 
-    def delete_project(self, project_id: str) -> None:
+    def delete_project(self, project_id: str) -> None:  # pragma: no cover
         """Delete a project from the repository.
         
         Args:
