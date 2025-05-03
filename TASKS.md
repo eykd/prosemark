@@ -10,12 +10,12 @@
   - [x] Implement methods for node manipulation (add_child, remove_child, etc.)
   - [x] Review for proper type annotations and docstrings
 
-- [ ] Define and implement the `Project` class
-  - [ ] Write tests for Project attributes and behavior
-  - [ ] Implement attributes (name, description, root_node, metadata)
-  - [ ] Write tests for project manipulation methods
-  - [ ] Implement methods for project manipulation (create_node, move_node, etc.)
-  - [ ] Review for proper type annotations and docstrings
+- [x] Define and implement the `Project` class
+  - [x] Write tests for Project attributes and behavior
+  - [x] Implement attributes (name, description, root_node, metadata)
+  - [x] Write tests for project manipulation methods
+  - [x] Implement methods for project manipulation (create_node, move_node, etc.)
+  - [x] Review for proper type annotations and docstrings
 
 ## Storage Implementation
 
