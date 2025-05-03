@@ -57,7 +57,7 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
 
 @cli.command()
 @click.pass_context
-def list(ctx: ClickContext) -> None:
+def list_projects(ctx: ClickContext) -> None:
     """List all available projects."""
     repo = ctx.obj['repo']
     projects = repo.list_projects()
