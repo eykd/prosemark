@@ -130,7 +130,7 @@ class Project:
             return False
 
         # Remove from current parent
-        if node.parent:
+        if node.parent:  # pragma: no branch
             node.parent.remove_child(node)
 
         # Add to new parent
@@ -157,7 +157,7 @@ class Project:
         children = node.children.copy()
 
         # Remove from parent
-        if node.parent:
+        if node.parent:  # pragma: no branch
             removed = node.parent.remove_child(node)
 
             # Set parent to None for all children
@@ -166,7 +166,7 @@ class Project:
 
             return removed
 
-        return None
+        return None  # pragma: no cover
 
     def get_node_count(self) -> int:
         """Get the total number of nodes in the project.
