@@ -153,9 +153,18 @@ class Project:
         if node is None or node is self.root_node:
             return None
 
+        # Get children before removing from parent
+        children = node.children.copy()
+
         # Remove from parent
         if node.parent:
-            return node.parent.remove_child(node)
+            removed = node.parent.remove_child(node)
+
+            # Set parent to None for all children
+            for child in children:
+                child.parent = None
+
+            return removed
 
         return None
 
