@@ -45,7 +45,7 @@ class InMemoryProjectRepository:
 
 
 # Type check to ensure InMemoryProjectRepository implements ProjectRepository
-_: ProjectRepository = InMemoryProjectRepository()  # type: ignore
+_: ProjectRepository = InMemoryProjectRepository()
 
 
 def test_repository_save_and_load() -> None:
