@@ -19,10 +19,10 @@
 
 ## Storage Implementation
 
-- [ ] Define the `ProjectRepository` interface
-  - [ ] Write tests for repository interface contract
-  - [ ] Define methods (save, load, list_projects, create_project)
-  - [ ] Review for proper type annotations and docstrings
+- [x] Define the `ProjectRepository` interface
+  - [x] Write tests for repository interface contract
+  - [x] Define methods (save, load, list_projects, create_project)
+  - [x] Review for proper type annotations and docstrings
 
 - [ ] Implement the `MarkdownFileAdapter` class
   - [ ] Write tests for project saving/loading functionality
