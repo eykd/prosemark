@@ -9,20 +9,21 @@ from __future__ import annotations
 import sys
 
 import click
+from click.core import Context as ClickContext  # type: ignore
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
 
 
-@click.group()
-@click.version_option()
-@click.option(
+@click.group()  # type: ignore
+@click.version_option()  # type: ignore
+@click.option(  # type: ignore
     '--data-dir',
     default='./prosemark_data',
     help='Directory where project data is stored',
     type=click.Path(),
 )
-@click.pass_context
-def cli(ctx: click.Context, data_dir: str) -> None:
+@click.pass_context  # type: ignore
+def cli(ctx: ClickContext, data_dir: str) -> None:
     """Prosemark - A tool for structured document creation and management.
 
     Prosemark helps you organize your writing projects with a hierarchical
@@ -33,11 +34,11 @@ def cli(ctx: click.Context, data_dir: str) -> None:
     ctx.obj['repo'] = MarkdownFileAdapter(data_dir)
 
 
-@cli.command()
-@click.argument('name')
-@click.option('--description', '-d', help='Description of the project')
-@click.pass_context
-def init(ctx: click.Context, name: str, description: str | None = None) -> None:
+@cli.command()  # type: ignore
+@click.argument('name')  # type: ignore
+@click.option('--description', '-d', help='Description of the project')  # type: ignore
+@click.pass_context  # type: ignore
+def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
     """Create a new project.
 
     NAME is the name of the new project to create.
@@ -51,9 +52,9 @@ def init(ctx: click.Context, name: str, description: str | None = None) -> None:
         sys.exit(1)
 
 
-@cli.command()
-@click.pass_context
-def list(ctx: click.Context) -> None:
+@cli.command()  # type: ignore
+@click.pass_context  # type: ignore
+def list(ctx: ClickContext) -> None:
     """List all available projects."""
     repo = ctx.obj['repo']
     projects = repo.list_projects()

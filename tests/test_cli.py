@@ -3,10 +3,11 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from click.testing import CliRunner
+from click.testing import CliRunner  # type: ignore
 
 from prosemark import cli
 from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.domain.projects import Project
 
 
 @pytest.fixture
@@ -42,7 +43,7 @@ def test_init_command(runner: CliRunner) -> None:
     """Test the init command creates a new project."""
     with runner.isolated_filesystem():
         with patch.object(MarkdownFileAdapter, 'create_project') as mock_create:
-            mock_create.return_value = cli.Project(name='test-project')
+            mock_create.return_value = Project(name='test-project')
 
             result = runner.invoke(cli.cli, ['--data-dir', '.', 'init', 'test-project'])
 
@@ -55,7 +56,7 @@ def test_init_command_with_description(runner: CliRunner) -> None:
     """Test the init command with a description."""
     with runner.isolated_filesystem():
         with patch.object(MarkdownFileAdapter, 'create_project') as mock_create:
-            mock_create.return_value = cli.Project(name='test-project', description='Test description')
+            mock_create.return_value = Project(name='test-project', description='Test description')
 
             result = runner.invoke(
                 cli.cli,
