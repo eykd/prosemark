@@ -189,10 +189,10 @@ class Project:
 
         """
         result = []
-        node_info = {
+        node_info: dict[str, Any] = {
             'id': node.id,
             'title': node.title,
-            'children': [],
+            'children': [],  # This is a list that will be modified
         }
 
         if node.children:
