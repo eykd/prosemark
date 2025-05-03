@@ -7,22 +7,25 @@ allowing users to manage projects and nodes through the terminal.
 from __future__ import annotations
 
 import sys
+from typing import TYPE_CHECKING
 
 import click
-from click.core import Context as ClickContext  # type: ignore
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
 
+if TYPE_CHECKING:
+    from click.core import Context as ClickContext
 
-@click.group()  # type: ignore
-@click.version_option()  # type: ignore
-@click.option(  # type: ignore
+
+@click.group()
+@click.version_option()
+@click.option(
     '--data-dir',
     default='./prosemark_data',
     help='Directory where project data is stored',
     type=click.Path(),
 )
-@click.pass_context  # type: ignore
+@click.pass_context
 def cli(ctx: ClickContext, data_dir: str) -> None:
     """Prosemark - A tool for structured document creation and management.
 
@@ -34,10 +37,10 @@ def cli(ctx: ClickContext, data_dir: str) -> None:
     ctx.obj['repo'] = MarkdownFileAdapter(data_dir)
 
 
-@cli.command()  # type: ignore
-@click.argument('name')  # type: ignore
-@click.option('--description', '-d', help='Description of the project')  # type: ignore
-@click.pass_context  # type: ignore
+@cli.command()
+@click.argument('name')
+@click.option('--description', '-d', help='Description of the project')
+@click.pass_context
 def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
     """Create a new project.
 
@@ -52,8 +55,8 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
         sys.exit(1)
 
 
-@cli.command()  # type: ignore
-@click.pass_context  # type: ignore
+@cli.command()
+@click.pass_context
 def list(ctx: ClickContext) -> None:
     """List all available projects."""
     repo = ctx.obj['repo']

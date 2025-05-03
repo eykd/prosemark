@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from click.testing import CliRunner  # type: ignore
+from click.testing import CliRunner
 
 from prosemark import cli
 from prosemark.adapters.markdown import MarkdownFileAdapter
