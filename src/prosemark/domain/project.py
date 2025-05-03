@@ -19,7 +19,7 @@ class Project:
     def __init__(
         self,
         name: str,
-        description: str = "",
+        description: str = '',
         root_node: Node | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
@@ -31,6 +31,7 @@ class Project:
             root_node: The root node of the project's document tree. If None, a new
                 empty root Node will be created automatically.
             metadata: Additional metadata about the project.
+
         """
         self.name = name
         self.description = description
@@ -45,6 +46,7 @@ class Project:
 
         Returns:
             The node if found, None otherwise.
+
         """
         # Check if it's the root node
         if self.root_node.id == node_id:
@@ -60,10 +62,10 @@ class Project:
     def create_node(
         self,
         parent_id: str,
-        title: str = "",
-        notecard: str = "",
-        content: str = "",
-        notes: str = "",
+        title: str = '',
+        notecard: str = '',
+        content: str = '',
+        notes: str = '',
         metadata: dict[str, Any] | None = None,
         position: int | None = None,
     ) -> Node | None:
@@ -80,6 +82,7 @@ class Project:
 
         Returns:
             The newly created node or None if the parent node couldn't be found.
+
         """
         parent = self.get_node_by_id(parent_id)
         if parent is None:
@@ -111,6 +114,7 @@ class Project:
 
         Returns:
             True if successful, False otherwise.
+
         """
         node = self.get_node_by_id(node_id)
         new_parent = self.get_node_by_id(new_parent_id)
@@ -141,6 +145,7 @@ class Project:
 
         Returns:
             The removed node or None if the node couldn't be found or is the root node.
+
         """
         node = self.get_node_by_id(node_id)
 
@@ -159,6 +164,7 @@ class Project:
 
         Returns:
             The total number of nodes, including the root node.
+
         """
         # Count the root node plus all descendants
         return 1 + len(self.root_node.get_descendants())
@@ -168,6 +174,7 @@ class Project:
 
         Returns:
             A list of dictionaries representing the project structure.
+
         """
         return self._build_structure(self.root_node)
 
@@ -179,17 +186,18 @@ class Project:
 
         Returns:
             A list of dictionaries representing the node structure.
+
         """
         result = []
         node_info = {
-            "id": node.id,
-            "title": node.title,
-            "children": [],
+            'id': node.id,
+            'title': node.title,
+            'children': [],
         }
 
         if node.children:
             for child in node.children:
-                node_info["children"].extend(self._build_structure(child))
+                node_info['children'].extend(self._build_structure(child))
 
         result.append(node_info)
         return result
