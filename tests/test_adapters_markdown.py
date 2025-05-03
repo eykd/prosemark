@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
-import os
 import tempfile
-from collections.abc import Generator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
 from prosemark.domain.nodes import Node
@@ -33,18 +35,17 @@ def test_markdown_adapter_initialization(temp_dir: str) -> None:
     assert adapter2.base_path == Path(temp_dir)
 
     # Test with non-existent directory (should create it)
-    new_dir = os.path.join(temp_dir, 'new_dir')
-    adapter3 = MarkdownFileAdapter(new_dir)
-    assert adapter3.base_path == Path(new_dir)
-    assert os.path.exists(new_dir)
+    new_dir = Path(temp_dir) / 'new_dir'
+    adapter3 = MarkdownFileAdapter(str(new_dir))
+    assert adapter3.base_path == new_dir
+    assert new_dir.exists()
 
     # Test with a file path (should raise ValueError)
-    test_file = os.path.join(temp_dir, 'test_file')
-    with open(test_file, 'w') as f:
-        f.write('test')
+    test_file = Path(temp_dir) / 'test_file'
+    test_file.write_text('test')
 
-    with pytest.raises(ValueError):
-        MarkdownFileAdapter(test_file)
+    with pytest.raises(ValueError, match=r'.*file.*'):
+        MarkdownFileAdapter(str(test_file))
 
 
 def test_save_and_load_project(temp_dir: str) -> None:
@@ -113,15 +114,14 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     )
 
     # Convert to Markdown
-    markdown = adapter._node_to_markdown(node)
+    markdown = adapter._node_to_markdown(node)  # noqa: SLF001  # Intentionally testing internal conversion
 
     # Write to a file
-    test_file = os.path.join(temp_dir, f'{node.id}.md')
-    with open(test_file, 'w', encoding='utf-8') as f:
-        f.write(markdown)
+    test_file = Path(temp_dir) / f'{node.id}.md'
+    test_file.write_text(markdown, encoding='utf-8')
 
     # Convert back to a Node
-    converted_node = adapter._markdown_to_node(Path(test_file))
+    converted_node = adapter._markdown_to_node(test_file)  # noqa: SLF001  # Intentionally testing internal conversion
 
     # Verify all fields were preserved
     assert converted_node.id == node.id
@@ -134,16 +134,15 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     assert converted_node.metadata['key2'] == 42
 
     # Test invalid markdown file format
-    invalid_file = os.path.join(temp_dir, 'invalid.md')
-    with open(invalid_file, 'w', encoding='utf-8') as f:
-        f.write('This is not a valid markdown file with frontmatter')
+    invalid_file = Path(temp_dir) / 'invalid.md'
+    invalid_file.write_text('This is not a valid markdown file with frontmatter', encoding='utf-8')
 
-    with pytest.raises(ValueError):
-        adapter._markdown_to_node(Path(invalid_file))
+    with pytest.raises(ValueError, match=r'.*frontmatter.*'):
+        adapter._markdown_to_node(invalid_file)  # noqa: SLF001  # Intentionally testing internal conversion
 
     # Test extracting relationships from invalid file
-    with pytest.raises(ValueError):
-        adapter._extract_node_relationships(Path(invalid_file))
+    with pytest.raises(ValueError, match=r'.*relationship.*|.*invalid.*|.*frontmatter.*'):
+        adapter._extract_node_relationships(invalid_file)  # noqa: SLF001  # Intentionally testing internal conversion
 
 
 def test_list_projects(temp_dir: str) -> None:
@@ -151,8 +150,8 @@ def test_list_projects(temp_dir: str) -> None:
     adapter = MarkdownFileAdapter(temp_dir)
 
     # Create some projects
-    project1 = adapter.create_project('Project 1', 'First project')
-    project2 = adapter.create_project('Project 2', 'Second project')
+    adapter.create_project('Project 1', 'First project')
+    adapter.create_project('Project 2', 'Second project')
 
     # List projects
     projects = adapter.list_projects()
@@ -181,14 +180,14 @@ def test_create_project(temp_dir: str) -> None:
     assert (project_dir / 'project.json').exists()
 
     # Verify project.json content
-    with open(project_dir / 'project.json', encoding='utf-8') as f:
+    with (project_dir / 'project.json').open(encoding='utf-8') as f:
         project_data = json.load(f)
         assert project_data['name'] == 'New Project'
         assert project_data['description'] == 'A new project'
         assert project_data['root_node_id'] == project.root_node.id
 
     # Try to create a project with the same name (should raise ValueError)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'.*already exists.*'):
         adapter.create_project('New Project')
 
 
@@ -210,7 +209,7 @@ def test_delete_project(temp_dir: str) -> None:
     assert not project_dir.exists()
 
     # Try to delete a non-existent project (should raise ValueError)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'.*not exist.*'):
         adapter.delete_project('Non-existent Project')
 
 
@@ -221,11 +220,8 @@ def test_project_with_complex_structure(temp_dir: str) -> None:
     # Test loading a project with no root_node_id specified
     simple_project_dir = Path(temp_dir) / 'Simple Project'
     simple_project_dir.mkdir()
-    with open(simple_project_dir / 'project.json', 'w', encoding='utf-8') as f:
-        json.dump({
-            'name': 'Simple Project',
-            'description': 'A project with no root_node_id'
-        }, f)
+    with (simple_project_dir / 'project.json').open('w', encoding='utf-8') as f:
+        json.dump({'name': 'Simple Project', 'description': 'A project with no root_node_id'}, f)
 
     simple_project = adapter.load('Simple Project')
     assert simple_project.name == 'Simple Project'
@@ -296,14 +292,14 @@ def test_load_nonexistent_project(temp_dir: str) -> None:
     adapter = MarkdownFileAdapter(temp_dir)
 
     # Test non-existent project
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'.*not exist.*'):
         adapter.load('Non-existent Project')
 
     # Test project directory exists but no metadata file
     project_dir = Path(temp_dir) / 'Invalid Project'
     project_dir.mkdir()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'.*metadata.*|.*project.json.*'):
         adapter.load('Invalid Project')
 
 

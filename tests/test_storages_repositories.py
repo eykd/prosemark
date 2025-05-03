@@ -2,47 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from prosemark.domain.projects import Project
-from prosemark.domain.repositories import ProjectRepository
+from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
+from prosemark.storages.repositories.inmemory import InMemoryProjectRepository
 
-
-# Define a simple in-memory implementation for testing
-class InMemoryProjectRepository:
-    """A simple in-memory implementation of ProjectRepository for testing."""
-
-    def __init__(self) -> None:
-        self.projects: dict[str, Project] = {}
-
-    def save(self, project: Project) -> None:
-        """Save a project to the repository."""
-        self.projects[project.name] = project
-
-    def load(self, project_id: str) -> Project:
-        """Load a project from the repository."""
-        if project_id not in self.projects:
-            raise ValueError(f'Project {project_id} not found')
-        return self.projects[project_id]
-
-    def list_projects(self) -> list[dict[str, str]]:
-        """List all available projects in the repository."""
-        return [{'id': name, 'name': name} for name in self.projects]
-
-    def create_project(self, name: str, description: str = '') -> Project:
-        """Create a new project in the repository."""
-        if name in self.projects:
-            raise ValueError(f'Project {name} already exists')
-        project = Project(name=name, description=description)
-        self.projects[name] = project
-        return project
-
-    def delete_project(self, project_id: str) -> None:
-        """Delete a project from the repository."""
-        if project_id not in self.projects:
-            raise ValueError(f'Project {project_id} not found')
-        del self.projects[project_id]
-
+if TYPE_CHECKING:
+    from prosemark.storages.repositories.base import ProjectRepository
 
 # Type check to ensure InMemoryProjectRepository implements ProjectRepository
 _: ProjectRepository = InMemoryProjectRepository()
@@ -70,8 +39,8 @@ def test_repository_list_projects() -> None:
     repo = InMemoryProjectRepository()
 
     # Create some projects
-    project1 = repo.create_project('Project 1', 'First project')
-    project2 = repo.create_project('Project 2', 'Second project')
+    repo.create_project('Project 1', 'First project')
+    repo.create_project('Project 2', 'Second project')
 
     # List projects
     projects = repo.list_projects()
@@ -120,12 +89,14 @@ def test_repository_project_not_found() -> None:
     repo = InMemoryProjectRepository()
 
     # Try to load a non-existent project
-    with pytest.raises(ValueError):
+    with pytest.raises(ProjectNotFoundError) as exc_info:
         repo.load('Non-existent Project')
+    assert exc_info.value.project_id == 'Non-existent Project'
 
     # Try to delete a non-existent project
-    with pytest.raises(ValueError):
+    with pytest.raises(ProjectNotFoundError) as exc_info:
         repo.delete_project('Non-existent Project')
+    assert exc_info.value.project_id == 'Non-existent Project'
 
 
 def test_repository_project_already_exists() -> None:
@@ -136,5 +107,6 @@ def test_repository_project_already_exists() -> None:
     repo.create_project('Existing Project')
 
     # Try to create a project with the same name
-    with pytest.raises(ValueError):
+    with pytest.raises(ProjectExistsError) as exc_info:
         repo.create_project('Existing Project')
+    assert exc_info.value.project_name == 'Existing Project'

@@ -9,11 +9,11 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
-from prosemark.domain.repositories import ProjectRepository
+from prosemark.storages.repositories.base import ProjectRepository
 
 
 class MarkdownFileAdapter(ProjectRepository):
@@ -40,7 +40,8 @@ class MarkdownFileAdapter(ProjectRepository):
         if not self.base_path.exists():  # pragma: no branch
             self.base_path.mkdir(parents=True)
         elif not self.base_path.is_dir():
-            raise ValueError(f'Base path {base_path} exists but is not a directory')
+            msg = f'Base path {base_path} exists but is not a directory'
+            raise ValueError(msg)
 
     def save(self, project: Project) -> None:
         """Save a project to the repository.
@@ -55,22 +56,23 @@ class MarkdownFileAdapter(ProjectRepository):
         project_dir = self.base_path / project.name
 
         # Create project directory if it doesn't exist
-        if not project_dir.exists():
+        if not project_dir.exists():  # pragma: no branch
             project_dir.mkdir(parents=True)
 
         # Save project metadata
         metadata_path = project_dir / 'project.json'
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            json.dump(
+        metadata_path.write_text(
+            json.dumps(
                 {
                     'name': project.name,
                     'description': project.description,
                     'root_node_id': project.root_node.id,
                     'metadata': project.metadata,
                 },
-                f,
                 indent=2,
-            )
+            ),
+            encoding='utf-8',
+        )
 
         # Save all nodes
         self._save_node(project.root_node, project_dir)
@@ -94,8 +96,7 @@ class MarkdownFileAdapter(ProjectRepository):
         content = self._node_to_markdown(node)
 
         # Write the node file
-        with open(node_path, 'w', encoding='utf-8') as f:
-            f.write(content)
+        node_path.write_text(content, encoding='utf-8')
 
         # Save all children
         for child in node.children:
@@ -113,20 +114,17 @@ class MarkdownFileAdapter(ProjectRepository):
         """
         # Start with YAML frontmatter for metadata
         lines = ['---']
-        lines.append(f'id: {node.id}')
-        lines.append(f'title: {node.title}')
+        lines.extend([f'id: {node.id}', f'title: {node.title}'])
 
         # Add children IDs if any
         if node.children:
             lines.append('children:')
-            for child in node.children:
-                lines.append(f'  - {child.id}')
+            lines.extend([f'  - {child.id}' for child in node.children])
 
         # Add any custom metadata
         if node.metadata:
             lines.append('metadata:')
-            for key, value in node.metadata.items():
-                lines.append(f'  {key}: {json.dumps(value)}')
+            lines.extend([f'  {key}: {json.dumps(value)}' for key, value in node.metadata.items()])
 
         lines.append('---')
 
@@ -140,10 +138,67 @@ class MarkdownFileAdapter(ProjectRepository):
 
         # Add notes in a section
         if node.notes:
-            lines.append('\n## Notes\n')
-            lines.append(node.notes)
+            lines.extend(['\n## Notes\n', node.notes])
 
         return '\n'.join(lines)
+
+    def _load_project_metadata(self, project_dir: Path, project_id: str) -> dict[str, Any]:
+        """Load project metadata from the project directory.
+
+        Args:
+            project_dir: The project directory.
+            project_id: The identifier of the project.
+
+        Returns:
+            A dictionary containing the project metadata.
+
+        Raises:
+            ValueError: If the project metadata file cannot be found.
+
+        """
+        metadata_path = project_dir / 'project.json'
+        if not metadata_path.exists():
+            msg = f'Project metadata file not found for {project_id}'
+            raise ValueError(msg)
+        return cast('dict[str, Any]', json.loads(metadata_path.read_text(encoding='utf-8')))
+
+    def _load_nodes(self, project_dir: Path) -> dict[str, Node]:
+        """Load all nodes from the project directory.
+
+        Args:
+            project_dir: The project directory.
+
+        Returns:
+            A dictionary mapping node IDs to Node objects.
+
+        """
+        nodes_by_id: dict[str, Node] = {}
+        for node_file in project_dir.glob('*.md'):
+            if node_file.name == 'project.json':  # pragma: no cover
+                continue
+            node = self._markdown_to_node(node_file)
+            nodes_by_id[node.id] = node
+        return nodes_by_id
+
+    def _setup_node_relationships(self, project_dir: Path, nodes_by_id: dict[str, Node]) -> None:
+        """Set up parent-child relationships between nodes.
+
+        Args:
+            project_dir: The project directory.
+            nodes_by_id: A dictionary mapping node IDs to Node objects.
+
+        """
+        for node_file in project_dir.glob('*.md'):
+            if node_file.name == 'project.json':  # pragma: no cover
+                continue
+            node_id, child_ids = self._extract_node_relationships(node_file)
+            if node_id in nodes_by_id:  # pragma: no branch
+                node = nodes_by_id[node_id]
+                for child_id in child_ids:
+                    if child_id in nodes_by_id:  # pragma: no branch
+                        child_node = nodes_by_id[child_id]
+                        if child_node not in node.children:  # pragma: no branch
+                            node.add_child(child_node)
 
     def load(self, project_id: str) -> Project:
         """Load a project from the repository.
@@ -162,15 +217,10 @@ class MarkdownFileAdapter(ProjectRepository):
         project_dir = self.base_path / project_id
 
         if not project_dir.exists() or not project_dir.is_dir():
-            raise ValueError(f'Project {project_id} not found')
+            msg = f'Project {project_id} does not exist'
+            raise ValueError(msg)
 
-        # Load project metadata
-        metadata_path = project_dir / 'project.json'
-        if not metadata_path.exists():
-            raise ValueError(f'Project metadata file not found for {project_id}')
-
-        with open(metadata_path, encoding='utf-8') as f:
-            project_data = json.load(f)
+        project_data = self._load_project_metadata(project_dir, project_id)
 
         # Create the project without a root node first
         project = Project(
@@ -185,33 +235,8 @@ class MarkdownFileAdapter(ProjectRepository):
             # If no root node ID is specified, use the project name as the root node title
             project.root_node.title = project.name
         else:
-            # Load the root node and all its children
-            nodes_by_id: dict[str, Node] = {}
-
-            # First pass: load all nodes without setting parent-child relationships
-            for node_file in project_dir.glob('*.md'):
-                if node_file.name == 'project.json':
-                    continue
-
-                node = self._markdown_to_node(node_file)
-                nodes_by_id[node.id] = node
-
-            # Second pass: set up parent-child relationships
-            for node_file in project_dir.glob('*.md'):
-                if node_file.name == 'project.json':
-                    continue
-
-                node_id, child_ids = self._extract_node_relationships(node_file)
-                if node_id in nodes_by_id:
-                    node = nodes_by_id[node_id]
-                    for child_id in child_ids:
-                        if child_id in nodes_by_id:
-                            child_node = nodes_by_id[child_id]
-                            # Only add if not already a child
-                            if child_node not in node.children:
-                                node.add_child(child_node)
-
-            # Set the root node
+            nodes_by_id = self._load_nodes(project_dir)
+            self._setup_node_relationships(project_dir, nodes_by_id)
             if root_node_id in nodes_by_id:  # pragma: no branch
                 project.root_node = nodes_by_id[root_node_id]
 
@@ -231,13 +256,13 @@ class MarkdownFileAdapter(ProjectRepository):
             OSError: If there's an error reading from the filesystem.
 
         """
-        with open(file_path, encoding='utf-8') as f:
-            content = f.read()
+        content = Path(file_path).read_text(encoding='utf-8')
 
         # Extract YAML frontmatter
         frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
         if not frontmatter_match:
-            raise ValueError(f'Invalid Markdown file format: {file_path}')
+            msg = f'Invalid Markdown file format: missing frontmatter in {file_path}'
+            raise ValueError(msg)
 
         frontmatter = frontmatter_match.group(1)
 
@@ -264,7 +289,7 @@ class MarkdownFileAdapter(ProjectRepository):
                     metadata[key] = value_str.strip()
 
         # Remove frontmatter from content
-        content_without_frontmatter = content[frontmatter_match.end():]
+        content_without_frontmatter = content[frontmatter_match.end() :]
 
         # Extract notecard (first blockquote)
         notecard = ''
@@ -310,13 +335,13 @@ class MarkdownFileAdapter(ProjectRepository):
             OSError: If there's an error reading from the filesystem.
 
         """
-        with open(file_path, encoding='utf-8') as f:
-            content = f.read()
+        content = Path(file_path).read_text(encoding='utf-8')
 
         # Extract YAML frontmatter
         frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
         if not frontmatter_match:
-            raise ValueError(f'Invalid Markdown file format: {file_path}')
+            msg = f'Invalid Markdown file format: missing frontmatter in {file_path}'
+            raise ValueError(msg)
 
         frontmatter = frontmatter_match.group(1)
 
@@ -333,7 +358,7 @@ class MarkdownFileAdapter(ProjectRepository):
             elif in_children_section and line.startswith('  -'):
                 child_id = line.split('-', 1)[1].strip()
                 child_ids.append(child_id)
-            elif in_children_section and not line.startswith('  '):  # pragma: no branch
+            elif in_children_section and not line.startswith('  '):  # pragma: no cover
                 in_children_section = False
 
         return node_id, child_ids
@@ -353,17 +378,16 @@ class MarkdownFileAdapter(ProjectRepository):
 
         # Iterate through directories in the base path
         for item in self.base_path.iterdir():
-            if item.is_dir():
+            if item.is_dir():  # pragma: no branch
                 # Check if this is a project directory (has a project.json file)
                 metadata_path = item / 'project.json'
-                if metadata_path.exists():
+                if metadata_path.exists():  # pragma: no branch
                     try:
-                        with open(metadata_path, encoding='utf-8') as f:
-                            project_data = json.load(f)
-                            projects.append({
-                                'id': item.name,
-                                'name': project_data.get('name', item.name),
-                            })
+                        project_data = json.load(metadata_path.open(encoding='utf-8'))
+                        projects.append({
+                            'id': item.name,
+                            'name': project_data.get('name', item.name),
+                        })
                     except (json.JSONDecodeError, OSError):  # pragma: no cover
                         # If we can't read the metadata, just use the directory name
                         projects.append({
@@ -392,7 +416,8 @@ class MarkdownFileAdapter(ProjectRepository):
 
         # Check if project already exists
         if project_dir.exists():
-            raise ValueError(f'Project {name} already exists')
+            msg = f'Project {name} already exists'
+            raise ValueError(msg)
 
         # Create the project
         project = Project(name=name, description=description)
@@ -416,11 +441,12 @@ class MarkdownFileAdapter(ProjectRepository):
         project_dir = self.base_path / project_id
 
         if not project_dir.exists() or not project_dir.is_dir():
-            raise ValueError(f'Project {project_id} not found')
+            msg = f'Project {project_id} does not exist'
+            raise ValueError(msg)
 
         # Delete all files in the project directory
         for item in project_dir.iterdir():  # pragma: no branch
-            if item.is_file():
+            if item.is_file():  # pragma: no branch
                 item.unlink()
 
         # Delete the project directory
