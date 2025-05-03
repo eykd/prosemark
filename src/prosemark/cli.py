@@ -279,7 +279,7 @@ def edit(
                 # Parse the edited text
                 sections = {}
                 current_section = None
-                section_content = []
+                section_content: list[str] = []
 
                 for line in edited_text.split('\n'):
                     if line.startswith('# Title:'):

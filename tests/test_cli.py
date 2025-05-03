@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from prosemark import cli
 from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
 
 
