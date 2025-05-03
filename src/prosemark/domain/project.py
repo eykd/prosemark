@@ -197,7 +197,9 @@ class Project:
 
         if node.children:
             for child in node.children:
-                node_info['children'].extend(self._build_structure(child))
+                # Append each child's structure to the children list
+                for child_structure in self._build_structure(child):
+                    node_info['children'].append(child_structure)
 
         result.append(node_info)
         return result

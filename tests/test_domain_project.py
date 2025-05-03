@@ -43,8 +43,11 @@ def test_get_node_by_id() -> None:
 
     # Add some nodes
     child1 = project.create_node(project.root_node.id, title='Child 1')
+    assert child1 is not None  # Type assertion for mypy
     child2 = project.create_node(project.root_node.id, title='Child 2')
+    assert child2 is not None  # Type assertion for mypy
     grandchild = project.create_node(child1.id, title='Grandchild')
+    assert grandchild is not None  # Type assertion for mypy
 
     # Test retrieving nodes
     assert project.get_node_by_id(child1.id) is child1
@@ -100,8 +103,11 @@ def test_move_node() -> None:
 
     # Create some nodes
     folder1 = project.create_node(root_id, title='Folder 1')
+    assert folder1 is not None  # Type assertion for mypy
     folder2 = project.create_node(root_id, title='Folder 2')
+    assert folder2 is not None  # Type assertion for mypy
     node1 = project.create_node(folder1.id, title='Node 1')
+    assert node1 is not None  # Type assertion for mypy
 
     # Move node to another parent
     result = project.move_node(node1.id, folder2.id)
@@ -112,6 +118,7 @@ def test_move_node() -> None:
 
     # Move node to specific position
     node2 = project.create_node(folder2.id, title='Node 2')
+    assert node2 is not None  # Type assertion for mypy
     result = project.move_node(node1.id, folder2.id, 0)
     assert result is True
     assert folder2.children[0] is node1
@@ -131,6 +138,7 @@ def test_move_node() -> None:
 
     # Try to create circular reference
     subfolder = project.create_node(folder2.id, title='Subfolder')
+    assert subfolder is not None  # Type assertion for mypy
     result = project.move_node(folder2.id, subfolder.id)
     assert result is False
 
@@ -142,8 +150,11 @@ def test_remove_node() -> None:
 
     # Create some nodes
     node1 = project.create_node(root_id, title='Node 1')
+    assert node1 is not None  # Type assertion for mypy
     node2 = project.create_node(root_id, title='Node 2')
+    assert node2 is not None  # Type assertion for mypy
     child = project.create_node(node1.id, title='Child')
+    assert child is not None  # Type assertion for mypy
 
     # Remove a node
     removed = project.remove_node(node1.id)
@@ -169,6 +180,7 @@ def test_get_node_count() -> None:
 
     # Add some nodes
     node1 = project.create_node(project.root_node.id, title='Node 1')
+    assert node1 is not None  # Type assertion for mypy
     project.create_node(project.root_node.id, title='Node 2')
     project.create_node(node1.id, title='Child 1')
     project.create_node(node1.id, title='Child 2')
@@ -186,7 +198,9 @@ def test_get_structure() -> None:
 
     # Create a simple structure
     node1 = project.create_node(project.root_node.id, title='Chapter 1')
+    assert node1 is not None  # Type assertion for mypy
     node2 = project.create_node(project.root_node.id, title='Chapter 2')
+    assert node2 is not None  # Type assertion for mypy
     project.create_node(node1.id, title='Scene 1')
     project.create_node(node1.id, title='Scene 2')
     project.create_node(node2.id, title='Scene 1')
