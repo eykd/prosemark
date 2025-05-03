@@ -35,6 +35,7 @@ repos:
     - id: mypy-check
       name: mypy-check
       entry: uv run mypy src tests
+      pass_filenames: false
       language: system
       types_or:
         - python
