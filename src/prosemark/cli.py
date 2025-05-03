@@ -316,7 +316,7 @@ def edit(
                     sections[current_section] = '\n'.join(section_content).strip()
 
                 # Update node with edited content
-                if sections.get('title'):
+                if 'title' in sections:
                     node.title = sections['title']
                 if 'notecard' in sections:
                     node.notecard = sections['notecard']
