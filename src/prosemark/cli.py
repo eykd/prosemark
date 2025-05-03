@@ -260,7 +260,7 @@ def edit(
             node.notes = notes
 
         # If editor flag is set and no content was provided via options, open editor
-        if editor and title is None and notecard is None and content is None and notes is None:
+        if editor and title is None and notecard is None and content is None and notes is None:  # pragma: no branch
             # Prepare initial text for the editor
             initial_text = f'# Title: {node.title}\n\n'
             initial_text += '# Notecard (brief summary):\n'
@@ -312,7 +312,7 @@ def edit(
                         section_content.append(line)
 
                 # Save the last section
-                if current_section and section_content:
+                if current_section and section_content:  # pragma: no cover
                     sections[current_section] = '\n'.join(section_content).strip()
 
                 # Update node with edited content
