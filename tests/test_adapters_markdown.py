@@ -133,6 +133,18 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     assert converted_node.metadata['key1'] == 'value1'
     assert converted_node.metadata['key2'] == 42
 
+    # Test invalid markdown file format
+    invalid_file = os.path.join(temp_dir, 'invalid.md')
+    with open(invalid_file, 'w', encoding='utf-8') as f:
+        f.write('This is not a valid markdown file with frontmatter')
+
+    with pytest.raises(ValueError):
+        adapter._markdown_to_node(Path(invalid_file))
+
+    # Test extracting relationships from invalid file
+    with pytest.raises(ValueError):
+        adapter._extract_node_relationships(Path(invalid_file))
+
 
 def test_list_projects(temp_dir: str) -> None:
     """Test listing projects in the repository."""
@@ -206,6 +218,19 @@ def test_project_with_complex_structure(temp_dir: str) -> None:
     """Test saving and loading a project with a complex structure."""
     adapter = MarkdownFileAdapter(temp_dir)
 
+    # Test loading a project with no root_node_id specified
+    simple_project_dir = Path(temp_dir) / 'Simple Project'
+    simple_project_dir.mkdir()
+    with open(simple_project_dir / 'project.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'name': 'Simple Project',
+            'description': 'A project with no root_node_id'
+        }, f)
+
+    simple_project = adapter.load('Simple Project')
+    assert simple_project.name == 'Simple Project'
+    assert simple_project.root_node.title == 'Simple Project'
+
     # Create a project with a complex structure
     project = Project(name='Complex Project')
 
@@ -270,8 +295,16 @@ def test_load_nonexistent_project(temp_dir: str) -> None:
     """Test loading a non-existent project."""
     adapter = MarkdownFileAdapter(temp_dir)
 
+    # Test non-existent project
     with pytest.raises(ValueError):
         adapter.load('Non-existent Project')
+
+    # Test project directory exists but no metadata file
+    project_dir = Path(temp_dir) / 'Invalid Project'
+    project_dir.mkdir()
+
+    with pytest.raises(ValueError):
+        adapter.load('Invalid Project')
 
 
 def test_node_with_all_fields(temp_dir: str) -> None:
