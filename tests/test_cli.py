@@ -364,3 +364,164 @@ def test_edit_command_with_options(runner: CliRunner) -> None:
                 assert node.content == 'New content'
                 assert node.notes == 'New notes'
                 mock_save.assert_called_once_with(project)
+
+
+def test_edit_command_with_editor(runner: CliRunner) -> None:
+    """Test the edit command with the editor functionality."""
+    with runner.isolated_filesystem():
+        with patch.object(MarkdownFileAdapter, 'load') as mock_load, \
+             patch.object(MarkdownFileAdapter, 'save') as mock_save:
+
+            # Create a mock project
+            project = Project(name='test-project')
+            mock_load.return_value = project
+
+            # Create a mock node to edit
+            node = Node(
+                node_id='test-node-id',
+                title='Old Title',
+                notecard='Old notecard',
+                content='Old content',
+                notes='Old notes'
+            )
+
+            # Mock the editor to return edited content
+            edited_text = """# Title: Edited Title
+
+# Notecard (brief summary):
+Edited notecard
+
+# Content (main text):
+Edited content
+
+# Notes (additional information):
+Edited notes
+
+# Instructions:
+# Edit the content above. Lines starting with # are comments and will be ignored.
+"""
+
+            with patch.object(Project, 'get_node_by_id', return_value=node), \
+                 patch.object(click, 'edit', return_value=edited_text):
+                result = runner.invoke(
+                    cli.cli,
+                    ['--data-dir', '.', 'edit', 'test-project', 'test-node-id']
+                )
+
+                assert result.exit_code == 0
+                assert 'updated successfully' in result.output
+                assert node.title == 'Edited Title'
+                assert node.notecard == 'Edited notecard'
+                assert node.content == 'Edited content'
+                assert node.notes == 'Edited notes'
+                mock_save.assert_called_once_with(project)
+
+
+def test_edit_command_node_not_found(runner: CliRunner) -> None:
+    """Test the edit command when node is not found."""
+    with runner.isolated_filesystem():
+        with patch.object(MarkdownFileAdapter, 'load') as mock_load:
+
+            # Create a mock project
+            project = Project(name='test-project')
+            mock_load.return_value = project
+
+            # Mock get_node_by_id to return None (node not found)
+            with patch.object(Project, 'get_node_by_id', return_value=None):
+                result = runner.invoke(
+                    cli.cli,
+                    ['--data-dir', '.', 'edit', 'test-project', 'non-existent-id']
+                )
+
+                assert result.exit_code == 1
+                assert 'Error: Node with ID' in result.output
+                assert 'not found' in result.output
+
+
+def test_structure_command_with_node_id(runner: CliRunner) -> None:
+    """Test the structure command with a specific node ID."""
+    with runner.isolated_filesystem():
+        with patch.object(MarkdownFileAdapter, 'load') as mock_load:
+
+            # Create a mock project with a structure
+            project = Project(name='test-project')
+            root = project.root_node
+            node1 = Node(node_id='node1', title='Node 1')
+            node2 = Node(node_id='node2', title='Node 2')
+            child1 = Node(node_id='child1', title='Child 1')
+
+            root.add_child(node1)
+            root.add_child(node2)
+            node1.add_child(child1)
+
+            mock_load.return_value = project
+
+            result = runner.invoke(
+                cli.cli,
+                ['--data-dir', '.', 'structure', 'test-project', '--node-id', 'node1']
+            )
+
+            assert result.exit_code == 0
+            assert 'Structure for project' in result.output
+            assert 'Node 1' in result.output
+            assert 'Child 1' in result.output
+            # Node 2 should not be in the output as we're starting from node1
+            assert 'Node 2' not in result.output
+
+
+def test_structure_command_node_not_found(runner: CliRunner) -> None:
+    """Test the structure command when the specified node is not found."""
+    with runner.isolated_filesystem():
+        with patch.object(MarkdownFileAdapter, 'load') as mock_load:
+
+            # Create a mock project
+            project = Project(name='test-project')
+            mock_load.return_value = project
+
+            # Mock get_node_by_id to return None (node not found)
+            with patch.object(Project, 'get_node_by_id', return_value=None):
+                result = runner.invoke(
+                    cli.cli,
+                    ['--data-dir', '.', 'structure', 'test-project', '--node-id', 'non-existent-id']
+                )
+
+                assert result.exit_code == 1
+                assert 'Error: Node with ID' in result.output
+                assert 'not found' in result.output
+
+
+def test_edit_command_with_editor_no_changes(runner: CliRunner) -> None:
+    """Test the edit command with the editor returning None (no changes)."""
+    with runner.isolated_filesystem():
+        with patch.object(MarkdownFileAdapter, 'load') as mock_load, \
+             patch.object(MarkdownFileAdapter, 'save') as mock_save:
+
+            # Create a mock project
+            project = Project(name='test-project')
+            mock_load.return_value = project
+
+            # Create a mock node to edit
+            node = Node(
+                node_id='test-node-id',
+                title='Old Title',
+                notecard='Old notecard',
+                content='Old content',
+                notes='Old notes'
+            )
+
+            # Mock the editor to return None (user closed without saving)
+            with patch.object(Project, 'get_node_by_id', return_value=node), \
+                 patch.object(click, 'edit', return_value=None):
+                result = runner.invoke(
+                    cli.cli,
+                    ['--data-dir', '.', 'edit', 'test-project', 'test-node-id']
+                )
+
+                assert result.exit_code == 0
+                assert 'updated successfully' in result.output
+                # Values should remain unchanged
+                assert node.title == 'Old Title'
+                assert node.notecard == 'Old notecard'
+                assert node.content == 'Old content'
+                assert node.notes == 'Old notes'
+                mock_save.assert_called_once_with(project)
