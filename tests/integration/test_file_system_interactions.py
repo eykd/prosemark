@@ -4,6 +4,7 @@ import pytest
 from click.testing import CliRunner
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.cli import cli
 from prosemark.domain.projects import Project
 from prosemark.storages.repositories.exceptions import ProjectNotFoundError
 
@@ -30,7 +31,7 @@ class TestFileStructureTests:
         assert 'A test project' in content
 
         # Verify node files exist
-        root_node_file = project_dir / f'{sample_project.root_node.node_id}.md' if sample_project.root_node else None
+        root_node_file = project_dir / f'{sample_project.root_node.id}.md' if sample_project.root_node else None
         assert root_node_file is not None
         assert root_node_file.exists()
 
@@ -42,7 +43,7 @@ class TestFileStructureTests:
         """Test handling of special characters in project and node names."""
         # Create a project with special characters
         result = cli_runner.invoke(
-            args=['init', 'Special & Chars: Project!', '--description', 'Testing special characters'],
+            cli, ['init', 'Special & Chars: Project!', '--description', 'Testing special characters'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -54,11 +55,11 @@ class TestFileStructureTests:
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
         project = adapter.load('special-chars-project')
-        root_id = project.root_node.node_id if project.root_node else ''
+        root_id = project.root_node.id if project.root_node else ''
 
         # Add a node with special characters
         result = cli_runner.invoke(
-            args=['add', 'Special & Chars: Project!', root_id, 'Node with: * ? / \\ special chars'],
+            cli, ['add', 'Special & Chars: Project!', root_id, 'Node with: * ? / \\ special chars'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -78,7 +79,7 @@ class TestFileContentTests:
 
         # Check root node content
         if sample_project.root_node:
-            root_file = project_dir / f'{sample_project.root_node.node_id}.md'
+            root_file = project_dir / f'{sample_project.root_node.id}.md'
             content = root_file.read_text()
 
             # Verify title is in the content
@@ -86,12 +87,12 @@ class TestFileContentTests:
 
             # Verify children references are in the content
             for child in sample_project.root_node.children:
-                assert f'- [{child.title}]({child.node_id}.md)' in content
+                assert f'- [{child.title}]({child.id}.md)' in content
 
         # Check a leaf node content
         if sample_project.root_node and sample_project.root_node.children:
             node = sample_project.root_node.children[0].children[0]  # Section 1.1
-            node_file = project_dir / f'{node.node_id}.md'
+            node_file = project_dir / f'{node.id}.md'
             content = node_file.read_text()
 
             # Verify title, notecard, content, and notes
@@ -101,13 +102,13 @@ class TestFileContentTests:
             assert node.notes in content
 
             # Verify parent reference
-            assert f'Parent: [{node.parent.title}]({node.parent.node_id}.md)' in content
+            assert f'Parent: [{node.parent.title}]({node.parent.id}.md)' in content
 
     def test_reading_writing_various_content(self, cli_runner: CliRunner, temp_dir: str) -> None:
         """Test reading and writing files with various content types."""
         # Create a project
         result = cli_runner.invoke(
-            args=['init', 'Content Test', '--description', 'Testing various content'],
+            cli, ['init', 'Content Test', '--description', 'Testing various content'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -115,7 +116,7 @@ class TestFileContentTests:
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
         project = adapter.load('content-test')
-        root_id = project.root_node.node_id if project.root_node else ''
+        root_id = project.root_node.id if project.root_node else ''
 
         # Add a node with Markdown content
         markdown_content = """
@@ -135,7 +136,7 @@ def hello_world():
 """
 
         result = cli_runner.invoke(
-            args=['add', 'Content Test', root_id, 'Markdown Node',
+            cli, ['add', 'Content Test', root_id, 'Markdown Node',
                   '--content', markdown_content],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
@@ -152,9 +153,9 @@ def hello_world():
         # Add a node with special characters
         special_content = "Line 1\nLine 2 & special chars: < > \" ' \\ / \n\nLine 4"
 
-        node_id = node.node_id
+        node_id = node.id
         result = cli_runner.invoke(
-            args=['add', 'Content Test', node_id, 'Special Chars Node',
+            cli, ['add', 'Content Test', node_id, 'Special Chars Node',
                   '--content', special_content],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
@@ -162,7 +163,7 @@ def hello_world():
 
         # Verify the content was saved correctly
         project = adapter.load('content-test')
-        special_node = project.get_node_by_id(project.root_node.children[0].children[0].node_id) if project.root_node else None
+        special_node = project.get_node_by_id(project.root_node.children[0].children[0].id) if project.root_node else None
         assert special_node is not None
         assert special_node.content == special_content
 
@@ -174,7 +175,7 @@ class TestErrorHandlingTests:
         """Test behavior when trying to access a non-existent project."""
         # Try to load a non-existent project
         result = cli_runner.invoke(
-            args=['structure', 'NonExistentProject'],
+            cli, ['structure', 'NonExistentProject'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code != 0
@@ -205,7 +206,7 @@ class TestErrorHandlingTests:
 
         # Corrupt a node file
         if sample_project.root_node and sample_project.root_node.children:
-            node_id = sample_project.root_node.children[0].node_id
+            node_id = sample_project.root_node.children[0].id
             node_file = project_dir / f'{node_id}.md'
             node_file.write_text('This is not valid node content')
 

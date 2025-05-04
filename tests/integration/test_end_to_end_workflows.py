@@ -3,6 +3,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.cli import cli
 
 
 class TestProjectManagementWorkflow:
@@ -12,7 +13,7 @@ class TestProjectManagementWorkflow:
         """Test creating, listing, and deleting a project."""
         # Create a new project
         result = cli_runner.invoke(
-            args=['init', 'Test Project', '--description', 'A test project'],
+            cli, ['init', 'Test Project', '--description', 'A test project'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -20,7 +21,7 @@ class TestProjectManagementWorkflow:
 
         # List projects to verify creation
         result = cli_runner.invoke(
-            args=['list-projects'],
+            cli, ['list-projects'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -34,7 +35,7 @@ class TestProjectManagementWorkflow:
 
         # Delete the project
         result = cli_runner.invoke(
-            args=['delete', 'Test Project'],
+            cli, ['delete', 'Test Project'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -42,7 +43,7 @@ class TestProjectManagementWorkflow:
 
         # Verify project no longer exists in listing
         result = cli_runner.invoke(
-            args=['list-projects'],
+            cli, ['list-projects'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -59,7 +60,7 @@ class TestNodeManagementWorkflow:
         """Test adding, moving, and removing nodes in a project."""
         # Create a new project
         result = cli_runner.invoke(
-            args=['init', 'Node Test', '--description', 'Testing node operations'],
+            cli, ['init', 'Node Test', '--description', 'Testing node operations'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -67,37 +68,37 @@ class TestNodeManagementWorkflow:
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
         project = adapter.load('node-test')
-        root_id = project.root_node.node_id if project.root_node else ''
+        root_id = project.root_node.id if project.root_node else ''
 
         # Add nodes to the project
         result = cli_runner.invoke(
-            args=['add', 'Node Test', root_id, 'Chapter 1', '--notecard', 'First chapter'],
+            cli, ['add', 'Node Test', root_id, 'Chapter 1', '--notecard', 'First chapter'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
         assert 'Node added successfully' in result.output
 
         result = cli_runner.invoke(
-            args=['add', 'Node Test', root_id, 'Chapter 2', '--notecard', 'Second chapter'],
+            cli, ['add', 'Node Test', root_id, 'Chapter 2', '--notecard', 'Second chapter'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
 
         # Reload project to get node IDs
         project = adapter.load('node-test')
-        ch1_id = project.root_node.children[0].node_id if project.root_node else ''
-        ch2_id = project.root_node.children[1].node_id if project.root_node else ''
+        ch1_id = project.root_node.children[0].id if project.root_node else ''
+        ch2_id = project.root_node.children[1].id if project.root_node else ''
 
         # Add a section to Chapter 1
         result = cli_runner.invoke(
-            args=['add', 'Node Test', ch1_id, 'Section 1.1', '--notecard', 'First section'],
+            cli, ['add', 'Node Test', ch1_id, 'Section 1.1', '--notecard', 'First section'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
 
         # Verify structure
         result = cli_runner.invoke(
-            args=['structure', 'Node Test'],
+            cli, ['structure', 'Node Test'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -107,10 +108,10 @@ class TestNodeManagementWorkflow:
 
         # Move Section 1.1 to be under Chapter 2
         project = adapter.load('node-test')
-        section_id = project.root_node.children[0].children[0].node_id if project.root_node else ''
+        section_id = project.root_node.children[0].children[0].id if project.root_node else ''
 
         result = cli_runner.invoke(
-            args=['move', 'Node Test', section_id, ch2_id],
+            cli, ['move', 'Node Test', section_id, ch2_id],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -118,7 +119,7 @@ class TestNodeManagementWorkflow:
 
         # Verify the new structure
         result = cli_runner.invoke(
-            args=['structure', 'Node Test'],
+            cli, ['structure', 'Node Test'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -131,7 +132,7 @@ class TestNodeManagementWorkflow:
 
         # Remove Chapter 1
         result = cli_runner.invoke(
-            args=['remove', 'Node Test', ch1_id],
+            cli, ['remove', 'Node Test', ch1_id],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -139,7 +140,7 @@ class TestNodeManagementWorkflow:
 
         # Verify final structure
         result = cli_runner.invoke(
-            args=['structure', 'Node Test'],
+            cli, ['structure', 'Node Test'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -155,7 +156,7 @@ class TestContentEditingWorkflow:
         """Test editing node content using direct parameters."""
         # Create a new project
         result = cli_runner.invoke(
-            args=['init', 'Edit Test', '--description', 'Testing content editing'],
+            cli, ['init', 'Edit Test', '--description', 'Testing content editing'],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0
@@ -163,11 +164,11 @@ class TestContentEditingWorkflow:
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
         project = adapter.load('edit-test')
-        root_id = project.root_node.node_id if project.root_node else ''
+        root_id = project.root_node.id if project.root_node else ''
 
         # Add a node to edit
         result = cli_runner.invoke(
-            args=['add', 'Edit Test', root_id, 'Chapter 1',
+            cli, ['add', 'Edit Test', root_id, 'Chapter 1',
                   '--notecard', 'Original notecard',
                   '--content', 'Original content',
                   '--notes', 'Original notes'],
@@ -177,11 +178,11 @@ class TestContentEditingWorkflow:
 
         # Get the node ID
         project = adapter.load('edit-test')
-        node_id = project.root_node.children[0].node_id if project.root_node else ''
+        node_id = project.root_node.children[0].id if project.root_node else ''
 
         # Edit the node with direct parameters
         result = cli_runner.invoke(
-            args=['edit', 'Edit Test', node_id,
+            cli, ['edit', 'Edit Test', node_id,
                   '--title', 'Updated Chapter 1',
                   '--notecard', 'Updated notecard',
                   '--content', 'Updated content',
@@ -194,7 +195,7 @@ class TestContentEditingWorkflow:
 
         # Verify the changes
         result = cli_runner.invoke(
-            args=['show', 'Edit Test', node_id],
+            cli, ['show', 'Edit Test', node_id],
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code == 0

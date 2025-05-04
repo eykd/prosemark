@@ -39,7 +39,7 @@ def _build_node_structure(node: Node) -> dict[str, Any]:
 
     """
     result = {
-        'id': node.node_id,
+        'id': node.id,
         'title': node.title,
         'notecard': node.notecard,
         'content': node.content,
@@ -48,7 +48,7 @@ def _build_node_structure(node: Node) -> dict[str, Any]:
     }
 
     for child in node.children:
-        result['children'][child.node_id] = _build_node_structure(child)
+        result['children'][child.id] = _build_node_structure(child)
 
     return result
 

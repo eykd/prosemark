@@ -71,13 +71,13 @@ def sample_project(markdown_adapter: MarkdownFileAdapter) -> Project:
     root_node = project.root_node
     if root_node:
         # Add first level nodes
-        node1 = project.create_node(root_node.node_id, 'Chapter 1', 'First chapter', 'Chapter 1 content', 'Notes for chapter 1')
-        node2 = project.create_node(root_node.node_id, 'Chapter 2', 'Second chapter', 'Chapter 2 content', 'Notes for chapter 2')
+        node1 = project.create_node(root_node.id, 'Chapter 1', 'First chapter', 'Chapter 1 content', 'Notes for chapter 1')
+        node2 = project.create_node(root_node.id, 'Chapter 2', 'Second chapter', 'Chapter 2 content', 'Notes for chapter 2')
 
         # Add second level nodes
-        project.create_node(node1.node_id, 'Section 1.1', 'First section', 'Section 1.1 content', 'Notes for section 1.1')
-        project.create_node(node1.node_id, 'Section 1.2', 'Second section', 'Section 1.2 content', 'Notes for section 1.2')
-        project.create_node(node2.node_id, 'Section 2.1', 'First section', 'Section 2.1 content', 'Notes for section 2.1')
+        project.create_node(node1.id, 'Section 1.1', 'First section', 'Section 1.1 content', 'Notes for section 1.1')
+        project.create_node(node1.id, 'Section 1.2', 'Second section', 'Section 1.2 content', 'Notes for section 1.2')
+        project.create_node(node2.id, 'Section 2.1', 'First section', 'Section 2.1 content', 'Notes for section 2.1')
 
     # Save the project
     markdown_adapter.save(project)
@@ -114,33 +114,33 @@ def complex_project(markdown_adapter: MarkdownFileAdapter, complex_project_name:
     root_node = project.root_node
     if root_node:
         # Add first level nodes
-        part1 = project.create_node(root_node.node_id, 'Part I', 'Introduction', 'Part I content', 'Notes for Part I')
-        part2 = project.create_node(root_node.node_id, 'Part II', 'Main content', 'Part II content', 'Notes for Part II')
-        part3 = project.create_node(root_node.node_id, 'Part III', 'Conclusion', 'Part III content', 'Notes for Part III')
+        part1 = project.create_node(root_node.id, 'Part I', 'Introduction', 'Part I content', 'Notes for Part I')
+        part2 = project.create_node(root_node.id, 'Part II', 'Main content', 'Part II content', 'Notes for Part II')
+        part3 = project.create_node(root_node.id, 'Part III', 'Conclusion', 'Part III content', 'Notes for Part III')
 
         # Add second level nodes to Part I
-        ch1 = project.create_node(part1.node_id, 'Chapter 1', 'Introduction chapter', 'Chapter 1 content', 'Notes for chapter 1')
-        ch2 = project.create_node(part1.node_id, 'Chapter 2', 'Background chapter', 'Chapter 2 content', 'Notes for chapter 2')
+        ch1 = project.create_node(part1.id, 'Chapter 1', 'Introduction chapter', 'Chapter 1 content', 'Notes for chapter 1')
+        ch2 = project.create_node(part1.id, 'Chapter 2', 'Background chapter', 'Chapter 2 content', 'Notes for chapter 2')
 
         # Add second level nodes to Part II
-        ch3 = project.create_node(part2.node_id, 'Chapter 3', 'First main chapter', 'Chapter 3 content', 'Notes for chapter 3')
-        ch4 = project.create_node(part2.node_id, 'Chapter 4', 'Second main chapter', 'Chapter 4 content', 'Notes for chapter 4')
-        ch5 = project.create_node(part2.node_id, 'Chapter 5', 'Third main chapter', 'Chapter 5 content', 'Notes for chapter 5')
+        ch3 = project.create_node(part2.id, 'Chapter 3', 'First main chapter', 'Chapter 3 content', 'Notes for chapter 3')
+        ch4 = project.create_node(part2.id, 'Chapter 4', 'Second main chapter', 'Chapter 4 content', 'Notes for chapter 4')
+        ch5 = project.create_node(part2.id, 'Chapter 5', 'Third main chapter', 'Chapter 5 content', 'Notes for chapter 5')
 
         # Add second level nodes to Part III
-        ch6 = project.create_node(part3.node_id, 'Chapter 6', 'Summary chapter', 'Chapter 6 content', 'Notes for chapter 6')
+        ch6 = project.create_node(part3.id, 'Chapter 6', 'Summary chapter', 'Chapter 6 content', 'Notes for chapter 6')
 
         # Add third level nodes
-        project.create_node(ch1.node_id, 'Section 1.1', 'Introduction section', 'Section 1.1 content', 'Notes for section 1.1')
-        project.create_node(ch1.node_id, 'Section 1.2', 'Purpose section', 'Section 1.2 content', 'Notes for section 1.2')
+        project.create_node(ch1.id, 'Section 1.1', 'Introduction section', 'Section 1.1 content', 'Notes for section 1.1')
+        project.create_node(ch1.id, 'Section 1.2', 'Purpose section', 'Section 1.2 content', 'Notes for section 1.2')
 
-        project.create_node(ch3.node_id, 'Section 3.1', 'Theory section', 'Section 3.1 content', 'Notes for section 3.1')
-        project.create_node(ch3.node_id, 'Section 3.2', 'Method section', 'Section 3.2 content', 'Notes for section 3.2')
+        project.create_node(ch3.id, 'Section 3.1', 'Theory section', 'Section 3.1 content', 'Notes for section 3.1')
+        project.create_node(ch3.id, 'Section 3.2', 'Method section', 'Section 3.2 content', 'Notes for section 3.2')
 
-        project.create_node(ch4.node_id, 'Section 4.1', 'Results section', 'Section 4.1 content', 'Notes for section 4.1')
+        project.create_node(ch4.id, 'Section 4.1', 'Results section', 'Section 4.1 content', 'Notes for section 4.1')
 
-        project.create_node(ch6.node_id, 'Section 6.1', 'Conclusion section', 'Section 6.1 content', 'Notes for section 6.1')
-        project.create_node(ch6.node_id, 'Section 6.2', 'Future work section', 'Section 6.2 content', 'Notes for section 6.2')
+        project.create_node(ch6.id, 'Section 6.1', 'Conclusion section', 'Section 6.1 content', 'Notes for section 6.1')
+        project.create_node(ch6.id, 'Section 6.2', 'Future work section', 'Section 6.2 content', 'Notes for section 6.2')
 
     # Save the project
     markdown_adapter.save(project)
