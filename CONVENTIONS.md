@@ -29,6 +29,7 @@ When writing or editing Python code (`*.py`), follow these quality standards:
 When designing application components (`*.py`), use hexagonal architecture to separate business logic from external concerns:
 
 - Place core business logic at the center, free from direct I/O dependencies.
+- Favor a functional style for core business logic.
 - Define interfaces (ports) for all external interactions.
 - Implement concrete adapters for external systems.
 - Inject dependencies through constructor parameters or factory functions.
@@ -40,9 +41,10 @@ When designing application components (`*.py`), use hexagonal architecture to se
 When writing Python code (`*.py`), follow these testing practices:
 
 - Write tests first for each change using pytest.
-- Organize tests in a dedicated `tests/` folder by module.
+- Organize tests in a dedicated `tests/` folder in the project root.
+- Name test files by package and module, omitting the root `prosemark` package name.
 - Use descriptive names for test functions and methods.
 - Group related tests in test classes.
 - Use fixtures for complex setup.
 - Aim for 100% test coverage for code under `src/`.
-- Move common fixtures to `tests/conftest.py`.
+- When writing tests, move common fixtures to `tests/conftest.py`.
