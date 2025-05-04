@@ -1,0 +1,16 @@
+---
+title: Cursor rule files for conventions
+description: When adding a new convention to CONVENTIONS.md, always create a corresponding Cursor rule file in the `.cursor/rules/` directory.
+---
+
+- Name the file with a kebab-case version of the convention title with `.mdc` extension.
+  - Example: For "Python PEP-8 code style" convention, create `.cursor/rules/python-pep8-code-style.mdc`
+- Include YAML frontmatter at the top of the file with:
+  ```yaml
+  ---
+  title: [Convention Title]
+  description: [First line of the convention section]
+  ---
+  ```
+- Copy the content of the convention section (bullet points and examples) after the frontmatter.
+- Ensure the file uses the same formatting as the original convention in CONVENTIONS.md.
