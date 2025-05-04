@@ -1,0 +1,220 @@
+---
+description:
+globs: *.py
+alwaysApply: false
+---
+# Conventions for the prosemark project
+
+## When asked to create new conventions
+
+When asked to create a new convention (`CONVENTIONS.md`), add a second-level
+heading section to this document, `CONVENTIONS.md`.
+
+- Name the new convention heading with a short, descriptive title.
+  - Example: Type annotations in Python code
+  - Example: Python code style
+- Use the first line of the section to elaborate on the "When..." of the heading.
+  - Example: When creating new conventions (`CONVENTIONS.md`)...
+  - Example: When writing a new Python class (`*.py`), use PEP8 style.
+- Use bullet points to organize further details for the convention.
+- Use full imperative sentences.
+- Keep new conventions short and to the point.
+- Use short examples for complex conventions.
+
+
+## Python PEP-8 code style
+
+When writing or editing Python code (`*.py`), ALWAYS use PEP8 style.
+
+- Use CamelCase for class names.
+- Use snake_case for variable, function, and method names.
+
+
+## Type annotations in Python code
+
+When writing or editing Python code (`*.py`), ALWAYS use type annotations for functions
+and methods.
+
+- All new Python code must include type annotations.
+- Include the following import at the top of all Python files:
+  ```python
+  from __future__ import annotations
+  ```
+- Annotate all function and method parameters and return values.
+- Annotate class variables and complex data structures.
+- Define a TypedDict for complex dictionary structures with known structures.
+
+
+## Docstrings in Python code
+
+When writing or editing Python code (`*.py`), ALWAYS add short, descriptive
+docstrings in Google Style to all packages, modules, functions, classes, and
+methods.
+
+- Use Google Style for all docstrings.
+  - Example: |
+    ```python
+    def fetch_smalltable_rows(
+        table_handle: smalltable.Table,
+        keys: Sequence[bytes | str],
+        require_all_keys: bool = False,
+    ) -> Mapping[bytes, tuple[str, ...]]:
+        """Fetches rows from a Smalltable.
+
+        Retrieves rows pertaining to the given keys from the Table instance
+        represented by table_handle.  String keys will be UTF-8 encoded.
+
+        Args:
+            table_handle: An open smalltable.Table instance.
+            keys: A sequence of strings representing the key of each table
+              row to fetch.  String keys will be UTF-8 encoded.
+            require_all_keys: If True only rows with values set for all keys will be
+              returned.
+
+        Returns:
+            A dict mapping keys to the corresponding table row data
+            fetched. Each row is represented as a tuple of strings. For
+            example:
+
+            {b'Serak': ('Rigel VII', 'Preparer'),
+             b'Zim': ('Irk', 'Invader'),
+             b'Lrrr': ('Omicron Persei 8', 'Emperor')}
+
+            Returned keys are always bytes.  If a key from the keys argument is
+            missing from the dictionary, then that row was not found in the
+            table (and require_all_keys must have been False).
+
+        Raises:
+            IOError: An error occurred accessing the smalltable.
+        """
+    ```
+  - Example: |
+    ```python
+    class SampleClass:
+        """Summary of class here.
+
+        Longer class information...
+        Longer class information...
+
+        Attributes:
+            likes_spam: A boolean indicating if we like SPAM or not.
+            eggs: An integer count of the eggs we have laid.
+        """
+
+        def __init__(self, likes_spam: bool = False):
+            """Initializes the instance based on spam preference.
+
+            Args:
+              likes_spam: Defines if instance exhibits this preference.
+            """
+            self.likes_spam = likes_spam
+            self.eggs = 0
+
+        @property
+        def butter_sticks(self) -> int:
+            """The number of butter sticks we have."""
+    ```
+
+
+## Formatting and linting Python code
+
+When writing or editing Python code (`*.py`), ALWAYS run the code formatter the linter,
+and the type checker.
+
+- To format code, run `uv run ruff format`.
+- To lint code, run `uv run ruff --fix check`.
+- Fix any linting errors before continuing.
+- To run the type checker, run `uv run mypy`.
+- Fix any typing errors before continuing.
+
+
+## Hexagonal Architecture (Ports and Adapters)
+
+When designing and implementing application components (`*.py`), follow hexagonal architecture principles to separate business logic from external concerns.
+
+- Place core business logic at the center of the application, free from direct dependencies on I/O or external systems.
+- Define clear interfaces (ports) for all external interactions required by the business logic.
+- Implement concrete adapters that fulfill these interfaces for actual external systems.
+- Inject dependencies through constructor parameters or dedicated factory functions.
+- Example port interface: |
+  ```python
+  class UserRepository(Protocol):
+      def get_user(self, user_id: str) -> User:
+          """Retrieves a user by ID."""
+          ...
+
+      def save_user(self, user: User) -> None:
+          """Persists user data."""
+          ...
+  ```
+- Example adapter implementation: |
+  ```python
+  class PostgresUserRepository:
+      def __init__(self, db_connection: Connection) -> None:
+          self.db_connection = db_connection
+
+      def get_user(self, user_id: str) -> User:
+          # Implementation using PostgreSQL
+          ...
+
+      def save_user(self, user: User) -> None:
+          # Implementation using PostgreSQL
+          ...
+  ```
+
+
+## Testing with Hexagonal Architecture
+
+When writing tests for business logic (`*_test.py`), use test doubles (fakes, stubs, mocks) for external dependencies.
+
+- Create in-memory fake implementations of port interfaces for testing.
+- Use stubs to provide predetermined responses for specific test scenarios.
+- Avoid testing the internals of adapters in business logic tests.
+- Test adapters separately with integration tests.
+- Example test with fake repository: |
+  ```python
+  class TestUserService:
+      def test_user_creation(self) -> None:
+          # Arrange
+          fake_repository = InMemoryUserRepository()
+          user_service = UserService(repository=fake_repository)
+
+          # Act
+          user_id = user_service.create_user("John", "Doe")
+
+          # Assert
+          created_user = fake_repository.get_user(user_id)
+          assert created_user.first_name == "John"
+          assert created_user.last_name == "Doe"
+  ```
+
+
+## Testing python code
+
+When writing or editing Python code (`*.py`), ALWAYS write a test first for each change.
+
+- Use pytest.
+- Place tests in a dedicated `tests/` folder.
+- Organize tests by module.
+  - Example: Tests for `src/prosemark/foo/bar.py` would live in `tests/test_foo_bar.py`.
+- Use descriptive names for test functions and test methods.
+  - Example: |
+    ```python
+    def test_it_should_add_integers_correctly() -> None:
+        result = 8 + 5
+        expected = 13
+        assert result == expected
+    ```
+- Use test classes to group related tests together.
+- Use pytest fixtures for complex initial state setup.
+- All Python code under `src/` MUST have 100% test coverage.
+  - Exceptions should be marked with `# pragma: no cover` or `# pragma :no branch`.
+  - Exceptions to 100% test coverage include minor logic branches and rare exception handlers.
+
+
+## Identifying common pytest fixtures
+
+When writing tests for Python code (`*.py`), look for common fixture patterns
+that are used across multiple test files.
+
+- Relocate common fixture patterns used in multiple test files to `tests/conftest.py`.
