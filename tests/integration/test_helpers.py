@@ -48,7 +48,9 @@ def _build_node_structure(node: Node) -> dict[str, Any]:
     }
 
     for child in node.children:
-        result['children'][child.id] = _build_node_structure(child)
+        children_dict = result['children']
+        if isinstance(children_dict, dict):
+            children_dict[child.id] = _build_node_structure(child)
 
     return result
 
