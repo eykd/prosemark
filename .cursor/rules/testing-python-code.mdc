@@ -1,0 +1,22 @@
+---
+title: Testing python code
+description: When writing or editing Python code (`*.py`), ALWAYS write a test first for each change.
+---
+
+- Use pytest.
+- Place tests in a dedicated `tests/` folder.
+- Organize tests by module.
+  - Example: Tests for `src/prosemark/foo/bar.py` would live in `tests/test_foo_bar.py`.
+- Use descriptive names for test functions and test methods.
+  - Example: |
+    ```python
+    def test_it_should_add_integers_correctly() -> None:
+        result = 8 + 5
+        expected = 13
+        assert result == expected
+    ```
+- Use test classes to group related tests together.
+- Use pytest fixtures for complex initial state setup.
+- All Python code under `src/` MUST have 100% test coverage.
+  - Exceptions should be marked with `# pragma: no cover` or `# pragma :no branch`.
+  - Exceptions to 100% test coverage include minor logic branches and rare exception handlers.

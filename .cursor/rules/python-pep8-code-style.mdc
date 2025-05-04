@@ -1,0 +1,7 @@
+---
+title: Python PEP-8 code style
+description: When writing or editing Python code (`*.py`), ALWAYS use PEP8 style.
+---
+
+- Use CamelCase for class names.
+- Use snake_case for variable, function, and method names.

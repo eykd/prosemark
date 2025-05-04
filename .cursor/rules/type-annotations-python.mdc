@@ -1,0 +1,13 @@
+---
+title: Type annotations in Python code
+description: When writing or editing Python code (`*.py`), ALWAYS use type annotations for functions and methods.
+---
+
+- All new Python code must include type annotations.
+- Include the following import at the top of all Python files:
+  ```python
+  from __future__ import annotations
+  ```
+- Annotate all function and method parameters and return values.
+- Annotate class variables and complex data structures.
+- Define a TypedDict for complex dictionary structures with known structures.

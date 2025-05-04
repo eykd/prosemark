@@ -1,0 +1,10 @@
+---
+title: Formatting and linting Python code
+description: When writing or editing Python code (`*.py`), ALWAYS run the code formatter the linter, and the type checker.
+---
+
+- To format code, run `uv run ruff format`.
+- To lint code, run `uv run ruff --fix check`.
+- Fix any linting errors before continuing.
+- To run the type checker, run `uv run mypy`.
+- Fix any typing errors before continuing.

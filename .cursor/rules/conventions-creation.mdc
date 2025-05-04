@@ -1,0 +1,15 @@
+---
+title: When asked to create new conventions
+description: When asked to create a new convention (`CONVENTIONS.md`), add a second-level heading section to this document, `CONVENTIONS.md`.
+---
+
+- Name the new convention heading with a short, descriptive title.
+  - Example: Type annotations in Python code
+  - Example: Python code style
+- Use the first line of the section to elaborate on the "When..." of the heading.
+  - Example: When creating new conventions (`CONVENTIONS.md`)...
+  - Example: When writing a new Python class (`*.py`), use PEP8 style.
+- Use bullet points to organize further details for the convention.
+- Use full imperative sentences.
+- Keep new conventions short and to the point.
+- Use short examples for complex conventions.

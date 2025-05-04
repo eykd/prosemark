@@ -1,0 +1,25 @@
+---
+title: Testing with Hexagonal Architecture
+description: When writing tests for business logic (`*_test.py`), use test doubles (fakes, stubs, mocks) for external dependencies.
+---
+
+- Create in-memory fake implementations of port interfaces for testing.
+- Use stubs to provide predetermined responses for specific test scenarios.
+- Avoid testing the internals of adapters in business logic tests.
+- Test adapters separately with integration tests.
+- Example test with fake repository: |
+  ```python
+  class TestUserService:
+      def test_user_creation(self) -> None:
+          # Arrange
+          fake_repository = InMemoryUserRepository()
+          user_service = UserService(repository=fake_repository)
+          
+          # Act
+          user_id = user_service.create_user("John", "Doe")
+          
+          # Assert
+          created_user = fake_repository.get_user(user_id)
+          assert created_user.first_name == "John"
+          assert created_user.last_name == "Doe"
+  ```

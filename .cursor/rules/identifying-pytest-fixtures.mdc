@@ -1,0 +1,6 @@
+---
+title: Identifying common pytest fixtures
+description: When writing tests for Python code (`*.py`), look for common fixture patterns that are used across multiple test files.
+---
+
+- Relocate common fixture patterns used in multiple test files to `tests/conftest.py`.
