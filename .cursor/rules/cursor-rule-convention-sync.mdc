@@ -1,0 +1,10 @@
+---
+title: Synchronizing Cursor rules with conventions
+description: When adding a new Cursor rule file (`.cursor/rules/*.mdc`), always add a corresponding section to CONVENTIONS.md.
+---
+
+- Create a second-level heading in CONVENTIONS.md with the same title as the Cursor rule.
+- Copy the description from the Cursor rule's frontmatter as the first line of the section.
+- Include all content from the Cursor rule file in the CONVENTIONS.md section.
+- Maintain consistent formatting between the Cursor rule file and CONVENTIONS.md.
+- Ensure any examples in the Cursor rule are also included in the CONVENTIONS.md section.
