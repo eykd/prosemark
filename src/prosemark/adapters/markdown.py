@@ -476,8 +476,8 @@ class MarkdownFileAdapter(ProjectRepository):
             if line.startswith('# Title:'):
                 # Extract title directly from this line
                 title_value = line.replace('# Title:', '').strip()
-                if title_value:  # pragma: no branch
-                    sections['title'] = title_value
+                # Always add title to sections, even if empty
+                sections['title'] = title_value
                 current_section = 'title'
                 section_content = []
             elif line.startswith('# Notecard'):
