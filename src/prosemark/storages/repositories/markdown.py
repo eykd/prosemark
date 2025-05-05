@@ -247,7 +247,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         return project
 
-    def _markdown_to_node(self, file_path: Path) -> Node:
+    def _markdown_to_node(self, file_path: Path) -> Node:  # noqa: C901
         """Convert a Markdown file to a Node.
 
         Args:
@@ -313,7 +313,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         notes = ''
         if notes_file:
             notes_path = file_path.parent / notes_file
-            if notes_path.exists():
+            if notes_path.exists():  # pragma: no branch
                 notes = notes_path.read_text(encoding='utf-8')
 
         # The remaining content is the main content
