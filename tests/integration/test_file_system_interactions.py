@@ -102,8 +102,7 @@ class TestFileContentTests:
             assert node.notes in content
 
             # Verify parent reference
-            if node.parent:
-                assert f'Parent: [{node.parent.title}]({node.parent.id}.md)' in content
+            assert f'Parent: [{node.parent.title}]({node.parent.id}.md)' in content
 
     def test_reading_writing_various_content(self, cli_runner: CliRunner, temp_dir: str) -> None:
         """Test reading and writing files with various content types."""
