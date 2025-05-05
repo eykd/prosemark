@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import click
 
 from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
 if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
@@ -50,31 +51,36 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.create_project(name, description or '')  # pragma: no branch
+        project = repo.create(name, description or '')
         click.echo(f"Project '{project.name}' created successfully.")
-    except ValueError as e:
+    except ProjectExistsError:
+        click.echo('Error: A project already exists in this repository.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
 
 @cli.command()
 @click.pass_context
-def list_projects(ctx: ClickContext) -> None:
-    """List all available projects."""
+def info(ctx: ClickContext) -> None:
+    """Display information about the current project."""
     repo = ctx.obj['repo']
-    projects = repo.list_projects()
-
-    if not projects:
-        click.echo('No projects found.')
-        return
-
-    click.echo('Available projects:')
-    for project in projects:
-        click.echo(f'- {project["name"]}')
+    try:
+        project = repo.load()
+        click.echo(f'Project: {project.name}')
+        if project.description:
+            click.echo(f'Description: {project.description}')
+        click.echo(f'Nodes: {project.get_node_count()}')
+    except ProjectNotFoundError:
+        click.echo('Error: No project found. Use "init" to create a new project.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
 
 
 @cli.command()
-@click.argument('project_name')
 @click.argument('parent_id')
 @click.argument('title')
 @click.option('--notecard', '-n', help='Brief summary of the node')
@@ -84,7 +90,6 @@ def list_projects(ctx: ClickContext) -> None:
 @click.pass_context
 def add(
     ctx: ClickContext,
-    project_name: str,
     parent_id: str,
     title: str,
     notecard: str = '',
@@ -92,15 +97,14 @@ def add(
     notes: str = '',
     position: int | None = None,
 ) -> None:
-    """Add a new node to a project.
+    """Add a new node to the project.
 
-    PROJECT_NAME is the name of the project to modify.
     PARENT_ID is the ID of the parent node.
     TITLE is the title of the new node.
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.load(project_name)
+        project = repo.load()
         node = project.create_node(
             parent_id=parent_id,
             title=title,
@@ -115,24 +119,25 @@ def add(
 
         repo.save(project)
         click.echo(f"Node '{title}' added successfully with ID: {node.id}")
-    except ValueError as e:  # pragma: no cover
+    except ProjectNotFoundError:
+        click.echo('Error: No project found. Use "init" to create a new project.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
 
 @cli.command()
-@click.argument('project_name')
 @click.argument('node_id')
 @click.pass_context
-def remove(ctx: ClickContext, project_name: str, node_id: str) -> None:
-    """Remove a node from a project.
+def remove(ctx: ClickContext, node_id: str) -> None:
+    """Remove a node from the project.
 
-    PROJECT_NAME is the name of the project to modify.
     NODE_ID is the ID of the node to remove.
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.load(project_name)
+        project = repo.load()
         node = project.remove_node(node_id)
         if node is None:  # pragma: no cover
             click.echo(f'Error: Node with ID {node_id} not found or is the root node.', err=True)
@@ -140,27 +145,28 @@ def remove(ctx: ClickContext, project_name: str, node_id: str) -> None:
 
         repo.save(project)
         click.echo(f"Node '{node.title}' removed successfully.")
-    except ValueError as e:  # pragma: no cover
+    except ProjectNotFoundError:
+        click.echo('Error: No project found. Use "init" to create a new project.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
 
 @cli.command()
-@click.argument('project_name')
 @click.argument('node_id')
 @click.argument('new_parent_id')
 @click.option('--position', '-p', type=int, help='Position to insert the node')
 @click.pass_context
-def move(ctx: ClickContext, project_name: str, node_id: str, new_parent_id: str, position: int | None = None) -> None:
+def move(ctx: ClickContext, node_id: str, new_parent_id: str, position: int | None = None) -> None:
     """Move a node to a new parent.
 
-    PROJECT_NAME is the name of the project to modify.
     NODE_ID is the ID of the node to move.
     NEW_PARENT_ID is the ID of the new parent node.
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.load(project_name)
+        project = repo.load()
         success = project.move_node(node_id, new_parent_id, position)
         if not success:  # pragma: no cover
             click.echo(
@@ -171,24 +177,25 @@ def move(ctx: ClickContext, project_name: str, node_id: str, new_parent_id: str,
 
         repo.save(project)
         click.echo('Node moved successfully.')
-    except ValueError as e:  # pragma: no cover
+    except ProjectNotFoundError:
+        click.echo('Error: No project found. Use "init" to create a new project.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
 
 @cli.command()
-@click.argument('project_name')
 @click.argument('node_id')
 @click.pass_context
-def show(ctx: ClickContext, project_name: str, node_id: str) -> None:
+def show(ctx: ClickContext, node_id: str) -> None:
     """Display node content.
 
-    PROJECT_NAME is the name of the project.
     NODE_ID is the ID of the node to display.
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.load(project_name)
+        project = repo.load()
         node = project.get_node_by_id(node_id)
         if node is None:  # pragma: no cover
             click.echo(f'Error: Node with ID {node_id} not found.', err=True)
@@ -211,13 +218,15 @@ def show(ctx: ClickContext, project_name: str, node_id: str) -> None:
             click.echo('\nChildren:')
             for child in node.children:
                 click.echo(f'- {child.title} (ID: {child.id})')
-    except ValueError as e:  # pragma: no cover
+    except ProjectNotFoundError:
+        click.echo('Error: No project found. Use "init" to create a new project.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
 
 @cli.command()
-@click.argument('project_name')
 @click.argument('node_id')
 @click.option('--title', '-t', help='New title for the node')
 @click.option('--notecard', '-n', help='New notecard for the node')
@@ -227,7 +236,6 @@ def show(ctx: ClickContext, project_name: str, node_id: str) -> None:
 @click.pass_context
 def edit(
     ctx: ClickContext,
-    project_name: str,
     node_id: str,
     title: str | None = None,
     notecard: str | None = None,
@@ -237,12 +245,11 @@ def edit(
 ) -> None:
     """Edit node content.
 
-    PROJECT_NAME is the name of the project.
     NODE_ID is the ID of the node to edit.
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.load(project_name)
+        project = repo.load()
         node = project.get_node_by_id(node_id)
         if node is None:  # pragma: no cover
             click.echo(f'Error: Node with ID {node_id} not found.', err=True)
@@ -267,23 +274,23 @@ def edit(
         # Save the project
         repo.save(project)
         click.echo(f"Node '{node.title}' updated successfully.")
-    except ValueError as e:  # pragma: no cover
+    except ProjectNotFoundError:
+        click.echo('Error: No project found. Use "init" to create a new project.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 
 
 @cli.command()
-@click.argument('project_name')
 @click.option('--node-id', '-n', help='ID of the node to start from (defaults to root)')
 @click.pass_context
-def structure(ctx: ClickContext, project_name: str, node_id: str | None = None) -> None:
+def structure(ctx: ClickContext, node_id: str | None = None) -> None:
     """Display the project structure.
-
-    PROJECT_NAME is the name of the project.
     """
     repo = ctx.obj['repo']
     try:
-        project = repo.load(project_name)
+        project = repo.load()
 
         # If node_id is provided, start from that node
         start_node = project.root_node
@@ -297,7 +304,10 @@ def structure(ctx: ClickContext, project_name: str, node_id: str | None = None) 
         # Display the structure
         click.echo(f"Structure for project '{project.name}':")
         _print_node_structure(start_node, 0)
-    except ValueError as e:  # pragma: no cover
+    except ProjectNotFoundError:
+        click.echo('Error: No project found. Use "init" to create a new project.', err=True)
+        sys.exit(1)
+    except Exception as e:  # pragma: no cover
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
 

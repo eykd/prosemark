@@ -8,32 +8,68 @@ class InMemoryProjectRepository:
     """A simple in-memory implementation of ProjectRepository for testing."""
 
     def __init__(self) -> None:
-        self.projects: dict[str, Project] = {}
+        """Initialize an empty in-memory project repository."""
+        self._project: Project | None = None
 
     def save(self, project: Project) -> None:
-        """Save a project to the repository."""
-        self.projects[project.name] = project
+        """Save the project to the repository.
 
-    def load(self, project_id: str) -> Project:
-        """Load a project from the repository."""
-        if project_id not in self.projects:
-            raise ProjectNotFoundError(project_id)
-        return self.projects[project_id]
+        Args:
+            project: The project to save.
 
-    def list_projects(self) -> list[dict[str, str]]:
-        """List all available projects in the repository."""
-        return [{'id': name, 'name': name} for name in self.projects]
+        """
+        self._project = project
 
-    def create_project(self, name: str, description: str = '') -> Project:
-        """Create a new project in the repository."""
-        if name in self.projects:
-            raise ProjectExistsError(name)
-        project = Project(name=name, description=description)
-        self.projects[name] = project
-        return project
+    def load(self) -> Project:
+        """Load the project from the repository.
 
-    def delete_project(self, project_id: str) -> None:
-        """Delete a project from the repository."""
-        if project_id not in self.projects:
-            raise ProjectNotFoundError(project_id)
-        del self.projects[project_id]
+        Returns:
+            The loaded project.
+
+        Raises:
+            ProjectNotFoundError: If no project exists in the repository.
+
+        """
+        if self._project is None:
+            raise ProjectNotFoundError()
+        return self._project
+
+    def exists(self) -> bool:
+        """Check if a project exists in the repository.
+
+        Returns:
+            True if a project exists, False otherwise.
+
+        """
+        return self._project is not None
+
+    def create(self, name: str, description: str = '') -> Project:
+        """Create a new project in the repository.
+
+        Args:
+            name: The name of the project.
+            description: An optional description of the project.
+
+        Returns:
+            The newly created project.
+
+        Raises:
+            ProjectExistsError: If a project already exists in the repository.
+
+        """
+        if self._project is not None:
+            raise ProjectExistsError()
+
+        self._project = Project(name=name, description=description)
+        return self._project
+
+    def delete(self) -> None:
+        """Delete the project from the repository.
+
+        Raises:
+            ProjectNotFoundError: If no project exists in the repository.
+
+        """
+        if self._project is None:
+            raise ProjectNotFoundError()
+        self._project = None

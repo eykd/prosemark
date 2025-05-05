@@ -14,12 +14,12 @@ if TYPE_CHECKING:  # pragma: no cover
 class ProjectRepository(Protocol):
     """Interface for project persistence operations.
 
-    This interface defines the contract for storing and retrieving Project objects.
+    This interface defines the contract for storing and retrieving a single Project object.
     Concrete implementations will handle the actual persistence mechanism.
     """
 
     def save(self, project: Project) -> None:  # pragma: no cover
-        """Save a project to the repository.
+        """Save the project to the repository.
 
         Args:
             project: The project to save.
@@ -30,11 +30,8 @@ class ProjectRepository(Protocol):
         """
         ...
 
-    def load(self, project_id: str) -> Project:  # pragma: no cover
-        """Load a project from the repository.
-
-        Args:
-            project_id: The identifier of the project to load.
+    def load(self) -> Project:  # pragma: no cover
+        """Load the project from the repository.
 
         Returns:
             The loaded project.
@@ -46,20 +43,16 @@ class ProjectRepository(Protocol):
         """
         ...
 
-    def list_projects(self) -> list[dict[str, str]]:  # pragma: no cover
-        """List all available projects in the repository.
+    def exists(self) -> bool:  # pragma: no cover
+        """Check if a project exists in the repository.
 
         Returns:
-            A list of dictionaries containing project metadata.
-            Each dictionary should contain at least 'id' and 'name' keys.
-
-        Raises:
-            RepositoryError: If the projects cannot be listed.
+            True if a project exists, False otherwise.
 
         """
         ...
 
-    def create_project(self, name: str, description: str = '') -> Project:  # pragma: no cover
+    def create(self, name: str, description: str = '') -> Project:  # pragma: no cover
         """Create a new project in the repository.
 
         Args:
@@ -70,17 +63,14 @@ class ProjectRepository(Protocol):
             The newly created project.
 
         Raises:
-            ProjectExistsError: If a project with the same name already exists.
+            ProjectExistsError: If a project already exists in the repository.
             RepositoryError: If the project cannot be created.
 
         """
         ...
 
-    def delete_project(self, project_id: str) -> None:  # pragma: no cover
-        """Delete a project from the repository.
-
-        Args:
-            project_id: The identifier of the project to delete.
+    def delete(self) -> None:  # pragma: no cover
+        """Delete the project from the repository.
 
         Raises:
             ProjectNotFoundError: If the project cannot be found.
