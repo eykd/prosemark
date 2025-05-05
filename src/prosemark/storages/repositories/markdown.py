@@ -192,8 +192,13 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                 node_file.name == 'project.json' or ' notes.md' in node_file.name or ' notecard.md' in node_file.name
             ):  # pragma: no cover
                 continue
+
+            # Convert file to node
             node = self._markdown_to_node(node_file)
-            nodes_by_id[node.id] = node
+
+            # Only add to dictionary if node was successfully created
+            if node is not None:
+                nodes_by_id[node.id] = node
         return nodes_by_id
 
     def _setup_node_relationships(self, project_dir: Path, nodes_by_id: dict[str, Node]) -> None:
@@ -210,7 +215,14 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                 node_file.name == 'project.json' or ' notes.md' in node_file.name or ' notecard.md' in node_file.name
             ):  # pragma: no cover
                 continue
+
+            # Extract node relationships
             node_id, child_ids = self._extract_node_relationships(node_file)
+
+            # Skip if node_id is None (invalid frontmatter)
+            if node_id is None:
+                continue
+
             if node_id in nodes_by_id:  # pragma: no branch
                 node = nodes_by_id[node_id]
                 for child_id in child_ids:
@@ -259,17 +271,16 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         return project
 
-    def _markdown_to_node(self, file_path: Path) -> Node:  # noqa: C901
+    def _markdown_to_node(self, file_path: Path) -> Node | None:  # noqa: C901
         """Convert a Markdown file to a Node.
 
         Args:
             file_path: Path to the Markdown file.
 
         Returns:
-            A Node object.
+            A Node object or None if the file doesn't have valid frontmatter.
 
         Raises:
-            ValueError: If the file cannot be parsed.
             OSError: If there's an error reading from the filesystem.
 
         """
@@ -278,8 +289,8 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         # Extract YAML frontmatter
         frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
         if not frontmatter_match:
-            msg = f'Invalid Markdown file format: missing frontmatter in {file_path}'
-            raise ValueError(msg)
+            # Instead of raising an error, just return None to ignore this file
+            return None
 
         frontmatter = frontmatter_match.group(1)
 
@@ -340,17 +351,16 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             metadata=metadata,
         )
 
-    def _extract_node_relationships(self, file_path: Path) -> tuple[str, list[str]]:
+    def _extract_node_relationships(self, file_path: Path) -> tuple[str | None, list[str]]:
         """Extract node ID and child IDs from a Markdown file.
 
         Args:
             file_path: Path to the Markdown file.
 
         Returns:
-            A tuple containing the node ID and a list of child IDs.
+            A tuple containing the node ID and a list of child IDs, or (None, []) if frontmatter is missing.
 
         Raises:
-            ValueError: If the file cannot be parsed.
             OSError: If there's an error reading from the filesystem.
 
         """
@@ -359,8 +369,8 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         # Extract YAML frontmatter
         frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
         if not frontmatter_match:
-            msg = f'Invalid Markdown file format: missing frontmatter in {file_path}'
-            raise ValueError(msg)
+            # Instead of raising an error, return None for node_id and empty list for child_ids
+            return None, []
 
         frontmatter = frontmatter_match.group(1)
 
