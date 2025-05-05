@@ -8,10 +8,10 @@ import pytest
 from click.testing import CliRunner
 
 from prosemark import cli
-from prosemark.adapters.markdown import MarkdownFilesystemProjectRepository
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
+from prosemark.storages.repositories.markdown import MarkdownFilesystemProjectRepository
 
 
 @pytest.fixture

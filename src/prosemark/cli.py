@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING
 
 import click
 
-from prosemark.adapters.markdown import MarkdownFilesystemProjectRepository
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
+from prosemark.storages.repositories.markdown import MarkdownFilesystemProjectRepository
 
 if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
