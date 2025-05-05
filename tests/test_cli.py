@@ -512,9 +512,9 @@ These are notes
 """
     sections = adapter.parse_edit_markdown(markdown)
     assert sections['title'] == 'Test Title'
-    assert sections['notecard'] == 'This is a notecard\n# This is a comment in the notecard section'
-    assert sections['content'] == 'This is content\n# This is a comment in the content section'
-    assert sections['notes'] == 'These are notes\n# This is a comment in the notes section'
+    assert sections['notecard'] == 'This is a notecard'
+    assert sections['content'] == 'This is content'
+    assert sections['notes'] == 'These are notes'
 
 
 def test_update_node_with_all_fields(tmp_path: Path) -> None:
