@@ -488,9 +488,9 @@ def test_edit_command_with_editor_no_changes(runner: CliRunner) -> None:
             mock_save.assert_called_once_with(project)
 
 
-def test_parse_edit_markdown_with_comments(temp_dir: str) -> None:
+def test_parse_edit_markdown_with_comments(tmp_path: Path) -> None:
     """Test parsing markdown with comments and section transitions."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFileAdapter(tmp_path)
 
     # Test with comments and multiple sections
     markdown = """# Title: Test Title
@@ -517,9 +517,9 @@ These are notes
     assert sections['notes'] == 'These are notes\n# This is a comment in the notes section'
 
 
-def test_update_node_with_all_fields(temp_dir: str) -> None:
+def test_update_node_with_all_fields(tmp_path: Path) -> None:
     """Test updating a node with all fields."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFileAdapter(tmp_path)
 
     # Create a node with initial values
     node = Node(
@@ -549,10 +549,10 @@ def test_update_node_with_all_fields(temp_dir: str) -> None:
     assert updated_node is node
 
 
-def test_existing_directory_initialization(temp_dir: str) -> None:
+def test_existing_directory_initialization(tmp_path: Path) -> None:
     """Test initializing the adapter with an existing directory."""
     # Create a directory that already exists
-    existing_dir = Path(temp_dir) / 'existing_dir'
+    existing_dir = tmp_path / 'existing_dir'
     existing_dir.mkdir()
 
     # Initialize adapter with existing directory
@@ -560,12 +560,12 @@ def test_existing_directory_initialization(temp_dir: str) -> None:
     assert adapter.base_path == existing_dir
 
 
-def test_markdown_to_node_with_empty_sections(temp_dir: str) -> None:
+def test_markdown_to_node_with_empty_sections(tmp_path: Path) -> None:
     """Test converting markdown to node with empty sections."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFileAdapter(tmp_path)
 
     # Create a markdown file with empty sections
-    test_file = Path(temp_dir) / 'empty_sections.md'
+    test_file = tmp_path / 'empty_sections.md'
     markdown_content = """---
 id: empty-node
 title: Empty Node
