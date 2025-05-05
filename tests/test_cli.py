@@ -587,3 +587,54 @@ title: Empty Node
     assert node.notecard == ''
     assert node.content == ''
     assert node.notes == ''
+
+
+def test_markdown_adapter_with_nonexistent_path(tmp_path: Path) -> None:
+    """Test initializing the adapter with a nonexistent path."""
+    # Create a path that doesn't exist
+    nonexistent_path = tmp_path / 'does_not_exist'
+
+    # Initialize adapter with nonexistent path - it should create the directory
+    adapter = MarkdownFileAdapter(nonexistent_path)
+    assert adapter.base_path == nonexistent_path
+    assert nonexistent_path.exists()
+    assert nonexistent_path.is_dir()
+
+
+def test_markdown_adapter_with_file_path(tmp_path: Path) -> None:
+    """Test initializing the adapter with a file path instead of a directory."""
+    # Create a file
+    file_path = tmp_path / 'file.txt'
+    file_path.write_text('This is a file, not a directory', encoding='utf-8')
+
+    # Initialize adapter with file path - should raise ValueError
+    with pytest.raises(ValueError, match='exists but is not a directory'):
+        MarkdownFileAdapter(file_path)
+
+
+def test_parse_edit_markdown_with_empty_content() -> None:
+    """Test parsing empty markdown content."""
+    adapter = MarkdownFileAdapter(Path())
+
+    # Test with empty content
+    markdown = ''
+    sections = adapter.parse_edit_markdown(markdown)
+
+    # Should return an empty dictionary or default values
+    assert isinstance(sections, dict)
+    assert len(sections) == 0
+
+
+def test_parse_edit_markdown_with_instructions_only() -> None:
+    """Test parsing markdown with only instructions section."""
+    adapter = MarkdownFileAdapter(Path())
+
+    # Test with only instructions
+    markdown = """# Instructions:
+# These are instructions that should be ignored
+"""
+    sections = adapter.parse_edit_markdown(markdown)
+
+    # Should return an empty dictionary or default values
+    assert isinstance(sections, dict)
+    assert len(sections) == 0
