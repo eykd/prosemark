@@ -99,6 +99,12 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             notes_path = project_dir / notes_filename
             notes_path.write_text(node.notes, encoding='utf-8')
 
+        # Save notecard to a separate file if it exists
+        if node.notecard:
+            notecard_filename = f'{node.id} notecard.md'
+            notecard_path = project_dir / notecard_filename
+            notecard_path.write_text(node.notecard, encoding='utf-8')
+
         # Prepare the node content
         content = self._node_to_markdown(node)
 
@@ -132,6 +138,10 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         if node.notes:
             lines.append(f'notes_file: {node.id} notes.md')
 
+        # Add reference to notecard file if notecard exists
+        if node.notecard:
+            lines.append(f'notecard_file: {node.id} notecard.md')
+
         # Add any custom metadata
         if node.metadata:
             lines.append('metadata:')
@@ -139,15 +149,11 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         lines.append('---')
 
-        # Add notecard as a blockquote
-        if node.notecard:
-            lines.append('\n> ' + node.notecard.replace('\n', '\n> '))
-
         # Add main content
         if node.content:
             lines.append('\n' + node.content)
 
-        # Notes are now in a separate file, so we don't include them here
+        # Notes and notecard are now in separate files, so we don't include them here
 
         return '\n'.join(lines)
 
@@ -181,7 +187,10 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         """
         nodes_by_id: dict[str, Node] = {}
         for node_file in project_dir.glob('*.md'):
-            if node_file.name == 'project.json' or ' notes.md' in node_file.name:  # pragma: no cover
+            # Skip project.json, notes files, and notecard files
+            if (
+                node_file.name == 'project.json' or ' notes.md' in node_file.name or ' notecard.md' in node_file.name
+            ):  # pragma: no cover
                 continue
             node = self._markdown_to_node(node_file)
             nodes_by_id[node.id] = node
@@ -196,7 +205,10 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         """
         for node_file in project_dir.glob('*.md'):
-            if node_file.name == 'project.json' or ' notes.md' in node_file.name:  # pragma: no cover
+            # Skip project.json, notes files, and notecard files
+            if (
+                node_file.name == 'project.json' or ' notes.md' in node_file.name or ' notecard.md' in node_file.name
+            ):  # pragma: no cover
                 continue
             node_id, child_ids = self._extract_node_relationships(node_file)
             if node_id in nodes_by_id:  # pragma: no branch
@@ -276,6 +288,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         title = ''
         metadata: dict[str, Any] = {}
         notes_file = None
+        notecard_file = None
 
         for line in frontmatter.split('\n'):  # pragma: no branch
             if line.startswith('id:'):
@@ -284,6 +297,8 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                 title = line.split(':', 1)[1].strip()
             elif line.startswith('notes_file:'):
                 notes_file = line.split(':', 1)[1].strip()
+            elif line.startswith('notecard_file:'):
+                notecard_file = line.split(':', 1)[1].strip()
             elif line.startswith('metadata:'):
                 # Skip the metadata line itself, we'll parse the nested items
                 continue
@@ -299,22 +314,19 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         # Remove frontmatter from content
         content_without_frontmatter = content[frontmatter_match.end() :]
 
-        # Extract notecard (first blockquote)
-        notecard = ''
-        notecard_match = re.search(r'\n>(.*?)(?=\n[^>]|\Z)', content_without_frontmatter, re.DOTALL)
-        if notecard_match:  # pragma: no branch
-            notecard_text = notecard_match.group(1)
-            # Remove the '> ' prefix from each line
-            notecard = '\n'.join(line.lstrip('> ').strip() for line in notecard_text.split('\n'))
-            # Remove the notecard from content
-            content_without_frontmatter = content_without_frontmatter.replace(notecard_match.group(0), '', 1)
-
         # Load notes from separate file if it exists
         notes = ''
         if notes_file:
             notes_path = file_path.parent / notes_file
             if notes_path.exists():  # pragma: no branch
                 notes = notes_path.read_text(encoding='utf-8')
+
+        # Load notecard from separate file if it exists
+        notecard = ''
+        if notecard_file:
+            notecard_path = file_path.parent / notecard_file
+            if notecard_path.exists():  # pragma: no branch
+                notecard = notecard_path.read_text(encoding='utf-8')
 
         # The remaining content is the main content
         main_content = content_without_frontmatter.strip()
