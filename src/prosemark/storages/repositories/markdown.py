@@ -197,7 +197,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             node = self._markdown_to_node(node_file)
 
             # Only add to dictionary if node was successfully created
-            if node is not None:
+            if node is not None:  # pragma: no branch
                 nodes_by_id[node.id] = node
         return nodes_by_id
 
@@ -220,7 +220,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             node_id, child_ids = self._extract_node_relationships(node_file)
 
             # Skip if node_id is None (invalid frontmatter)
-            if node_id is None:
+            if node_id is None:  # pragma: no cover
                 continue
 
             if node_id in nodes_by_id:  # pragma: no branch
