@@ -8,3 +8,4 @@ wheels/
 .env
 .venv
 .aider*
+tmp/
