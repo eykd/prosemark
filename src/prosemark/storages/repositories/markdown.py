@@ -181,7 +181,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         """
         nodes_by_id: dict[str, Node] = {}
         for node_file in project_dir.glob('*.md'):
-            if node_file.name == 'project.json':  # pragma: no cover
+            if node_file.name == 'project.json' or ' notes.md' in node_file.name:  # pragma: no cover
                 continue
             node = self._markdown_to_node(node_file)
             nodes_by_id[node.id] = node

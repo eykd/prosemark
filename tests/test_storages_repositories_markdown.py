@@ -127,6 +127,11 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     test_file = Path(temp_dir) / f'{node.id}.md'
     test_file.write_text(markdown, encoding='utf-8')
 
+    # Write notes to a separate file if they exist
+    if node.notes:
+        notes_file = Path(temp_dir) / f'{node.id} notes.md'
+        notes_file.write_text(node.notes, encoding='utf-8')
+
     # Convert back to a Node
     converted_node = adapter._markdown_to_node(test_file)  # noqa: SLF001  # Intentionally testing internal conversion
 
