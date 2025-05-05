@@ -527,16 +527,12 @@ def test_update_node_with_all_fields(tmp_path: Path) -> None:
         title='Initial Title',
         notecard='Initial notecard',
         content='Initial content',
-        notes='Initial notes'
+        notes='Initial notes',
     )
 
     # Update all fields
     updated_node = adapter.update_node(
-        node,
-        title='Updated Title',
-        notecard='Updated notecard',
-        content='Updated content',
-        notes='Updated notes'
+        node, title='Updated Title', notecard='Updated notecard', content='Updated content', notes='Updated notes'
     )
 
     # Verify all fields were updated
@@ -571,7 +567,7 @@ id: empty-node
 title: Empty Node
 ---
 
-> 
+>
 
 ## Notes
 

@@ -51,7 +51,7 @@ def test_markdown_adapter_initialization(temp_dir: str) -> None:
     non_existent_dir = Path(temp_dir) / 'does_not_exist'
     if non_existent_dir.exists():
         non_existent_dir.rmdir()
-    adapter4 = MarkdownFileAdapter(non_existent_dir)
+    MarkdownFileAdapter(non_existent_dir)
     assert non_existent_dir.exists()
 
 
@@ -363,7 +363,7 @@ def test_node_with_all_fields(temp_dir: str) -> None:
     assert loaded_node.metadata['word_count'] == 150
 
     # Test with empty title but other sections
-    markdown = """# Title: 
+    markdown = """# Title:
 
 # Notecard (brief summary):
 This is a notecard
