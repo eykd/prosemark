@@ -5,7 +5,7 @@ This module defines the Node class which represents elements in a hierarchical d
 
 from __future__ import annotations
 
-import uuid
+from datetime import datetime
 from typing import Any
 
 
@@ -30,7 +30,7 @@ class Node:
         """Initialize a new Node.
 
         Args:
-            node_id: Unique identifier for the node. If None, a UUID will be generated.
+            node_id: Unique identifier for the node. If None, a timestamp in YYYYMMDDHHmmss format will be generated.
             title: Short descriptive title for the node.
             notecard: Brief summary of the node's content.
             content: Main content of the node.
@@ -40,7 +40,7 @@ class Node:
             children: List of child nodes.
 
         """
-        self.id = node_id if node_id is not None else str(uuid.uuid4())
+        self.id = node_id if node_id is not None else datetime.now().strftime('%Y%m%d%H%M%S')
         self.title = title
         self.notecard = notecard
         self.content = content
