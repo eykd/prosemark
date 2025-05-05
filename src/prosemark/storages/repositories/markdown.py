@@ -93,6 +93,12 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         filename = f'{node.id}.md'
         node_path = project_dir / filename
 
+        # Save notes to a separate file if they exist
+        if node.notes:
+            notes_filename = f'{node.id} notes.md'
+            notes_path = project_dir / notes_filename
+            notes_path.write_text(node.notes, encoding='utf-8')
+
         # Prepare the node content
         content = self._node_to_markdown(node)
 
@@ -122,6 +128,10 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             lines.append('children:')
             lines.extend([f'  - {child.id}' for child in node.children])
 
+        # Add reference to notes file if notes exist
+        if node.notes:
+            lines.append(f'notes_file: {node.id} notes.md')
+
         # Add any custom metadata
         if node.metadata:
             lines.append('metadata:')
@@ -137,9 +147,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         if node.content:
             lines.append('\n' + node.content)
 
-        # Add notes in a section
-        if node.notes:
-            lines.extend(['\n## Notes\n', node.notes])
+        # Notes are now in a separate file, so we don't include them here
 
         return '\n'.join(lines)
 
@@ -267,12 +275,15 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         node_id = None
         title = ''
         metadata: dict[str, Any] = {}
+        notes_file = None
 
         for line in frontmatter.split('\n'):  # pragma: no branch
             if line.startswith('id:'):
                 node_id = line.split(':', 1)[1].strip()
             elif line.startswith('title:'):
                 title = line.split(':', 1)[1].strip()
+            elif line.startswith('notes_file:'):
+                notes_file = line.split(':', 1)[1].strip()
             elif line.startswith('metadata:'):
                 # Skip the metadata line itself, we'll parse the nested items
                 continue
@@ -298,13 +309,12 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             # Remove the notecard from content
             content_without_frontmatter = content_without_frontmatter.replace(notecard_match.group(0), '', 1)
 
-        # Extract notes section
+        # Load notes from separate file if it exists
         notes = ''
-        notes_match = re.search(r'\n## Notes\n(.*?)(?=\n##|\Z)', content_without_frontmatter, re.DOTALL)
-        if notes_match:  # pragma: no branch
-            notes = notes_match.group(1).strip()
-            # Remove the notes section from content
-            content_without_frontmatter = content_without_frontmatter.replace(notes_match.group(0), '', 1)
+        if notes_file:
+            notes_path = file_path.parent / notes_file
+            if notes_path.exists():
+                notes = notes_path.read_text(encoding='utf-8')
 
         # The remaining content is the main content
         main_content = content_without_frontmatter.strip()
