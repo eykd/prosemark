@@ -46,7 +46,8 @@ def test_init_command(runner: CliRunner) -> None:
     with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create_project') as mock_create:
         mock_create.return_value = Project(name='test-project')
 
-        result = runner.invoke(cli.cli, ['--data-dir', '.', 'init', 'test-project'])
+        # Note: --data-dir is now optional since it defaults to '.'
+        result = runner.invoke(cli.cli, ['init', 'test-project'])
 
         assert result.exit_code == 0
         assert 'created successfully' in result.output

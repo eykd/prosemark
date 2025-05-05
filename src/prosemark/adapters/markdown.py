@@ -53,10 +53,10 @@ class MarkdownFileAdapter(ProjectRepository):
             OSError: If there's an error writing to the filesystem.
 
         """
-        project_dir = self.base_path / project.name
+        project_dir = self.base_path
 
-        # Create project directory if it doesn't exist
-        if not project_dir.exists():  # pragma: no branch
+        # Ensure the directory exists
+        if not project_dir.exists():
             project_dir.mkdir(parents=True)
 
         # Save project metadata
@@ -214,9 +214,15 @@ class MarkdownFileAdapter(ProjectRepository):
             OSError: If there's an error reading from the filesystem.
 
         """
-        project_dir = self.base_path / project_id
+        project_dir = self.base_path
 
         if not project_dir.exists() or not project_dir.is_dir():
+            msg = f'Project {project_id} does not exist'
+            raise ValueError(msg)
+
+        # Check if project.json exists
+        metadata_path = project_dir / 'project.json'
+        if not metadata_path.exists():
             msg = f'Project {project_id} does not exist'
             raise ValueError(msg)
 
@@ -375,25 +381,23 @@ class MarkdownFileAdapter(ProjectRepository):
 
         """
         projects = []
+        project_dir = self.base_path
 
-        # Iterate through directories in the base path
-        for item in self.base_path.iterdir():
-            if item.is_dir():  # pragma: no branch
-                # Check if this is a project directory (has a project.json file)
-                metadata_path = item / 'project.json'
-                if metadata_path.exists():  # pragma: no branch
-                    try:
-                        project_data = json.load(metadata_path.open(encoding='utf-8'))
-                        projects.append({
-                            'id': item.name,
-                            'name': project_data.get('name', item.name),
-                        })
-                    except (json.JSONDecodeError, OSError):  # pragma: no cover
-                        # If we can't read the metadata, just use the directory name
-                        projects.append({
-                            'id': item.name,
-                            'name': item.name,
-                        })
+        # Check if project.json exists in the current directory
+        metadata_path = project_dir / 'project.json'
+        if metadata_path.exists():
+            try:
+                project_data = json.load(metadata_path.open(encoding='utf-8'))
+                projects.append({
+                    'id': project_dir.name,
+                    'name': project_data.get('name', project_dir.name),
+                })
+            except (json.JSONDecodeError, OSError):  # pragma: no cover
+                # If we can't read the metadata, just use the directory name
+                projects.append({
+                    'id': project_dir.name,
+                    'name': project_dir.name,
+                })
 
         return projects
 
@@ -408,15 +412,16 @@ class MarkdownFileAdapter(ProjectRepository):
             The newly created project.
 
         Raises:
-            ValueError: If a project with the same name already exists.
+            ValueError: If a project already exists in the directory.
             OSError: If there's an error writing to the filesystem.
 
         """
-        project_dir = self.base_path / name
+        project_dir = self.base_path
 
-        # Check if project already exists
-        if project_dir.exists():
-            msg = f'Project {name} already exists'
+        # Check if project already exists (project.json exists)
+        metadata_path = project_dir / 'project.json'
+        if metadata_path.exists():
+            msg = f'Project already exists in {project_dir}'
             raise ValueError(msg)
 
         # Create the project
@@ -438,19 +443,20 @@ class MarkdownFileAdapter(ProjectRepository):
             OSError: If there's an error deleting the project.
 
         """
-        project_dir = self.base_path / project_id
+        project_dir = self.base_path
+        metadata_path = project_dir / 'project.json'
 
-        if not project_dir.exists() or not project_dir.is_dir():
+        if not metadata_path.exists():
             msg = f'Project {project_id} does not exist'
             raise ValueError(msg)
 
-        # Delete all files in the project directory
-        for item in project_dir.iterdir():  # pragma: no branch
-            if item.is_file():  # pragma: no branch
+        # Delete all markdown files in the directory
+        for item in project_dir.glob('*.md'):
+            if item.is_file():
                 item.unlink()
 
-        # Delete the project directory
-        project_dir.rmdir()
+        # Delete the project.json file
+        metadata_path.unlink()
 
     def parse_edit_markdown(self, markdown: str) -> dict[str, str]:  # noqa: C901
         """Parse markdown content from the edit command.

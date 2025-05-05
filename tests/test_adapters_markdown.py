@@ -65,8 +65,7 @@ def test_save_and_load_project(temp_dir: str) -> None:
     adapter.save(project)
 
     # Verify files were created
-    project_dir = Path(temp_dir) / 'Test Project'
-    assert project_dir.exists()
+    project_dir = Path(temp_dir)
     assert (project_dir / 'project.json').exists()
     assert (project_dir / f'{project.root_node.id}.md').exists()
     assert (project_dir / f'{node1.id}.md').exists()
@@ -149,17 +148,15 @@ def test_list_projects(temp_dir: str) -> None:
     """Test listing projects in the repository."""
     adapter = MarkdownFileAdapter(temp_dir)
 
-    # Create some projects
+    # Create a project
     adapter.create_project('Project 1', 'First project')
-    adapter.create_project('Project 2', 'Second project')
 
     # List projects
     projects = adapter.list_projects()
 
     # Verify the list
-    assert len(projects) == 2
-    assert {'id': 'Project 1', 'name': 'Project 1'} in projects
-    assert {'id': 'Project 2', 'name': 'Project 2'} in projects
+    assert len(projects) == 1
+    assert {'id': Path(temp_dir).name, 'name': 'Project 1'} in projects
 
 
 def test_create_project(temp_dir: str) -> None:
@@ -175,8 +172,7 @@ def test_create_project(temp_dir: str) -> None:
     assert project.root_node is not None
 
     # Verify it was saved to disk
-    project_dir = Path(temp_dir) / 'New Project'
-    assert project_dir.exists()
+    project_dir = Path(temp_dir)
     assert (project_dir / 'project.json').exists()
 
     # Verify project.json content
@@ -186,9 +182,9 @@ def test_create_project(temp_dir: str) -> None:
         assert project_data['description'] == 'A new project'
         assert project_data['root_node_id'] == project.root_node.id
 
-    # Try to create a project with the same name (should raise ValueError)
+    # Try to create another project in the same directory (should raise ValueError)
     with pytest.raises(ValueError, match=r'.*already exists.*'):
-        adapter.create_project('New Project')
+        adapter.create_project('Another Project')
 
 
 def test_delete_project(temp_dir: str) -> None:
@@ -199,14 +195,14 @@ def test_delete_project(temp_dir: str) -> None:
     adapter.create_project('Temporary Project', 'A project to delete')
 
     # Verify it exists
-    project_dir = Path(temp_dir) / 'Temporary Project'
-    assert project_dir.exists()
+    project_dir = Path(temp_dir)
+    assert (project_dir / 'project.json').exists()
 
     # Delete the project
     adapter.delete_project('Temporary Project')
 
     # Verify it was deleted
-    assert not project_dir.exists()
+    assert not (project_dir / 'project.json').exists()
 
     # Try to delete a non-existent project (should raise ValueError)
     with pytest.raises(ValueError, match=r'.*not exist.*'):
@@ -218,9 +214,8 @@ def test_project_with_complex_structure(temp_dir: str) -> None:
     adapter = MarkdownFileAdapter(temp_dir)
 
     # Test loading a project with no root_node_id specified
-    simple_project_dir = Path(temp_dir) / 'Simple Project'
-    simple_project_dir.mkdir()
-    with (simple_project_dir / 'project.json').open('w', encoding='utf-8') as f:
+    project_dir = Path(temp_dir)
+    with (project_dir / 'project.json').open('w', encoding='utf-8') as f:
         json.dump({'name': 'Simple Project', 'description': 'A project with no root_node_id'}, f)
 
     simple_project = adapter.load('Simple Project')
@@ -291,16 +286,14 @@ def test_load_nonexistent_project(temp_dir: str) -> None:
     """Test loading a non-existent project."""
     adapter = MarkdownFileAdapter(temp_dir)
 
-    # Test non-existent project
+    # Test non-existent project (no project.json)
+    # First make sure project.json doesn't exist
+    project_json = Path(temp_dir) / 'project.json'
+    if project_json.exists():
+        project_json.unlink()
+
     with pytest.raises(ValueError, match=r'.*not exist.*'):
         adapter.load('Non-existent Project')
-
-    # Test project directory exists but no metadata file
-    project_dir = Path(temp_dir) / 'Invalid Project'
-    project_dir.mkdir()
-
-    with pytest.raises(ValueError, match=r'.*metadata.*|.*project.json.*'):
-        adapter.load('Invalid Project')
 
 
 def test_node_with_all_fields(temp_dir: str) -> None:

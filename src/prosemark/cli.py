@@ -23,7 +23,7 @@ if TYPE_CHECKING:  # pragma: no cover
 @click.version_option()
 @click.option(
     '--data-dir',
-    default='./prosemark_data',
+    default='.',
     help='Directory where project data is stored',
     type=click.Path(),
 )
