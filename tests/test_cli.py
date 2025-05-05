@@ -485,3 +485,104 @@ def test_edit_command_with_editor_no_changes(runner: CliRunner) -> None:
             assert node.content == 'Old content'
             assert node.notes == 'Old notes'
             mock_save.assert_called_once_with(project)
+
+
+def test_parse_edit_markdown_with_comments(temp_dir: str) -> None:
+    """Test parsing markdown with comments and section transitions."""
+    adapter = MarkdownFileAdapter(temp_dir)
+
+    # Test with comments and multiple sections
+    markdown = """# Title: Test Title
+
+# Notecard (brief summary):
+This is a notecard
+# This is a comment in the notecard section
+
+# Content (main text):
+This is content
+# This is a comment in the content section
+
+# Notes (additional information):
+These are notes
+# This is a comment in the notes section
+
+# Instructions:
+# These are instructions that should be ignored
+"""
+    sections = adapter.parse_edit_markdown(markdown)
+    assert sections['title'] == 'Test Title'
+    assert sections['notecard'] == 'This is a notecard\n# This is a comment in the notecard section'
+    assert sections['content'] == 'This is content\n# This is a comment in the content section'
+    assert sections['notes'] == 'These are notes\n# This is a comment in the notes section'
+
+
+def test_update_node_with_all_fields(temp_dir: str) -> None:
+    """Test updating a node with all fields."""
+    adapter = MarkdownFileAdapter(temp_dir)
+
+    # Create a node with initial values
+    node = Node(
+        node_id='test-node',
+        title='Initial Title',
+        notecard='Initial notecard',
+        content='Initial content',
+        notes='Initial notes'
+    )
+
+    # Update all fields
+    updated_node = adapter.update_node(
+        node,
+        title='Updated Title',
+        notecard='Updated notecard',
+        content='Updated content',
+        notes='Updated notes'
+    )
+
+    # Verify all fields were updated
+    assert updated_node.title == 'Updated Title'
+    assert updated_node.notecard == 'Updated notecard'
+    assert updated_node.content == 'Updated content'
+    assert updated_node.notes == 'Updated notes'
+
+    # Verify it's the same node object (updated in place)
+    assert updated_node is node
+
+
+def test_existing_directory_initialization(temp_dir: str) -> None:
+    """Test initializing the adapter with an existing directory."""
+    # Create a directory that already exists
+    existing_dir = Path(temp_dir) / 'existing_dir'
+    existing_dir.mkdir()
+
+    # Initialize adapter with existing directory
+    adapter = MarkdownFileAdapter(existing_dir)
+    assert adapter.base_path == existing_dir
+
+
+def test_markdown_to_node_with_empty_sections(temp_dir: str) -> None:
+    """Test converting markdown to node with empty sections."""
+    adapter = MarkdownFileAdapter(temp_dir)
+
+    # Create a markdown file with empty sections
+    test_file = Path(temp_dir) / 'empty_sections.md'
+    markdown_content = """---
+id: empty-node
+title: Empty Node
+---
+
+> 
+
+## Notes
+
+"""
+    test_file.write_text(markdown_content, encoding='utf-8')
+
+    # Convert to node
+    node = adapter._markdown_to_node(test_file)  # noqa: SLF001
+
+    # Verify empty sections are handled correctly
+    assert node.id == 'empty-node'
+    assert node.title == 'Empty Node'
+    assert node.notecard == ''
+    assert node.content == ''
+    assert node.notes == ''
