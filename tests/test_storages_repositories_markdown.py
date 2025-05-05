@@ -154,12 +154,14 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     invalid_file = Path(temp_dir) / 'invalid.md'
     invalid_file.write_text('This is not a valid markdown file with frontmatter', encoding='utf-8')
 
-    with pytest.raises(ValueError, match=r'.*frontmatter.*'):
-        adapter._markdown_to_node(invalid_file)  # noqa: SLF001  # Intentionally testing internal conversion
+    # Now should return None instead of raising ValueError
+    result = adapter._markdown_to_node(invalid_file)  # noqa: SLF001  # Intentionally testing internal conversion
+    assert result is None
 
     # Test extracting relationships from invalid file
-    with pytest.raises(ValueError, match=r'.*relationship.*|.*invalid.*|.*frontmatter.*'):
-        adapter._extract_node_relationships(invalid_file)  # noqa: SLF001  # Intentionally testing internal conversion
+    node_id, child_ids = adapter._extract_node_relationships(invalid_file)  # noqa: SLF001
+    assert node_id is None
+    assert child_ids == []
 
     # Test with metadata parsing
     metadata_file = Path(temp_dir) / 'metadata.md'
