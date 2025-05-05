@@ -565,7 +565,6 @@ id: empty-node
 title: Empty Node
 ---
 
->
 
 """
     test_file.write_text(markdown_content, encoding='utf-8')
