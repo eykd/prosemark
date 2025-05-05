@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from prosemark.adapters.markdown import MarkdownFileAdapter
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
+from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
 
 @pytest.fixture
@@ -274,7 +275,7 @@ def test_project_with_complex_structure(temp_dir: str) -> None:
     adapter.save(project)
 
     # Load the project
-    loaded_project = adapter.load('Complex Project')
+    loaded_project = adapter.load()
 
     # Verify the structure
     assert loaded_project.get_node_count() == 6  # root + 2 chapters + 3 scenes
