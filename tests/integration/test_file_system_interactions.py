@@ -54,16 +54,7 @@ class TestFileStructureTests:
 
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
-        # Project IDs are lowercase with hyphens
-        project_id = 'special-chars-project'
-
-        # If the project doesn't exist yet, create it
-        if not Path(temp_dir, project_id).exists():
-            Path(temp_dir, project_id).mkdir(exist_ok=True)
-            project = Project(name='Special & Chars: Project!', description='Testing special characters')
-            adapter.save(project)
-        else:
-            project = adapter.load(project_id)
+        project = adapter.load('special-chars-project')
         root_id = project.root_node.id if project.root_node else ''
 
         # Add a node with special characters
@@ -125,16 +116,7 @@ class TestFileContentTests:
 
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
-        # Project IDs are lowercase with hyphens
-        project_id = 'content-test'
-
-        # If the project doesn't exist yet, create it
-        if not Path(temp_dir, project_id).exists():
-            Path(temp_dir, project_id).mkdir(exist_ok=True)
-            project = Project(name='Content Test', description='Testing various content')
-            adapter.save(project)
-        else:
-            project = adapter.load(project_id)
+        project = adapter.load('content-test')
         root_id = project.root_node.id if project.root_node else ''
 
         # Add a node with Markdown content
@@ -198,7 +180,7 @@ class TestErrorHandlingTests:
             env={'PROSEMARK_DATA_DIR': temp_dir}
         )
         assert result.exit_code != 0
-        assert 'Project NonExistentProject does not exist' in result.output
+        assert "Project 'NonExistentProject' not found" in result.output
 
         # Try to directly load a non-existent project with the adapter
         adapter = MarkdownFileAdapter(temp_dir)

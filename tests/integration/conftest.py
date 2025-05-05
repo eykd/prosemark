@@ -80,9 +80,7 @@ def sample_project(markdown_adapter: MarkdownFileAdapter) -> Project:
             project.create_node(node1.id, 'Section 1.2', 'Second section', 'Section 1.2 content', 'Notes for section 1.2')
             project.create_node(node2.id, 'Section 2.1', 'First section', 'Section 2.1 content', 'Notes for section 2.1')
 
-    # Create the project directory and save the project
-    project_dir = Path(markdown_adapter.base_path) / 'sample-project'
-    project_dir.mkdir(exist_ok=True)
+    # Save the project
     markdown_adapter.save(project)
 
     return project
@@ -154,9 +152,7 @@ def complex_project(markdown_adapter: MarkdownFileAdapter, complex_project_name:
             project.create_node(ch6.id, 'Section 6.1', 'Conclusion section', 'Section 6.1 content', 'Notes for section 6.1')
             project.create_node(ch6.id, 'Section 6.2', 'Future work section', 'Section 6.2 content', 'Notes for section 6.2')
 
-    # Create the project directory and save the project
-    project_dir = Path(markdown_adapter.base_path) / 'complex-project'
-    project_dir.mkdir(exist_ok=True)
+    # Save the project
     markdown_adapter.save(project)
 
     return project

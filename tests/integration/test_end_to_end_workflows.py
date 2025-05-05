@@ -26,8 +26,7 @@ class TestProjectManagementWorkflow:
         )
         assert result.exit_code == 0
         assert 'Test Project' in result.output
-        # The list-projects command only shows project names, not descriptions
-        assert 'Test Project' in result.output
+        assert 'A test project' in result.output
 
         # Verify project directory exists
         project_dir = Path(temp_dir) / 'test-project'
@@ -68,13 +67,7 @@ class TestNodeManagementWorkflow:
 
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
-        # Project IDs are lowercase with hyphens
         project = adapter.load('node-test')
-
-        # If the project doesn't exist yet, create it
-        if not Path(temp_dir, 'node-test').exists():
-            Path(temp_dir, 'node-test').mkdir(exist_ok=True)
-            adapter.save(project)
         root_id = project.root_node.id if project.root_node else ''
 
         # Add nodes to the project
@@ -170,13 +163,7 @@ class TestContentEditingWorkflow:
 
         # Get the root node ID
         adapter = MarkdownFileAdapter(temp_dir)
-        # Project IDs are lowercase with hyphens
         project = adapter.load('edit-test')
-
-        # If the project doesn't exist yet, create it
-        if not Path(temp_dir, 'edit-test').exists():
-            Path(temp_dir, 'edit-test').mkdir(exist_ok=True)
-            adapter.save(project)
         root_id = project.root_node.id if project.root_node else ''
 
         # Add a node to edit
