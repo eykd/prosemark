@@ -31,7 +31,7 @@ class InMemoryProjectRepository:
 
         """
         if self._project is None:
-            raise ProjectNotFoundError()
+            raise ProjectNotFoundError
         return self._project
 
     def exists(self) -> bool:
@@ -58,7 +58,7 @@ class InMemoryProjectRepository:
 
         """
         if self._project is not None:
-            raise ProjectExistsError()
+            raise ProjectExistsError
 
         self._project = Project(name=name, description=description)
         return self._project
@@ -71,5 +71,5 @@ class InMemoryProjectRepository:
 
         """
         if self._project is None:
-            raise ProjectNotFoundError()
+            raise ProjectNotFoundError
         self._project = None

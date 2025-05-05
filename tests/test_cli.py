@@ -407,7 +407,7 @@ def test_edit_command_node_not_found(runner: CliRunner) -> None:
 
         # Mock get_node_by_id to return None (node not found)
         with patch.object(Project, 'get_node_by_id', return_value=None):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'edit', 'test-project', 'non-existent-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'edit', 'non-existent-id'])
 
             assert result.exit_code == 1
             assert 'Error: Node with ID' in result.output
@@ -449,9 +449,7 @@ def test_structure_command_node_not_found(runner: CliRunner) -> None:
 
         # Mock get_node_by_id to return None (node not found)
         with patch.object(Project, 'get_node_by_id', return_value=None):
-            result = runner.invoke(
-                cli.cli, ['--data-dir', '.', 'structure', '--node-id', 'non-existent-id']
-            )
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'structure', '--node-id', 'non-existent-id'])
 
             assert result.exit_code == 1
             assert 'Error: Node with ID' in result.output

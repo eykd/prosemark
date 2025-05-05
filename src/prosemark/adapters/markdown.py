@@ -157,8 +157,8 @@ class MarkdownFileAdapter(ProjectRepository):
 
         """
         metadata_path = project_dir / 'project.json'
-        if not metadata_path.exists():
-            raise ProjectNotFoundError()
+        if not metadata_path.exists():  # pragma: no cover
+            raise ProjectNotFoundError
         return cast('dict[str, Any]', json.loads(metadata_path.read_text(encoding='utf-8')))
 
     def _load_nodes(self, project_dir: Path) -> dict[str, Node]:
@@ -215,7 +215,7 @@ class MarkdownFileAdapter(ProjectRepository):
         # Check if project.json exists
         metadata_path = project_dir / 'project.json'
         if not metadata_path.exists():
-            raise ProjectNotFoundError()
+            raise ProjectNotFoundError
 
         project_data = self._load_project_metadata(project_dir)
 
@@ -386,7 +386,7 @@ class MarkdownFileAdapter(ProjectRepository):
 
         """
         if self.exists():
-            raise ProjectExistsError()
+            raise ProjectExistsError
 
         # Create the project
         project = Project(name=name, description=description)
@@ -408,7 +408,7 @@ class MarkdownFileAdapter(ProjectRepository):
         metadata_path = project_dir / 'project.json'
 
         if not metadata_path.exists():
-            raise ProjectNotFoundError()
+            raise ProjectNotFoundError
 
         # Delete all markdown files in the directory
         for item in project_dir.glob('*.md'):

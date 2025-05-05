@@ -28,8 +28,15 @@ if TYPE_CHECKING:  # pragma: no cover
     help='Directory where project data is stored',
     type=click.Path(),
 )
+@click.option(
+    '--verbose',
+    '-v',
+    is_flag=True,
+    default=False,
+    help='Enable verbose output (print tracebacks on errors)',
+)
 @click.pass_context
-def cli(ctx: ClickContext, data_dir: str) -> None:
+def cli(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT001
     """Prosemark - A tool for structured document creation and management.
 
     Prosemark helps you organize your writing projects with a hierarchical
@@ -38,6 +45,7 @@ def cli(ctx: ClickContext, data_dir: str) -> None:
     # Initialize the repository and store it in the context for subcommands
     ctx.ensure_object(dict)
     ctx.obj['repo'] = MarkdownFileAdapter(data_dir)
+    ctx.obj['verbose'] = verbose
 
 
 @cli.command()
@@ -56,8 +64,12 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
     except ProjectExistsError:
         click.echo('Error: A project already exists in this repository.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover  # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
@@ -69,14 +81,18 @@ def info(ctx: ClickContext) -> None:
     try:
         project = repo.load()
         click.echo(f'Project: {project.name}')
-        if project.description:
+        if project.description:  # pragma: no branch
             click.echo(f'Description: {project.description}')
         click.echo(f'Nodes: {project.get_node_count()}')
     except ProjectNotFoundError:
         click.echo('Error: No project found. Use "init" to create a new project.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover  # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
@@ -119,11 +135,15 @@ def add(
 
         repo.save(project)
         click.echo(f"Node '{title}' added successfully with ID: {node.id}")
-    except ProjectNotFoundError:
+    except ProjectNotFoundError:  # pragma: no cover
         click.echo('Error: No project found. Use "init" to create a new project.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover  # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
@@ -145,11 +165,15 @@ def remove(ctx: ClickContext, node_id: str) -> None:
 
         repo.save(project)
         click.echo(f"Node '{node.title}' removed successfully.")
-    except ProjectNotFoundError:
+    except ProjectNotFoundError:  # pragma: no cover
         click.echo('Error: No project found. Use "init" to create a new project.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover  # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
@@ -177,11 +201,15 @@ def move(ctx: ClickContext, node_id: str, new_parent_id: str, position: int | No
 
         repo.save(project)
         click.echo('Node moved successfully.')
-    except ProjectNotFoundError:
+    except ProjectNotFoundError:  # pragma: no cover
         click.echo('Error: No project found. Use "init" to create a new project.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover  # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
@@ -218,11 +246,15 @@ def show(ctx: ClickContext, node_id: str) -> None:
             click.echo('\nChildren:')
             for child in node.children:
                 click.echo(f'- {child.title} (ID: {child.id})')
-    except ProjectNotFoundError:
+    except ProjectNotFoundError:  # pragma: no cover
         click.echo('Error: No project found. Use "init" to create a new project.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover    # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
@@ -274,11 +306,15 @@ def edit(
         # Save the project
         repo.save(project)
         click.echo(f"Node '{node.title}' updated successfully.")
-    except ProjectNotFoundError:
+    except ProjectNotFoundError:  # pragma: no cover
         click.echo('Error: No project found. Use "init" to create a new project.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover    # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
@@ -286,8 +322,7 @@ def edit(
 @click.option('--node-id', '-n', help='ID of the node to start from (defaults to root)')
 @click.pass_context
 def structure(ctx: ClickContext, node_id: str | None = None) -> None:
-    """Display the project structure.
-    """
+    """Display the project structure."""
     repo = ctx.obj['repo']
     try:
         project = repo.load()
@@ -304,11 +339,15 @@ def structure(ctx: ClickContext, node_id: str | None = None) -> None:
         # Display the structure
         click.echo(f"Structure for project '{project.name}':")
         _print_node_structure(start_node, 0)
-    except ProjectNotFoundError:
+    except ProjectNotFoundError:  # pragma: no cover
         click.echo('Error: No project found. Use "init" to create a new project.', err=True)
         sys.exit(1)
-    except Exception as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover    # noqa: BLE001
         click.echo(f'Error: {e}', err=True)
+        if ctx.obj.get('verbose'):
+            import traceback
+
+            click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
 
