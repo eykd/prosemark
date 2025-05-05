@@ -12,7 +12,7 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.adapters.markdown import MarkdownFilesystemProjectRepository
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
@@ -28,16 +28,16 @@ def temp_dir() -> Generator[str, None, None]:
 def test_markdown_adapter_initialization(temp_dir: str) -> None:
     """Test that the adapter can be initialized with a directory."""
     # Test with string path
-    adapter1 = MarkdownFileAdapter(temp_dir)
+    adapter1 = MarkdownFilesystemProjectRepository(temp_dir)
     assert adapter1.base_path == Path(temp_dir)
 
     # Test with Path object
-    adapter2 = MarkdownFileAdapter(Path(temp_dir))
+    adapter2 = MarkdownFilesystemProjectRepository(Path(temp_dir))
     assert adapter2.base_path == Path(temp_dir)
 
     # Test with non-existent directory (should create it)
     new_dir = Path(temp_dir) / 'new_dir'
-    adapter3 = MarkdownFileAdapter(str(new_dir))
+    adapter3 = MarkdownFilesystemProjectRepository(str(new_dir))
     assert adapter3.base_path == new_dir
     assert new_dir.exists()
 
@@ -46,19 +46,19 @@ def test_markdown_adapter_initialization(temp_dir: str) -> None:
     test_file.write_text('test')
 
     with pytest.raises(ValueError, match=r'.*file.*'):
-        MarkdownFileAdapter(str(test_file))
+        MarkdownFilesystemProjectRepository(str(test_file))
 
     # Test creating the base directory when it doesn't exist
     non_existent_dir = Path(temp_dir) / 'does_not_exist'
     if non_existent_dir.exists():
         non_existent_dir.rmdir()
-    MarkdownFileAdapter(non_existent_dir)
+    MarkdownFilesystemProjectRepository(non_existent_dir)
     assert non_existent_dir.exists()
 
 
 def test_save_and_load_project(temp_dir: str) -> None:
     """Test saving and loading a project."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Create a project with some nodes
     project = Project(name='Test Project', description='A test project')
@@ -109,7 +109,7 @@ def test_save_and_load_project(temp_dir: str) -> None:
 
 def test_node_to_markdown_conversion(temp_dir: str) -> None:
     """Test conversion between Node and Markdown format."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Create a node with all fields populated
     node = Node(
@@ -171,7 +171,7 @@ Content"""
 
 def test_exists(temp_dir: str) -> None:
     """Test checking if a project exists."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Initially no project exists
     assert not adapter.exists()
@@ -185,7 +185,7 @@ def test_exists(temp_dir: str) -> None:
 
 def test_create(temp_dir: str) -> None:
     """Test creating a new project."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Create a project
     project = adapter.create('New Project', 'A new project')
@@ -213,7 +213,7 @@ def test_create(temp_dir: str) -> None:
 
 def test_delete(temp_dir: str) -> None:
     """Test deleting a project."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Create a project
     adapter.create('Temporary Project', 'A project to delete')
@@ -235,7 +235,7 @@ def test_delete(temp_dir: str) -> None:
 
 def test_project_with_complex_structure(temp_dir: str) -> None:
     """Test saving and loading a project with a complex structure."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Test loading a project with no root_node_id specified
     project_dir = Path(temp_dir)
@@ -308,7 +308,7 @@ def test_project_with_complex_structure(temp_dir: str) -> None:
 
 def test_load_nonexistent_project(temp_dir: str) -> None:
     """Test loading a non-existent project."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Test non-existent project (no project.json)
     # First make sure project.json doesn't exist
@@ -322,7 +322,7 @@ def test_load_nonexistent_project(temp_dir: str) -> None:
 
 def test_node_with_all_fields(temp_dir: str) -> None:
     """Test saving and loading a node with all fields populated."""
-    adapter = MarkdownFileAdapter(temp_dir)
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Create a project
     project = Project(name='Test Project')

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.adapters.markdown import MarkdownFilesystemProjectRepository
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -44,7 +44,7 @@ def cli(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT00
     """
     # Initialize the repository and store it in the context for subcommands
     ctx.ensure_object(dict)
-    ctx.obj['repo'] = MarkdownFileAdapter(data_dir)
+    ctx.obj['repo'] = MarkdownFilesystemProjectRepository(data_dir)
     ctx.obj['verbose'] = verbose
 
 

@@ -8,7 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from prosemark import cli
-from prosemark.adapters.markdown import MarkdownFileAdapter
+from prosemark.adapters.markdown import MarkdownFilesystemProjectRepository
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
@@ -45,7 +45,7 @@ def test_cli_help(runner: CliRunner) -> None:
 
 def test_init_command(runner: CliRunner) -> None:
     """Test the init command creates a new project."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create') as mock_create:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'create') as mock_create:
         mock_create.return_value = Project(name='test-project')
 
         # Note: --data-dir is now optional since it defaults to '.'
@@ -58,7 +58,7 @@ def test_init_command(runner: CliRunner) -> None:
 
 def test_init_command_with_description(runner: CliRunner) -> None:
     """Test the init command with a description."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create') as mock_create:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'create') as mock_create:
         mock_create.return_value = Project(name='test-project', description='Test description')
 
         result = runner.invoke(
@@ -72,7 +72,7 @@ def test_init_command_with_description(runner: CliRunner) -> None:
 
 def test_init_command_error(runner: CliRunner) -> None:
     """Test the init command handles errors."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create') as mock_create:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'create') as mock_create:
         mock_create.side_effect = ProjectExistsError()
 
         result = runner.invoke(cli.cli, ['--data-dir', '.', 'init', 'test-project'])
@@ -84,7 +84,7 @@ def test_init_command_error(runner: CliRunner) -> None:
 
 def test_info_command(runner: CliRunner) -> None:
     """Test the info command shows project information."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         project = Project(name='Test Project', description='Test description')
         mock_load.return_value = project
 
@@ -100,7 +100,7 @@ def test_info_command(runner: CliRunner) -> None:
 
 def test_info_command_no_project(runner: CliRunner) -> None:
     """Test the info command when no project exists."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         mock_load.side_effect = ProjectNotFoundError()
 
         result = runner.invoke(cli.cli, ['--data-dir', '.', 'info'])
@@ -113,8 +113,8 @@ def test_add_command(runner: CliRunner) -> None:
     """Test the add command creates a new node."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -135,8 +135,8 @@ def test_add_command_parent_not_found(runner: CliRunner) -> None:
     """Test the add command when parent node is not found."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -156,8 +156,8 @@ def test_remove_command(runner: CliRunner) -> None:
     """Test the remove command removes a node."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -177,8 +177,8 @@ def test_remove_command_node_not_found(runner: CliRunner) -> None:
     """Test the remove command when node is not found."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -198,8 +198,8 @@ def test_move_command(runner: CliRunner) -> None:
     """Test the move command moves a node."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -218,8 +218,8 @@ def test_move_command_failure(runner: CliRunner) -> None:
     """Test the move command when move operation fails."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -236,7 +236,7 @@ def test_move_command_failure(runner: CliRunner) -> None:
 
 def test_show_command(runner: CliRunner) -> None:
     """Test the show command displays node content."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         # Create a mock project
         project = Project(name='test-project')
         mock_load.return_value = project
@@ -269,7 +269,7 @@ def test_show_command(runner: CliRunner) -> None:
 
 def test_show_command_node_not_found(runner: CliRunner) -> None:
     """Test the show command when node is not found."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         # Create a mock project
         project = Project(name='test-project')
         mock_load.return_value = project
@@ -285,7 +285,7 @@ def test_show_command_node_not_found(runner: CliRunner) -> None:
 
 def test_structure_command(runner: CliRunner) -> None:
     """Test the structure command displays project structure."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         # Create a mock project with a structure
         project = Project(name='test-project')
         root = project.root_node
@@ -312,8 +312,8 @@ def test_edit_command_with_options(runner: CliRunner) -> None:
     """Test the edit command with direct options."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -355,8 +355,8 @@ def test_edit_command_with_editor(runner: CliRunner) -> None:
     """Test the edit command with the editor functionality."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -400,7 +400,7 @@ Edited notes
 
 def test_edit_command_node_not_found(runner: CliRunner) -> None:
     """Test the edit command when node is not found."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         # Create a mock project
         project = Project(name='test-project')
         mock_load.return_value = project
@@ -416,7 +416,7 @@ def test_edit_command_node_not_found(runner: CliRunner) -> None:
 
 def test_structure_command_with_node_id(runner: CliRunner) -> None:
     """Test the structure command with a specific node ID."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         # Create a mock project with a structure
         project = Project(name='test-project')
         root = project.root_node
@@ -442,7 +442,7 @@ def test_structure_command_with_node_id(runner: CliRunner) -> None:
 
 def test_structure_command_node_not_found(runner: CliRunner) -> None:
     """Test the structure command when the specified node is not found."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+    with runner.isolated_filesystem(), patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load:
         # Create a mock project
         project = Project(name='test-project')
         mock_load.return_value = project
@@ -460,8 +460,8 @@ def test_edit_command_with_editor_no_changes(runner: CliRunner) -> None:
     """Test the edit command with the editor returning None (no changes)."""
     with (
         runner.isolated_filesystem(),
-        patch.object(MarkdownFileAdapter, 'load') as mock_load,
-        patch.object(MarkdownFileAdapter, 'save') as mock_save,
+        patch.object(MarkdownFilesystemProjectRepository, 'load') as mock_load,
+        patch.object(MarkdownFilesystemProjectRepository, 'save') as mock_save,
     ):
         # Create a mock project
         project = Project(name='test-project')
@@ -488,7 +488,7 @@ def test_edit_command_with_editor_no_changes(runner: CliRunner) -> None:
 
 def test_parse_edit_markdown_with_comments(tmp_path: Path) -> None:
     """Test parsing markdown with comments and section transitions."""
-    adapter = MarkdownFileAdapter(tmp_path)
+    adapter = MarkdownFilesystemProjectRepository(tmp_path)
 
     # Test with comments and multiple sections
     markdown = """# Title: Test Title
@@ -517,7 +517,7 @@ These are notes
 
 def test_update_node_with_all_fields(tmp_path: Path) -> None:
     """Test updating a node with all fields."""
-    adapter = MarkdownFileAdapter(tmp_path)
+    adapter = MarkdownFilesystemProjectRepository(tmp_path)
 
     # Create a node with initial values
     node = Node(
@@ -550,13 +550,13 @@ def test_existing_directory_initialization(tmp_path: Path) -> None:
     existing_dir.mkdir()
 
     # Initialize adapter with existing directory
-    adapter = MarkdownFileAdapter(existing_dir)
+    adapter = MarkdownFilesystemProjectRepository(existing_dir)
     assert adapter.base_path == existing_dir
 
 
 def test_markdown_to_node_with_empty_sections(tmp_path: Path) -> None:
     """Test converting markdown to node with empty sections."""
-    adapter = MarkdownFileAdapter(tmp_path)
+    adapter = MarkdownFilesystemProjectRepository(tmp_path)
 
     # Create a markdown file with empty sections
     test_file = tmp_path / 'empty_sections.md'
@@ -589,7 +589,7 @@ def test_markdown_adapter_with_nonexistent_path(tmp_path: Path) -> None:
     nonexistent_path = tmp_path / 'does_not_exist'
 
     # Initialize adapter with nonexistent path - it should create the directory
-    adapter = MarkdownFileAdapter(nonexistent_path)
+    adapter = MarkdownFilesystemProjectRepository(nonexistent_path)
     assert adapter.base_path == nonexistent_path
     assert nonexistent_path.exists()
     assert nonexistent_path.is_dir()
@@ -603,12 +603,12 @@ def test_markdown_adapter_with_file_path(tmp_path: Path) -> None:
 
     # Initialize adapter with file path - should raise ValueError
     with pytest.raises(ValueError, match='exists but is not a directory'):
-        MarkdownFileAdapter(file_path)
+        MarkdownFilesystemProjectRepository(file_path)
 
 
 def test_parse_edit_markdown_with_empty_content() -> None:
     """Test parsing empty markdown content."""
-    adapter = MarkdownFileAdapter(Path())
+    adapter = MarkdownFilesystemProjectRepository(Path())
 
     # Test with empty content
     markdown = ''
@@ -621,7 +621,7 @@ def test_parse_edit_markdown_with_empty_content() -> None:
 
 def test_parse_edit_markdown_with_instructions_only() -> None:
     """Test parsing markdown with only instructions section."""
-    adapter = MarkdownFileAdapter(Path())
+    adapter = MarkdownFilesystemProjectRepository(Path())
 
     # Test with only instructions
     markdown = """# Instructions:

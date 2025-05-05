@@ -17,7 +17,7 @@ from prosemark.storages.repositories.base import ProjectRepository
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
 
-class MarkdownFileAdapter(ProjectRepository):
+class MarkdownFilesystemProjectRepository(ProjectRepository):
     """A ProjectRepository implementation that uses Markdown files for storage.
 
     This adapter stores projects as a directory structure with Markdown files.
