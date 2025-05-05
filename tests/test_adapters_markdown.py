@@ -47,6 +47,13 @@ def test_markdown_adapter_initialization(temp_dir: str) -> None:
     with pytest.raises(ValueError, match=r'.*file.*'):
         MarkdownFileAdapter(str(test_file))
 
+    # Test creating the base directory when it doesn't exist
+    non_existent_dir = Path(temp_dir) / 'does_not_exist'
+    if non_existent_dir.exists():
+        non_existent_dir.rmdir()
+    adapter4 = MarkdownFileAdapter(non_existent_dir)
+    assert non_existent_dir.exists()
+
 
 def test_save_and_load_project(temp_dir: str) -> None:
     """Test saving and loading a project."""
@@ -142,6 +149,23 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     # Test extracting relationships from invalid file
     with pytest.raises(ValueError, match=r'.*relationship.*|.*invalid.*|.*frontmatter.*'):
         adapter._extract_node_relationships(invalid_file)  # noqa: SLF001  # Intentionally testing internal conversion
+
+    # Test with metadata parsing
+    metadata_file = Path(temp_dir) / 'metadata.md'
+    metadata_content = """---
+id: test-id
+title: Test Title
+metadata:
+  key1: "value1"
+  key2: 42
+  invalid: invalid json
+---
+Content"""
+    metadata_file.write_text(metadata_content, encoding='utf-8')
+    node_with_metadata = adapter._markdown_to_node(metadata_file)  # noqa: SLF001
+    assert node_with_metadata.metadata['key1'] == 'value1'
+    assert node_with_metadata.metadata['key2'] == 42
+    assert 'invalid' in node_with_metadata.metadata
 
 
 def test_list_projects(temp_dir: str) -> None:
