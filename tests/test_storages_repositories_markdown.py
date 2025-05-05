@@ -141,6 +141,7 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     converted_node = adapter._markdown_to_node(test_file)  # noqa: SLF001  # Intentionally testing internal conversion
 
     # Verify all fields were preserved
+    assert converted_node is not None  # Add type check for mypy
     assert converted_node.id == node.id
     assert converted_node.title == 'Test Node'
     assert converted_node.notecard == 'This is a notecard\nwith multiple lines'
@@ -176,6 +177,7 @@ metadata:
 Content"""
     metadata_file.write_text(metadata_content, encoding='utf-8')
     node_with_metadata = adapter._markdown_to_node(metadata_file)  # noqa: SLF001
+    assert node_with_metadata is not None  # Add type check for mypy
     assert node_with_metadata.metadata['key1'] == 'value1'
     assert node_with_metadata.metadata['key2'] == 42
     assert 'invalid' in node_with_metadata.metadata
