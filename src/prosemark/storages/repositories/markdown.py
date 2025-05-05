@@ -196,7 +196,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         """
         for node_file in project_dir.glob('*.md'):
-            if node_file.name == 'project.json':  # pragma: no cover
+            if node_file.name == 'project.json' or ' notes.md' in node_file.name:  # pragma: no cover
                 continue
             node_id, child_ids = self._extract_node_relationships(node_file)
             if node_id in nodes_by_id:  # pragma: no branch
