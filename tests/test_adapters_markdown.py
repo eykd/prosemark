@@ -80,7 +80,7 @@ def test_save_and_load_project(temp_dir: str) -> None:
     assert (project_dir / f'{node3.id}.md').exists()
 
     # Load the project
-    loaded_project = adapter.load('Test Project')
+    loaded_project = adapter.load()
 
     # Verify project metadata
     assert loaded_project.name == 'Test Project'
@@ -168,27 +168,26 @@ Content"""
     assert 'invalid' in node_with_metadata.metadata
 
 
-def test_list_projects(temp_dir: str) -> None:
-    """Test listing projects in the repository."""
+def test_exists(temp_dir: str) -> None:
+    """Test checking if a project exists."""
     adapter = MarkdownFileAdapter(temp_dir)
 
+    # Initially no project exists
+    assert not adapter.exists()
+
     # Create a project
-    adapter.create_project('Project 1', 'First project')
+    adapter.create('Project 1', 'First project')
 
-    # List projects
-    projects = adapter.list_projects()
-
-    # Verify the list
-    assert len(projects) == 1
-    assert {'id': Path(temp_dir).name, 'name': 'Project 1'} in projects
+    # Now a project exists
+    assert adapter.exists()
 
 
-def test_create_project(temp_dir: str) -> None:
+def test_create(temp_dir: str) -> None:
     """Test creating a new project."""
     adapter = MarkdownFileAdapter(temp_dir)
 
     # Create a project
-    project = adapter.create_project('New Project', 'A new project')
+    project = adapter.create('New Project', 'A new project')
 
     # Verify the project was created
     assert project.name == 'New Project'
@@ -206,31 +205,31 @@ def test_create_project(temp_dir: str) -> None:
         assert project_data['description'] == 'A new project'
         assert project_data['root_node_id'] == project.root_node.id
 
-    # Try to create another project in the same directory (should raise ValueError)
-    with pytest.raises(ValueError, match=r'.*already exists.*'):
-        adapter.create_project('Another Project')
+    # Try to create another project in the same directory (should raise ProjectExistsError)
+    with pytest.raises(ProjectExistsError):
+        adapter.create('Another Project')
 
 
-def test_delete_project(temp_dir: str) -> None:
+def test_delete(temp_dir: str) -> None:
     """Test deleting a project."""
     adapter = MarkdownFileAdapter(temp_dir)
 
     # Create a project
-    adapter.create_project('Temporary Project', 'A project to delete')
+    adapter.create('Temporary Project', 'A project to delete')
 
     # Verify it exists
     project_dir = Path(temp_dir)
     assert (project_dir / 'project.json').exists()
 
     # Delete the project
-    adapter.delete_project('Temporary Project')
+    adapter.delete()
 
     # Verify it was deleted
     assert not (project_dir / 'project.json').exists()
 
-    # Try to delete a non-existent project (should raise ValueError)
-    with pytest.raises(ValueError, match=r'.*not exist.*'):
-        adapter.delete_project('Non-existent Project')
+    # Try to delete a non-existent project (should raise ProjectNotFoundError)
+    with pytest.raises(ProjectNotFoundError):
+        adapter.delete()
 
 
 def test_project_with_complex_structure(temp_dir: str) -> None:
@@ -242,7 +241,7 @@ def test_project_with_complex_structure(temp_dir: str) -> None:
     with (project_dir / 'project.json').open('w', encoding='utf-8') as f:
         json.dump({'name': 'Simple Project', 'description': 'A project with no root_node_id'}, f)
 
-    simple_project = adapter.load('Simple Project')
+    simple_project = adapter.load()
     assert simple_project.name == 'Simple Project'
     assert simple_project.root_node.title == 'Simple Project'
 
@@ -316,8 +315,8 @@ def test_load_nonexistent_project(temp_dir: str) -> None:
     if project_json.exists():
         project_json.unlink()
 
-    with pytest.raises(ValueError, match=r'.*not exist.*'):
-        adapter.load('Non-existent Project')
+    with pytest.raises(ProjectNotFoundError):
+        adapter.load()
 
 
 def test_node_with_all_fields(temp_dir: str) -> None:
@@ -344,7 +343,7 @@ def test_node_with_all_fields(temp_dir: str) -> None:
     adapter.save(project)
 
     # Load the project
-    loaded_project = adapter.load('Test Project')
+    loaded_project = adapter.load()
 
     # Find the loaded node
     loaded_node = loaded_project.get_node_by_id(node.id)

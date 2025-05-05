@@ -11,6 +11,7 @@ from prosemark import cli
 from prosemark.adapters.markdown import MarkdownFileAdapter
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
+from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
 
 @pytest.fixture
@@ -44,7 +45,7 @@ def test_cli_help(runner: CliRunner) -> None:
 
 def test_init_command(runner: CliRunner) -> None:
     """Test the init command creates a new project."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create_project') as mock_create:
+    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create') as mock_create:
         mock_create.return_value = Project(name='test-project')
 
         # Note: --data-dir is now optional since it defaults to '.'
@@ -57,7 +58,7 @@ def test_init_command(runner: CliRunner) -> None:
 
 def test_init_command_with_description(runner: CliRunner) -> None:
     """Test the init command with a description."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create_project') as mock_create:
+    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create') as mock_create:
         mock_create.return_value = Project(name='test-project', description='Test description')
 
         result = runner.invoke(
@@ -71,41 +72,41 @@ def test_init_command_with_description(runner: CliRunner) -> None:
 
 def test_init_command_error(runner: CliRunner) -> None:
     """Test the init command handles errors."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create_project') as mock_create:
-        mock_create.side_effect = ValueError('Project already exists')
+    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'create') as mock_create:
+        mock_create.side_effect = ProjectExistsError()
 
         result = runner.invoke(cli.cli, ['--data-dir', '.', 'init', 'test-project'])
 
         assert result.exit_code == 1
         assert 'Error:' in result.output
-        assert 'Project already exists' in result.output
+        assert 'already exists' in result.output
 
 
-def test_list_command_with_projects(runner: CliRunner) -> None:
-    """Test the list command shows available projects."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'list_projects') as mock_list:
-        mock_list.return_value = [
-            {'id': 'project1', 'name': 'Project 1'},
-            {'id': 'project2', 'name': 'Project 2'},
-        ]
+def test_info_command(runner: CliRunner) -> None:
+    """Test the info command shows project information."""
+    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+        project = Project(name='Test Project', description='Test description')
+        mock_load.return_value = project
 
-        result = runner.invoke(cli.cli, ['--data-dir', '.', 'list-projects'])
+        # Add a method to get node count
+        with patch.object(Project, 'get_node_count', return_value=5):
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'info'])
 
-        assert result.exit_code == 0
-        assert 'Available projects:' in result.output
-        assert 'Project 1' in result.output
-        assert 'Project 2' in result.output
+            assert result.exit_code == 0
+            assert 'Project: Test Project' in result.output
+            assert 'Description: Test description' in result.output
+            assert 'Nodes: 5' in result.output
 
 
-def test_list_command_no_projects(runner: CliRunner) -> None:
-    """Test the list command when no projects exist."""
-    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'list_projects') as mock_list:
-        mock_list.return_value = []
+def test_info_command_no_project(runner: CliRunner) -> None:
+    """Test the info command when no project exists."""
+    with runner.isolated_filesystem(), patch.object(MarkdownFileAdapter, 'load') as mock_load:
+        mock_load.side_effect = ProjectNotFoundError()
 
-        result = runner.invoke(cli.cli, ['--data-dir', '.', 'list-projects'])
+        result = runner.invoke(cli.cli, ['--data-dir', '.', 'info'])
 
-        assert result.exit_code == 0
-        assert 'No projects found' in result.output
+        assert result.exit_code == 1
+        assert 'Error: No project found' in result.output
 
 
 def test_add_command(runner: CliRunner) -> None:
@@ -122,7 +123,7 @@ def test_add_command(runner: CliRunner) -> None:
         # Create a mock node
         node = Node(node_id='test-node-id', title='Test Node')
         with patch.object(Project, 'create_node', return_value=node):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'add', 'test-project', 'root-id', 'Test Node'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'add', 'root-id', 'Test Node'])
 
             assert result.exit_code == 0
             assert 'added successfully' in result.output
@@ -143,7 +144,7 @@ def test_add_command_parent_not_found(runner: CliRunner) -> None:
 
         # Mock create_node to return None (parent not found)
         with patch.object(Project, 'create_node', return_value=None):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'add', 'test-project', 'non-existent-id', 'Test Node'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'add', 'non-existent-id', 'Test Node'])
 
             assert result.exit_code == 1
             assert 'Error: Parent node' in result.output
@@ -165,7 +166,7 @@ def test_remove_command(runner: CliRunner) -> None:
         # Create a mock node to be removed
         node = Node(node_id='test-node-id', title='Test Node')
         with patch.object(Project, 'remove_node', return_value=node):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'remove', 'test-project', 'test-node-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'remove', 'test-node-id'])
 
             assert result.exit_code == 0
             assert 'removed successfully' in result.output
@@ -185,7 +186,7 @@ def test_remove_command_node_not_found(runner: CliRunner) -> None:
 
         # Mock remove_node to return None (node not found or is root)
         with patch.object(Project, 'remove_node', return_value=None):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'remove', 'test-project', 'non-existent-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'remove', 'non-existent-id'])
 
             assert result.exit_code == 1
             assert 'Error: Node with ID' in result.output
@@ -206,7 +207,7 @@ def test_move_command(runner: CliRunner) -> None:
 
         # Mock move_node to return True (success)
         with patch.object(Project, 'move_node', return_value=True):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'move', 'test-project', 'node-id', 'new-parent-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'move', 'node-id', 'new-parent-id'])
 
             assert result.exit_code == 0
             assert 'moved successfully' in result.output
@@ -226,7 +227,7 @@ def test_move_command_failure(runner: CliRunner) -> None:
 
         # Mock move_node to return False (failure)
         with patch.object(Project, 'move_node', return_value=False):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'move', 'test-project', 'node-id', 'new-parent-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'move', 'node-id', 'new-parent-id'])
 
             assert result.exit_code == 1
             assert 'Error: Failed to move node' in result.output
@@ -252,7 +253,7 @@ def test_show_command(runner: CliRunner) -> None:
         node.add_child(child)
 
         with patch.object(Project, 'get_node_by_id', return_value=node):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'show', 'test-project', 'test-node-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'show', 'test-node-id'])
 
             assert result.exit_code == 0
             assert 'Title: Test Node' in result.output
@@ -275,7 +276,7 @@ def test_show_command_node_not_found(runner: CliRunner) -> None:
 
         # Mock get_node_by_id to return None (node not found)
         with patch.object(Project, 'get_node_by_id', return_value=None):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'show', 'test-project', 'non-existent-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'show', 'non-existent-id'])
 
             assert result.exit_code == 1
             assert 'Error: Node with ID' in result.output
@@ -298,7 +299,7 @@ def test_structure_command(runner: CliRunner) -> None:
 
         mock_load.return_value = project
 
-        result = runner.invoke(cli.cli, ['--data-dir', '.', 'structure', 'test-project'])
+        result = runner.invoke(cli.cli, ['--data-dir', '.', 'structure'])
 
         assert result.exit_code == 0
         assert 'Structure for project' in result.output
@@ -328,7 +329,6 @@ def test_edit_command_with_options(runner: CliRunner) -> None:
                     '--data-dir',
                     '.',
                     'edit',
-                    'test-project',
                     'test-node-id',
                     '--title',
                     'New Title',
@@ -387,7 +387,7 @@ Edited notes
             patch.object(Project, 'get_node_by_id', return_value=node),
             patch.object(click, 'edit', return_value=edited_text),
         ):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'edit', 'test-project', 'test-node-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'edit', 'test-node-id'])
 
             assert result.exit_code == 0
             assert 'updated successfully' in result.output
@@ -430,7 +430,7 @@ def test_structure_command_with_node_id(runner: CliRunner) -> None:
 
         mock_load.return_value = project
 
-        result = runner.invoke(cli.cli, ['--data-dir', '.', 'structure', 'test-project', '--node-id', 'node1'])
+        result = runner.invoke(cli.cli, ['--data-dir', '.', 'structure', '--node-id', 'node1'])
 
         assert result.exit_code == 0
         assert 'Structure for project' in result.output
@@ -450,7 +450,7 @@ def test_structure_command_node_not_found(runner: CliRunner) -> None:
         # Mock get_node_by_id to return None (node not found)
         with patch.object(Project, 'get_node_by_id', return_value=None):
             result = runner.invoke(
-                cli.cli, ['--data-dir', '.', 'structure', 'test-project', '--node-id', 'non-existent-id']
+                cli.cli, ['--data-dir', '.', 'structure', '--node-id', 'non-existent-id']
             )
 
             assert result.exit_code == 1
@@ -476,7 +476,7 @@ def test_edit_command_with_editor_no_changes(runner: CliRunner) -> None:
 
         # Mock the editor to return None (user closed without saving)
         with patch.object(Project, 'get_node_by_id', return_value=node), patch.object(click, 'edit', return_value=None):
-            result = runner.invoke(cli.cli, ['--data-dir', '.', 'edit', 'test-project', 'test-node-id'])
+            result = runner.invoke(cli.cli, ['--data-dir', '.', 'edit', 'test-node-id'])
 
             assert result.exit_code == 0
             assert 'updated successfully' in result.output
