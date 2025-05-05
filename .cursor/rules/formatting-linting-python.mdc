@@ -4,7 +4,7 @@ description: When writing or editing Python code (`*.py`), ALWAYS run the code f
 ---
 
 - To format code, run `uv run ruff format`.
-- To lint code, run `uv run ruff --fix check`.
+- To lint code, run `uv run ruff check --fix`.
 - Fix any linting errors before continuing.
 - To run the type checker, run `uv run mypy`.
 - Fix any typing errors before continuing.
