@@ -148,8 +148,6 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             lines.append('metadata:')
             lines.extend([f'  {key}: {json.dumps(value)}' for key, value in node.metadata.items()])
 
-        lines.append('---')
-
         # Add wikilink-style links to notecard and notes files
         lines.extend([
             '',
@@ -388,7 +386,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                     metadata[key] = value_str.strip()
 
         # Remove frontmatter from content
-        content_without_frontmatter = content[frontmatter_match.end():]
+        content_without_frontmatter = content[frontmatter_match.end() :]
 
         # Process content - we need to filter out the wikilinks section
         # Look for a pattern like:
@@ -403,7 +401,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         # Find the last occurrence of '---' in the content
         parts = content_without_frontmatter.split('---')
-        if len(parts) > 2:
+        if len(parts) > 2:  # noqa: SIM108
             # If we have more than one separator, take the content after the last one
             main_content = parts[-1].strip()
         else:
