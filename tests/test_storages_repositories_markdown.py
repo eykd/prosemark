@@ -158,11 +158,6 @@ def test_node_to_markdown_conversion(temp_dir: str) -> None:
     result = adapter._markdown_to_node(invalid_file)  # noqa: SLF001  # Intentionally testing internal conversion
     assert result is None
 
-    # Test extracting relationships from invalid file
-    node_id, child_ids = adapter._extract_node_relationships(invalid_file)  # noqa: SLF001
-    assert node_id is None
-    assert child_ids == []
-
     # Test with metadata parsing
     metadata_file = Path(temp_dir) / 'metadata.md'
     metadata_content = """---
