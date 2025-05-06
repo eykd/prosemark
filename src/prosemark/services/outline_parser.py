@@ -15,13 +15,13 @@ class OutlineParseError(Exception):
 
 def parse_outline(outline_text: str) -> Node:
     """Parse a Markdown-formatted outline into a node tree.
-    
+
     Args:
         outline_text: String containing the Markdown outline
-        
+
     Returns:
         A root Node object containing the complete node tree
-        
+
     Raises:
         OutlineParseError: If the outline format is invalid
 
@@ -65,10 +65,10 @@ def parse_outline(outline_text: str) -> Node:
 
 def generate_outline(root_node: Node) -> str:
     """Generate a Markdown-formatted outline from a node tree.
-    
+
     Args:
         root_node: The root Node object of the tree to convert
-        
+
     Returns:
         A string containing the Markdown outline
 
@@ -84,13 +84,13 @@ def generate_outline(root_node: Node) -> str:
 
 def _parse_line(line: str) -> tuple[int, str, str]:
     """Parse a single line of the Markdown outline.
-    
+
     Args:
         line: A single line from the Markdown outline
-        
+
     Returns:
         A tuple of (indent_level, title, node_id)
-        
+
     Raises:
         ValueError: If the line format is invalid
 
@@ -117,7 +117,7 @@ def _parse_line(line: str) -> tuple[int, str, str]:
 
 def _generate_node_line(node: Node, lines: list[str], indent_level: int) -> None:
     """Recursively generate Markdown lines for a node and its children.
-    
+
     Args:
         node: The node to generate a line for
         lines: List to append the generated lines to
