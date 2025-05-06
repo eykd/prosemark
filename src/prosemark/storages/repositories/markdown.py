@@ -150,6 +150,18 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         lines.append('---')
 
+        # Add wikilink-style links to notecard and notes files
+        links = []
+        if node.notecard:
+            links.append(f'[[{node.id} notecard.md]]')
+        if node.notes:
+            links.append(f'[[{node.id} notes.md]]')
+
+        if links:
+            lines.append('---')
+            lines.append(' | '.join(links))
+            lines.append('---')
+
         # Add main content
         if node.content:
             lines.append('\n' + node.content)
@@ -377,6 +389,11 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         # Remove frontmatter from content
         content_without_frontmatter = content[frontmatter_match.end() :]
+
+        # Remove the wikilinks section if it exists
+        wikilinks_match = re.match(r'\n?---\n.*?\n---\n', content_without_frontmatter, re.DOTALL)
+        if wikilinks_match:
+            content_without_frontmatter = content_without_frontmatter[wikilinks_match.end():]
 
         # Load notes from separate file if it exists
         notes = ''
