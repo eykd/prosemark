@@ -66,15 +66,22 @@ When raising exceptions in Python code, follow these practices:
 
 - Do not raise generic exceptions like `Exception` or `RuntimeError`.
 - Use a specific exception defined in `src/prosemark/exceptions.py`.
-- Define a new specific exception in `src/prosemark/exceptions.py` if none exists for your situation.
+- When raising a new exception from within an exception handler, always `raise NewError from old_exception`:
+  Define a new specific exception in `src/prosemark/exceptions.py` if none exists for your situation.
 - Do not define `__init__` methods on custom exceptions.
 - When raising exceptions with a string message, do not use variable substitution in the error message.
 - Add extra context as further arguments to the exception instead of embedding variables in the message.
 - Example:
   ```python
   # Bad
-  raise ValueError(f"Node with ID {node_id} not found")
-  
+  try:
+      ...
+  except Exception:
+      raise ValueError(f"Node with ID {node_id} not found")
+
   # Good
-  raise NodeNotFoundError("Node not found", node_id)
+  try:
+      ...
+  except ValueError as exc:
+      raise NodeNotFoundError("Node not found", node_id) from exc
   ```

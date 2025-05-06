@@ -45,7 +45,7 @@ def parse_outline(outline_text: str) -> Node:
             while node_stack and node_stack[-1][1] >= indent_level:
                 node_stack.pop()
 
-            if not node_stack:
+            if not node_stack:  # pragma: no cover
                 raise OutlineParseError(f'Invalid indentation structure at line: {line}')
 
             # Check if the indentation level is valid (should be exactly 2 more than parent's level)
@@ -100,7 +100,7 @@ def _parse_line(line: str) -> tuple[int, str, str]:
     """
     # Count leading spaces to determine indentation level
     indent_match = re.match(r'^(\s*)', line)
-    if not indent_match:
+    if not indent_match:  # pragma: no cover
         raise ValueError('Could not determine indentation')
 
     indent_level = len(indent_match.group(1))
