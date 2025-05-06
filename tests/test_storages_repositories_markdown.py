@@ -408,15 +408,15 @@ def test_node_with_all_fields(temp_dir: str) -> None:
     assert loaded_node.metadata['word_count'] == 150
 
     # Test with empty title but other sections
-    markdown = """# Title:
+    markdown = """// Title:
 
-# Notecard (brief summary):
+// Notecard (brief summary):
 This is a notecard
 
-# Content (main text):
+// Content (main text):
 This is the content
 
-# Notes (additional information):
+// Notes (additional information):
 These are notes
 """
     sections = adapter.parse_edit_markdown(markdown)
