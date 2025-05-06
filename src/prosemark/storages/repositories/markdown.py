@@ -490,54 +490,6 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             metadata=metadata,
         )
 
-    def _extract_node_relationships(self, file_path: Path) -> tuple[str | None, list[str]]:
-        """Extract node ID and child IDs from a Markdown file.
-
-        Args:
-            file_path: Path to the Markdown file.
-
-        Returns:
-            A tuple containing the node ID and a list of child IDs, or (None, []) if frontmatter is missing.
-
-        Raises:
-            OSError: If there's an error reading from the filesystem.
-
-        """
-        content = Path(file_path).read_text(encoding='utf-8')
-
-        # Extract YAML frontmatter
-        frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
-        if not frontmatter_match:
-            # Instead of raising an error, return None for node_id and empty list for child_ids
-            return None, []
-
-        frontmatter = frontmatter_match.group(1)
-
-        # Parse node ID and children
-        node_id = ''
-        child_ids: list[str] = []
-
-        in_children_section = False
-        for line in frontmatter.split('\n'):
-            if line.startswith('id:'):
-                node_id = line.split(':', 1)[1].strip()
-            elif line.startswith('children:'):
-                children_value = line.split(':', 1)[1].strip()
-                if children_value.startswith('[') and children_value.endswith(']'):
-                    # Inline list format: children: [id1, id2]
-                    child_ids = [s.strip() for s in children_value.strip('[]').split(',') if s.strip()]
-                    in_children_section = False
-                else:
-                    # YAML list format: children: (followed by indented - id lines)
-                    in_children_section = True
-            elif in_children_section and line.startswith('  -'):
-                child_id = line.split('-', 1)[1].strip()
-                child_ids.append(child_id)
-            elif in_children_section and not line.startswith('  '):  # pragma: no cover
-                in_children_section = False
-
-        return node_id, child_ids
-
     def exists(self) -> bool:
         """Check if a project exists in the repository.
 
