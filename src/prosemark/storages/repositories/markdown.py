@@ -388,7 +388,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         # Remove frontmatter from content
         content_without_frontmatter = content[frontmatter_match.end() :]
 
-        # Process content - we need to filter out the wikilinks section
+        # Process content - filter out the wikilinks section
         # Look for a pattern like:
         # ---
         #
@@ -397,16 +397,11 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         #
         # ---
         #
-        # And extract only the content after the second ---
+        # And extract only the content after the last ---
 
-        # Find the last occurrence of '---' in the content
-        parts = content_without_frontmatter.split('---')
-        if len(parts) > 2:  # noqa: SIM108
-            # If we have more than one separator, take the content after the last one
-            main_content = parts[-1].strip()
-        else:
-            # Otherwise, just use the content as is
-            main_content = content_without_frontmatter.strip()
+        # Find the wikilinks section and remove it
+        wikilinks_pattern = r'\[\[.*? notecard\.md\]\]\n\[\[.*? notes\.md\]\]\n\n---\n\n'
+        main_content = re.sub(wikilinks_pattern, '', content_without_frontmatter, flags=re.DOTALL).strip()
 
         # Load notes from separate file if it exists
         notes = ''
