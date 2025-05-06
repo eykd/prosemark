@@ -151,12 +151,15 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         lines.append('---')
 
         # Add wikilink-style links to notecard and notes files
-        lines.append('')
-        lines.append(f'[[{node.id} notecard.md]]')
-        lines.append(f'[[{node.id} notes.md]]')
-        lines.append('')
-        lines.append('---')
-        lines.append('')
+        lines.extend([
+            '',
+            '---',
+            '',
+            f'[[{node.id} notecard.md]]',
+            f'[[{node.id} notes.md]]',
+            '',
+            '---',
+        ])
 
         # Add main content
         if node.content:
