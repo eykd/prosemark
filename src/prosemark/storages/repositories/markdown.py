@@ -159,6 +159,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             f'[[{node.id} notes.md]]',
             '',
             '---',
+            '',
         ])
 
         # Add main content
