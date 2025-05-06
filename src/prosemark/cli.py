@@ -294,8 +294,8 @@ def edit(
             # Generate initial text for the editor
             initial_text = repo.generate_edit_markdown(node)
 
-            # Open editor and get result
-            edited_text = click.edit(initial_text)
+            # Open editor and get result, specifying .md extension for the temporary file
+            edited_text = click.edit(initial_text, extension='.md')
 
             if edited_text is not None:
                 # Parse the edited text
