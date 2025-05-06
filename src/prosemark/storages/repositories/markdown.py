@@ -151,13 +151,11 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         lines.append('---')
 
         # Add wikilink-style links to notecard and notes files
-        links = []
-        links.append(f'[[{node.id} notecard.md]]')
-        links.append(f'[[{node.id} notes.md]]')
-
-        # Add a blank line before the closing ---
         lines.append('')
-        lines.extend(links)
+        lines.append(f'[[{node.id} notecard.md]]')
+        lines.append(f'[[{node.id} notes.md]]')
+        lines.append('')
+        lines.append('---')
         lines.append('')
 
         # Add main content
@@ -388,24 +386,19 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         # Remove frontmatter from content
         content_without_frontmatter = content[frontmatter_match.end() :]
 
-        # Process content by filtering out wikilinks
+        # Process content by filtering out wikilinks and the separator
         content_lines = content_without_frontmatter.strip().split('\n')
         filtered_content_lines = []
-        in_wikilinks_section = True  # Assume we start in the wikilinks section
+        skip_until_separator = True  # Skip everything until we find the second '---'
 
         for line in content_lines:
-            if in_wikilinks_section:
-                if line.strip() == '':
-                    # Skip blank lines in the wikilinks section
-                    continue
-                if line.startswith('[[') and line.endswith(']]'):
-                    # Skip wikilink lines
-                    continue
-                # We've reached the actual content
-                in_wikilinks_section = False
-                filtered_content_lines.append(line)
-            else:
-                filtered_content_lines.append(line)
+            if skip_until_separator:
+                if line.strip() == '---':
+                    skip_until_separator = False  # Found the separator, stop skipping
+                # Skip all lines in the wikilinks section
+                continue
+            # We're past the separator, include all remaining lines
+            filtered_content_lines.append(line)
 
         # The remaining content is the main content
         main_content = '\n'.join(filtered_content_lines).strip()
