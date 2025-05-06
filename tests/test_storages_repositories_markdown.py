@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -74,7 +73,7 @@ def test_save_and_load_project(temp_dir: str) -> None:
 
     # Verify files were created
     project_dir = Path(temp_dir)
-    assert (project_dir / 'project.json').exists()
+    assert (project_dir / '_binder.md').exists()
     assert (project_dir / f'{project.root_node.id}.md').exists()
     assert (project_dir / f'{node1.id}.md').exists()
     assert (project_dir / f'{node2.id}.md').exists()
@@ -211,14 +210,20 @@ def test_create(temp_dir: str) -> None:
 
     # Verify it was saved to disk
     project_dir = Path(temp_dir)
-    assert (project_dir / 'project.json').exists()
+    assert (project_dir / '_binder.md').exists()
 
-    # Verify project.json content
-    with (project_dir / 'project.json').open(encoding='utf-8') as f:
-        project_data = json.load(f)
-        assert project_data['name'] == 'New Project'
-        assert project_data['description'] == 'A new project'
-        assert project_data['root_node_id'] == project.root_node.id
+    # Verify _binder.md frontmatter content
+    binder_path = project_dir / '_binder.md'
+    content = binder_path.read_text(encoding='utf-8')
+    import re
+
+    frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
+    assert frontmatter_match
+    frontmatter = frontmatter_match.group(1)
+    lines = {
+        line.split(':', 1)[0].strip(): line.split(':', 1)[1].strip() for line in frontmatter.split('\n') if ':' in line
+    }
+    assert lines['title'] == 'New Project'
 
     # Try to create another project in the same directory (should raise ProjectExistsError)
     with pytest.raises(ProjectExistsError):
@@ -234,13 +239,13 @@ def test_delete(temp_dir: str) -> None:
 
     # Verify it exists
     project_dir = Path(temp_dir)
-    assert (project_dir / 'project.json').exists()
+    assert (project_dir / '_binder.md').exists()
 
     # Delete the project
     adapter.delete()
 
     # Verify it was deleted
-    assert not (project_dir / 'project.json').exists()
+    assert not (project_dir / '_binder.md').exists()
 
     # Try to delete a non-existent project (should raise ProjectNotFoundError)
     with pytest.raises(ProjectNotFoundError):
@@ -253,8 +258,13 @@ def test_project_with_complex_structure(temp_dir: str) -> None:
 
     # Test loading a project with no root_node_id specified
     project_dir = Path(temp_dir)
-    with (project_dir / 'project.json').open('w', encoding='utf-8') as f:
-        json.dump({'name': 'Simple Project', 'description': 'A project with no root_node_id'}, f)
+    # Write a minimal _binder.md file
+    binder_content = """---
+id: _binder
+title: Simple Project
+---
+"""
+    (project_dir / '_binder.md').write_text(binder_content, encoding='utf-8')
 
     simple_project = adapter.load()
     assert simple_project.name == 'Simple Project'
@@ -324,11 +334,11 @@ def test_load_nonexistent_project(temp_dir: str) -> None:
     """Test loading a non-existent project."""
     adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
-    # Test non-existent project (no project.json)
-    # First make sure project.json doesn't exist
-    project_json = Path(temp_dir) / 'project.json'
-    if project_json.exists():
-        project_json.unlink()
+    # Test non-existent project (no _binder.md)
+    # First make sure _binder.md doesn't exist
+    binder_md = Path(temp_dir) / '_binder.md'
+    if binder_md.exists():
+        binder_md.unlink()
 
     with pytest.raises(ProjectNotFoundError):
         adapter.load()
@@ -392,3 +402,73 @@ These are notes
     assert 'title' in sections
     assert sections['title'] == ''
     assert sections['notecard'] == 'This is a notecard'
+
+
+def test_parse_id_line_and_title_line() -> None:
+    adapter = MarkdownFilesystemProjectRepository('.')
+    data: dict[str, str] = {}
+    adapter._parse_id_line('id: test-id', data)  # noqa: SLF001
+    assert data['id'] == 'test-id'
+    adapter._parse_title_line('title: Test Title', data)  # noqa: SLF001
+    assert data['name'] == 'Test Title'
+
+
+def test_parse_children_line() -> None:
+    adapter = MarkdownFilesystemProjectRepository('.')
+    data: dict[str, list[str]] = {}
+    adapter._parse_children_line('children: [id1, id2, id3]', data)  # noqa: SLF001
+    assert data['children'] == ['id1', 'id2', 'id3']
+    # Test with extra spaces
+    data2: dict[str, list[str]] = {}
+    adapter._parse_children_line('children: [ id1 , id2 , id3 ]', data2)  # noqa: SLF001
+    assert data2['children'] == ['id1', 'id2', 'id3']
+
+
+def test_parse_notes_and_notecard_file_line() -> None:
+    adapter = MarkdownFilesystemProjectRepository('.')
+    data: dict[str, str] = {}
+    adapter._parse_notes_file_line('notes_file: notes.md', data)  # noqa: SLF001
+    assert data['notes_file'] == 'notes.md'
+    adapter._parse_notecard_file_line('notecard_file: notecard.md', data)  # noqa: SLF001
+    assert data['notecard_file'] == 'notecard.md'
+
+
+def test_parse_metadata_line_and_item_line() -> None:
+    adapter = MarkdownFilesystemProjectRepository('.')
+    data: dict[str, dict[str, object]] = {}
+    adapter._parse_metadata_line(data)  # noqa: SLF001
+    assert 'metadata' in data
+    assert data['metadata'] == {}
+    # Add a metadata item (valid JSON)
+    adapter._parse_metadata_item_line('  key1: "value1"', data)  # noqa: SLF001
+    assert data['metadata']['key1'] == 'value1'
+    # Add a metadata item (int)
+    adapter._parse_metadata_item_line('  key2: 42', data)  # noqa: SLF001
+    assert data['metadata']['key2'] == 42
+    # Add a metadata item (invalid JSON)
+    adapter._parse_metadata_item_line('  key3: notjson', data)  # noqa: SLF001
+    assert data['metadata']['key3'] == 'notjson'
+
+
+def test_parse_frontmatter_lines() -> None:
+    adapter = MarkdownFilesystemProjectRepository('.')
+    frontmatter = (
+        'id: test-id\n'
+        'title: Test Title\n'
+        'description: "A description"\n'
+        'children: [id1, id2]\n'
+        'notes_file: notes.md\n'
+        'notecard_file: notecard.md\n'
+        'metadata:\n'
+        '  key1: "value1"\n'
+        '  key2: 42\n'
+    )
+    data: dict[str, Any] = adapter._parse_frontmatter_lines(frontmatter)  # noqa: SLF001
+    assert data['id'] == 'test-id'
+    assert data['name'] == 'Test Title'
+    assert data['description'] == 'A description'
+    assert data['children'] == ['id1', 'id2']
+    assert data['notes_file'] == 'notes.md'
+    assert data['notecard_file'] == 'notecard.md'
+    assert data['metadata']['key1'] == 'value1'
+    assert data['metadata']['key2'] == 42

@@ -479,10 +479,14 @@ def test_edit_command_with_editor_no_changes(runner: CliRunner) -> None:
             assert result.exit_code == 0
             assert 'updated successfully' in result.output
             # Values should remain unchanged
-            assert node.title == 'Old Title'
-            assert node.notecard == 'Old notecard'
-            assert node.content == 'Old content'
-            assert node.notes == 'Old notes'
+            if node is not None and isinstance(node, Node):
+                assert node.id == 'test-node-id'
+                assert node.title == 'Old Title'
+                assert node.notecard == 'Old notecard'
+                assert node.content == 'Old content'
+                assert node.notes == 'Old notes'
+            else:
+                pytest.fail('Node should not be None after edit command with editor returning no changes.')
             mock_save.assert_called_once_with(project)
 
 
@@ -573,6 +577,7 @@ title: Empty Node
     node = adapter._markdown_to_node(test_file)  # noqa: SLF001
 
     # Verify empty sections are handled correctly
+    assert isinstance(node, Node)
     assert node.id == 'empty-node'
     assert node.title == 'Empty Node'
     assert node.notecard == ''

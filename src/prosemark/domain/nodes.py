@@ -5,7 +5,7 @@ This module defines the Node class which represents elements in a hierarchical d
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -40,7 +40,7 @@ class Node:
             children: List of child nodes.
 
         """
-        self.id = node_id if node_id is not None else datetime.now().strftime('%Y%m%d%H%M%S%f')
+        self.id = node_id if node_id is not None else datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')
         self.title = title
         self.notecard = notecard
         self.content = content

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
@@ -60,23 +60,24 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         if not project_dir.exists():  # pragma: no cover
             project_dir.mkdir(parents=True)
 
-        # Save project metadata
-        metadata_path = project_dir / 'project.json'
-        metadata_path.write_text(
-            json.dumps(
-                {
-                    'name': project.name,
-                    'description': project.description,
-                    'root_node_id': project.root_node.id,
-                    'metadata': project.metadata,
-                },
-                indent=2,
-            ),
-            encoding='utf-8',
-        )
+        # Save all nodes except the root (_binder)
+        for node in (project.root_node, *project.root_node.get_descendants()):
+            if node.id == '_binder':
+                continue
+            self._save_node(node, project_dir)
 
-        # Save all nodes
-        self._save_node(project.root_node, project_dir)
+        # Save the root node as _binder.md
+        binder_path = project_dir / '_binder.md'
+        binder_content = self._root_node_to_binder_markdown(project)
+        binder_path.write_text(binder_content, encoding='utf-8')
+
+        # Save notes and notecard for _binder if they exist
+        if project.root_node.notes:
+            notes_path = project_dir / '_binder notes.md'
+            notes_path.write_text(project.root_node.notes, encoding='utf-8')
+        if project.root_node.notecard:
+            notecard_path = project_dir / '_binder notecard.md'
+            notecard_path.write_text(project.root_node.notecard, encoding='utf-8')
 
     def _save_node(self, node: Node, project_dir: Path) -> None:
         """Save a node and its children to the filesystem.
@@ -157,72 +158,136 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         return '\n'.join(lines)
 
+    def _root_node_to_binder_markdown(self, project: Project) -> str:
+        """Generate the _binder.md content from the project root node and structure."""
+        root = project.root_node
+        lines = ['---']
+        lines.extend([
+            'id: _binder',
+            f'title: {project.name}',
+        ])
+        if project.description:
+            lines.append(f'description: {json.dumps(project.description)}')
+        if root.children:
+            lines.append('children: [' + ', '.join(child.id for child in root.children) + ']')
+        if root.notes:
+            lines.append('notes_file: _binder notes.md')
+        if root.notecard:
+            lines.append('notecard_file: _binder notecard.md')
+        if project.metadata:  # pragma: no cover
+            lines.append('metadata:')
+            lines.extend([f'  {key}: {json.dumps(value)}' for key, value in project.metadata.items()])
+        lines.append('---\n')
+        # Add Markdown outline of the structure
+        lines.extend(self._generate_outline(root))
+        return '\n'.join(lines)
+
+    def _generate_outline(self, node: Node, level: int = 0) -> list[str]:
+        """Recursively generate a Markdown outline for the node and its descendants."""
+        lines = []
+        indent = '  ' * level
+        if node.id != '_binder':
+            lines.append(f'{indent}- [{node.title}]({node.id}.md)')
+        for child in node.children:
+            lines.extend(self._generate_outline(child, level + (0 if node.id == '_binder' else 1)))
+        return lines
+
+    def _parse_id_line(self, line: str, data: dict[str, Any]) -> None:
+        data['id'] = line.split(':', 1)[1].strip()
+
+    def _parse_title_line(self, line: str, data: dict[str, Any]) -> None:
+        data['name'] = line.split(':', 1)[1].strip()
+
+    def _parse_children_line(self, line: str, data: dict[str, Any]) -> None:
+        children_str = line.split(':', 1)[1].strip()
+        children = [s.strip() for s in children_str.strip('[]').split(',') if s.strip()]
+        data['children'] = children
+
+    def _parse_notes_file_line(self, line: str, data: dict[str, Any]) -> None:
+        data['notes_file'] = line.split(':', 1)[1].strip()
+
+    def _parse_notecard_file_line(self, line: str, data: dict[str, Any]) -> None:
+        data['notecard_file'] = line.split(':', 1)[1].strip()
+
+    def _parse_metadata_line(self, data: dict[str, Any]) -> None:
+        data['metadata'] = {}
+
+    def _parse_metadata_item_line(self, line: str, data: dict[str, Any]) -> None:
+        key, value_str = line.strip().split(':', 1)
+        try:
+            value = json.loads(value_str.strip())
+        except json.JSONDecodeError:
+            value = value_str.strip()
+        if 'metadata' in data:  # pragma: no branch
+            data['metadata'][key] = value
+
+    def _parse_frontmatter_lines(self, frontmatter: str) -> dict[str, Any]:
+        """Parse the frontmatter lines into a metadata dictionary."""
+        data: dict[str, Any] = {}
+        for line in frontmatter.split('\n'):
+            if line.startswith('id:'):
+                self._parse_id_line(line, data)
+            elif line.startswith('title:'):
+                self._parse_title_line(line, data)
+            elif line.startswith('description:'):
+                self._parse_description_line(line, data)
+            elif line.startswith('children:'):
+                self._parse_children_line(line, data)
+            elif line.startswith('notes_file:'):
+                self._parse_notes_file_line(line, data)
+            elif line.startswith('notecard_file:'):
+                self._parse_notecard_file_line(line, data)
+            elif line.startswith('metadata:'):
+                self._parse_metadata_line(data)
+            elif line.startswith('  ') and ':' in line and not line.startswith('  -'):
+                self._parse_metadata_item_line(line, data)
+        return data
+
+    def _parse_description_line(self, line: str, data: dict[str, Any]) -> None:
+        """Parse the description line, handling JSON and fallback to string."""
+        value = line.split(':', 1)[1].strip()
+        try:
+            data['description'] = json.loads(value)
+        except json.JSONDecodeError:  # pragma: no cover
+            data['description'] = value
+
     def _load_project_metadata(self, project_dir: Path) -> dict[str, Any]:
-        """Load project metadata from the project directory.
-
-        Args:
-            project_dir: The project directory.
-
-        Returns:
-            A dictionary containing the project metadata.
-
-        Raises:
-            ProjectNotFoundError: If the project metadata file cannot be found.
-
-        """
-        metadata_path = project_dir / 'project.json'
-        if not metadata_path.exists():  # pragma: no cover
+        """Load project metadata from the _binder.md file."""
+        binder_path = project_dir / '_binder.md'
+        if not binder_path.exists():  # pragma: no cover
             raise ProjectNotFoundError
-        return cast('dict[str, Any]', json.loads(metadata_path.read_text(encoding='utf-8')))
+        content = binder_path.read_text(encoding='utf-8')
+        frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
+        if not frontmatter_match:  # pragma: no cover
+            raise ProjectNotFoundError
+        frontmatter = frontmatter_match.group(1)
+        return self._parse_frontmatter_lines(frontmatter)
 
     def _load_nodes(self, project_dir: Path) -> dict[str, Node]:
-        """Load all nodes from the project directory.
-
-        Args:
-            project_dir: The project directory.
-
-        Returns:
-            A dictionary mapping node IDs to Node objects.
-
-        """
+        """Load all nodes from the project directory, including _binder.md as root."""
         nodes_by_id: dict[str, Node] = {}
         for node_file in project_dir.glob('*.md'):
-            # Skip project.json, notes files, and notecard files
-            if (
-                node_file.name == 'project.json' or ' notes.md' in node_file.name or ' notecard.md' in node_file.name
-            ):  # pragma: no cover
+            # Skip notes files and notecard files
+            if node_file.name.endswith(' notes.md') or node_file.name.endswith(' notecard.md'):
                 continue
-
             # Convert file to node
             node = self._markdown_to_node(node_file)
-
             # Only add to dictionary if node was successfully created
             if node is not None:  # pragma: no branch
                 nodes_by_id[node.id] = node
         return nodes_by_id
 
     def _setup_node_relationships(self, project_dir: Path, nodes_by_id: dict[str, Node]) -> None:
-        """Set up parent-child relationships between nodes.
-
-        Args:
-            project_dir: The project directory.
-            nodes_by_id: A dictionary mapping node IDs to Node objects.
-
-        """
+        """Set up parent-child relationships between nodes, using _binder as root."""
         for node_file in project_dir.glob('*.md'):
-            # Skip project.json, notes files, and notecard files
-            if (
-                node_file.name == 'project.json' or ' notes.md' in node_file.name or ' notecard.md' in node_file.name
-            ):  # pragma: no cover
+            # Skip notes files and notecard files
+            if node_file.name.endswith(' notes.md') or node_file.name.endswith(' notecard.md'):
                 continue
-
             # Extract node relationships
             node_id, child_ids = self._extract_node_relationships(node_file)
-
             # Skip if node_id is None (invalid frontmatter)
             if node_id is None:  # pragma: no cover
                 continue
-
             if node_id in nodes_by_id:  # pragma: no branch
                 node = nodes_by_id[node_id]
                 for child_id in child_ids:
@@ -243,33 +308,22 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         """
         project_dir = self.base_path
-
-        # Check if project.json exists
-        metadata_path = project_dir / 'project.json'
-        if not metadata_path.exists():
+        binder_path = project_dir / '_binder.md'
+        if not binder_path.exists():
             raise ProjectNotFoundError
-
         project_data = self._load_project_metadata(project_dir)
-
-        # Create the project without a root node first
-        project = Project(
-            name=project_data['name'],
+        # Create the root node from _binder.md
+        nodes_by_id = self._load_nodes(project_dir)
+        self._setup_node_relationships(project_dir, nodes_by_id)
+        root_node = nodes_by_id.get('_binder')
+        if root_node is None:
+            raise ProjectNotFoundError
+        return Project(
+            name=project_data.get('name', ''),
             description=project_data.get('description', ''),
+            root_node=root_node,
             metadata=project_data.get('metadata', {}),
         )
-
-        # Load the root node and all its children
-        root_node_id = project_data.get('root_node_id')
-        if not root_node_id:
-            # If no root node ID is specified, use the project name as the root node title
-            project.root_node.title = project.name
-        else:
-            nodes_by_id = self._load_nodes(project_dir)
-            self._setup_node_relationships(project_dir, nodes_by_id)
-            if root_node_id in nodes_by_id:  # pragma: no branch
-                project.root_node = nodes_by_id[root_node_id]
-
-        return project
 
     def _markdown_to_node(self, file_path: Path) -> Node | None:  # noqa: C901
         """Convert a Markdown file to a Node.
@@ -379,11 +433,18 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         child_ids: list[str] = []
 
         in_children_section = False
-        for line in frontmatter.split('\n'):  # pragma: no branch
+        for line in frontmatter.split('\n'):
             if line.startswith('id:'):
                 node_id = line.split(':', 1)[1].strip()
             elif line.startswith('children:'):
-                in_children_section = True
+                children_value = line.split(':', 1)[1].strip()
+                if children_value.startswith('[') and children_value.endswith(']'):
+                    # Inline list format: children: [id1, id2]
+                    child_ids = [s.strip() for s in children_value.strip('[]').split(',') if s.strip()]
+                    in_children_section = False
+                else:
+                    # YAML list format: children: (followed by indented - id lines)
+                    in_children_section = True
             elif in_children_section and line.startswith('  -'):
                 child_id = line.split('-', 1)[1].strip()
                 child_ids.append(child_id)
@@ -399,8 +460,8 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             True if a project exists, False otherwise.
 
         """
-        metadata_path = self.base_path / 'project.json'
-        return metadata_path.exists()
+        binder_path = self.base_path / '_binder.md'
+        return binder_path.exists()
 
     def create(self, name: str, description: str = '') -> Project:
         """Create a new project in the repository.
@@ -419,13 +480,10 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         """
         if self.exists():
             raise ProjectExistsError
-
-        # Create the project
-        project = Project(name=name, description=description)
-
-        # Save it
+        # Create the root node as _binder
+        root_node = Node(node_id='_binder', title=name)
+        project = Project(name=name, description=description, root_node=root_node)
         self.save(project)
-
         return project
 
     def delete(self) -> None:
@@ -437,18 +495,20 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         """
         project_dir = self.base_path
-        metadata_path = project_dir / 'project.json'
-
-        if not metadata_path.exists():
+        binder_path = project_dir / '_binder.md'
+        if not binder_path.exists():
             raise ProjectNotFoundError
-
         # Delete all markdown files in the directory
         for item in project_dir.glob('*.md'):
             if item.is_file():  # pragma: no branch
                 item.unlink()
-
-        # Delete the project.json file
-        metadata_path.unlink()
+        # Delete notes and notecard files for _binder
+        notes_path = project_dir / '_binder notes.md'
+        if notes_path.exists():  # pragma: no cover
+            notes_path.unlink()
+        notecard_path = project_dir / '_binder notecard.md'
+        if notecard_path.exists():  # pragma: no cover
+            notecard_path.unlink()
 
     def parse_edit_markdown(self, markdown: str) -> dict[str, str]:  # noqa: C901
         """Parse markdown content from the edit command.
