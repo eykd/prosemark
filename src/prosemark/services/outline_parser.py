@@ -74,7 +74,7 @@ def generate_outline(root_node: Node) -> str:
 
     """
     # Skip the root node itself and start with its children
-    lines = []
+    lines: list[str] = []
 
     for child in root_node.children:
         _generate_node_line(child, lines, indent_level=0)

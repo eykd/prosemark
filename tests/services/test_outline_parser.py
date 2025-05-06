@@ -9,14 +9,14 @@ from prosemark.services.outline_parser import OutlineParseError, generate_outlin
 class TestOutlineParser:
     """Tests for the outline parser service."""
 
-    def test_parse_empty_outline(self):
+    def test_parse_empty_outline(self) -> None:
         """Test parsing an empty outline."""
         result = parse_outline('')
         assert result.title == 'Root'
         assert result.id == 'root'
         assert len(result.children) == 0
 
-    def test_parse_simple_outline(self):
+    def test_parse_simple_outline(self) -> None:
         """Test parsing a simple outline with one level."""
         outline = '- [Book 1](20250506032834876147.md)'
         result = parse_outline(outline)
@@ -27,7 +27,7 @@ class TestOutlineParser:
         assert book.id == '20250506032834876147'
         assert len(book.children) == 0
 
-    def test_parse_nested_outline(self):
+    def test_parse_nested_outline(self) -> None:
         """Test parsing a nested outline with multiple levels."""
         outline = """- [Book 1](20250506032834876147.md)
   - [Chapter 1](20250506032925694067.md)
@@ -62,19 +62,19 @@ class TestOutlineParser:
         assert book2.title == 'Book 2'
         assert len(book2.children) == 1
 
-    def test_invalid_outline_format(self):
+    def test_invalid_outline_format(self) -> None:
         """Test that invalid outline formats raise appropriate errors."""
         invalid_outline = '- Book 1 without proper format'
         with pytest.raises(OutlineParseError):
             parse_outline(invalid_outline)
 
-    def test_generate_outline_empty(self):
+    def test_generate_outline_empty(self) -> None:
         """Test generating an outline from an empty root node."""
         root = Node(node_id='root', title='Root')
         result = generate_outline(root)
         assert result == ''
 
-    def test_generate_simple_outline(self):
+    def test_generate_simple_outline(self) -> None:
         """Test generating a simple outline with one level."""
         root = Node(node_id='root', title='Root')
         book = Node(node_id='20250506032834876147', title='Book 1')
@@ -83,7 +83,7 @@ class TestOutlineParser:
         result = generate_outline(root)
         assert result == '- [Book 1](20250506032834876147.md)'
 
-    def test_generate_nested_outline(self):
+    def test_generate_nested_outline(self) -> None:
         """Test generating a nested outline with multiple levels."""
         # Create node structure
         root = Node(node_id='root', title='Root')
@@ -119,7 +119,7 @@ class TestOutlineParser:
 
         assert result == expected
 
-    def test_round_trip(self):
+    def test_round_trip(self) -> None:
         """Test that parsing and then generating returns the original outline."""
         original = """- [Book 1](20250506032834876147.md)
   - [Chapter 1](20250506032925694067.md)
