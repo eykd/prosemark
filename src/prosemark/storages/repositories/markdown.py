@@ -152,22 +152,17 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         # Add wikilink-style links to notecard and notes files
         links = []
-        if node.notecard:
-            links.append(f'[[{node.id} notecard.md]]')
-        if node.notes:
-            links.append(f'[[{node.id} notes.md]]')
+        links.append(f'[[{node.id} notecard.md]]')
+        links.append(f'[[{node.id} notes.md]]')
 
-        if links:
-            lines.append('---')
-            # Put each link on its own line
-            lines.extend(links)
-            # Add a blank line before the closing ---
-            lines.append('')
-            lines.append('---')
+        # Add a blank line before the closing ---
+        lines.append('')
+        lines.extend(links)
+        lines.append('')
 
         # Add main content
         if node.content:
-            lines.append('\n' + node.content)
+            lines.append(node.content)
 
         # Notes and notecard are now in separate files, so we don't include them here
 
@@ -393,10 +388,27 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         # Remove frontmatter from content
         content_without_frontmatter = content[frontmatter_match.end() :]
 
-        # Remove the wikilinks section if it exists
-        wikilinks_match = re.match(r'\n?---\n.*?\n---\n', content_without_frontmatter, re.DOTALL)
-        if wikilinks_match:
-            content_without_frontmatter = content_without_frontmatter[wikilinks_match.end():]
+        # Process content by filtering out wikilinks
+        content_lines = content_without_frontmatter.strip().split('\n')
+        filtered_content_lines = []
+        in_wikilinks_section = True  # Assume we start in the wikilinks section
+
+        for line in content_lines:
+            if in_wikilinks_section:
+                if line.strip() == '':
+                    # Skip blank lines in the wikilinks section
+                    continue
+                if line.startswith('[[') and line.endswith(']]'):
+                    # Skip wikilink lines
+                    continue
+                # We've reached the actual content
+                in_wikilinks_section = False
+                filtered_content_lines.append(line)
+            else:
+                filtered_content_lines.append(line)
+
+        # The remaining content is the main content
+        main_content = '\n'.join(filtered_content_lines).strip()
 
         # Load notes from separate file if it exists
         notes = ''
@@ -412,8 +424,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             if notecard_path.exists():  # pragma: no branch
                 notecard = notecard_path.read_text(encoding='utf-8')
 
-        # The remaining content is the main content
-        main_content = content_without_frontmatter.strip()
+        # main_content is now set by the wikilinks filtering code above
 
         return Node(
             node_id=node_id,
