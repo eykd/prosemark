@@ -252,14 +252,14 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             data['description'] = value
 
     def _load_project_metadata(self, project_dir: Path) -> dict[str, Any]:
-        """Load project metadata from the _binder.md file."""
+        """Load project metadata from the _binder.md file. If missing or malformed, return empty dict."""
         binder_path = project_dir / '_binder.md'
         if not binder_path.exists():  # pragma: no cover
-            raise ProjectNotFoundError
+            return {}
         content = binder_path.read_text(encoding='utf-8')
         frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
-        if not frontmatter_match:  # pragma: no cover
-            raise ProjectNotFoundError
+        if not frontmatter_match:
+            return {}
         frontmatter = frontmatter_match.group(1)
         return self._parse_frontmatter_lines(frontmatter)
 
@@ -297,27 +297,26 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                             node.add_child(child_node)
 
     def load(self) -> Project:
-        """Load the project from the repository.
-
-        Returns:
-            The loaded project.
-
-        Raises:
-            ProjectNotFoundError: If the project cannot be found.
-            OSError: If there's an error reading from the filesystem.
-
-        """
+        """Load the project from the repository. If missing or malformed, return an empty Project."""
         project_dir = self.base_path
         binder_path = project_dir / '_binder.md'
+        # If binder is missing, return empty Project
         if not binder_path.exists():
-            raise ProjectNotFoundError
+            return Project(name='', description='', root_node=Node(node_id='_binder', title=''))
         project_data = self._load_project_metadata(project_dir)
+        # If project_data is empty, treat as malformed and return empty Project
+        if not project_data:
+            return Project(name='', description='', root_node=Node(node_id='_binder', title=''))
         # Create the root node from _binder.md
         nodes_by_id = self._load_nodes(project_dir)
         self._setup_node_relationships(project_dir, nodes_by_id)
         root_node = nodes_by_id.get('_binder')
-        if root_node is None:
-            raise ProjectNotFoundError
+        if root_node is None:  # pragma: no cover
+            return Project(
+                name=project_data.get('name', ''),
+                description=project_data.get('description', ''),
+                root_node=Node(node_id='_binder', title=project_data.get('name', '')),
+            )
         return Project(
             name=project_data.get('name', ''),
             description=project_data.get('description', ''),

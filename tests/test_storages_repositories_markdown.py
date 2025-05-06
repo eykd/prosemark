@@ -330,8 +330,8 @@ title: Simple Project
     assert loaded_scene3.metadata['status'] == 'revision'
 
 
-def test_load_nonexistent_project(temp_dir: str) -> None:
-    """Test loading a non-existent project."""
+def test_load_nonexistent_project_returns_empty(temp_dir: str) -> None:
+    """Test loading a non-existent project returns an empty Project, not an error."""
     adapter = MarkdownFilesystemProjectRepository(temp_dir)
 
     # Test non-existent project (no _binder.md)
@@ -340,8 +340,29 @@ def test_load_nonexistent_project(temp_dir: str) -> None:
     if binder_md.exists():
         binder_md.unlink()
 
-    with pytest.raises(ProjectNotFoundError):
-        adapter.load()
+    project = adapter.load()
+    assert isinstance(project, Project)
+    assert project.name == ''
+    assert project.description == ''
+    assert project.root_node.id == '_binder'
+    assert project.root_node.title == ''
+    assert project.get_node_count() == 1
+
+
+def test_load_malformed_binder_returns_empty(temp_dir: str) -> None:
+    """Test loading a project with a malformed _binder.md returns an empty Project."""
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
+    binder_md = Path(temp_dir) / '_binder.md'
+    # Write malformed content (no valid frontmatter)
+    binder_md.write_text('This is not valid frontmatter', encoding='utf-8')
+
+    project = adapter.load()
+    assert isinstance(project, Project)
+    assert project.name == ''
+    assert project.description == ''
+    assert project.root_node.id == '_binder'
+    assert project.root_node.title == ''
+    assert project.get_node_count() == 1
 
 
 def test_node_with_all_fields(temp_dir: str) -> None:
@@ -472,3 +493,89 @@ def test_parse_frontmatter_lines() -> None:
     assert data['notecard_file'] == 'notecard.md'
     assert data['metadata']['key1'] == 'value1'
     assert data['metadata']['key2'] == 42
+
+
+def test_root_node_notes_and_notecard(temp_dir: str) -> None:
+    """Test saving and loading a project where the root node has notes and a notecard."""
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
+    # Create a project with notes and notecard on the root node
+    project = Project(name='Root Notes Project', description='Project with root notes')
+    project.root_node.notes = 'Root node notes content.'
+    project.root_node.notecard = 'Root node notecard content.'
+    adapter.save(project)
+    project_dir = Path(temp_dir)
+    # Check that notes and notecard files exist for _binder
+    notes_path = project_dir / '_binder notes.md'
+    notecard_path = project_dir / '_binder notecard.md'
+    assert notes_path.exists()
+    assert notecard_path.exists()
+    # Check that the YAML frontmatter in _binder.md includes notes_file and notecard_file
+    binder_path = project_dir / '_binder.md'
+    content = binder_path.read_text(encoding='utf-8')
+    assert 'notes_file: _binder notes.md' in content
+    assert 'notecard_file: _binder notecard.md' in content
+    # Load the project and verify notes and notecard are loaded
+    loaded_project = adapter.load()
+    assert loaded_project.root_node.notes == 'Root node notes content.'
+    assert loaded_project.root_node.notecard == 'Root node notecard content.'
+
+
+def test_load_project_with_empty_frontmatter(temp_dir: str) -> None:
+    """Test loading a project with an empty frontmatter block in _binder.md."""
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
+    binder_path = Path(temp_dir) / '_binder.md'
+    binder_path.write_text('---\n---\n', encoding='utf-8')
+    project = adapter.load()
+    assert isinstance(project, Project)
+    assert project.name == ''
+    assert project.root_node.id == '_binder'
+
+
+def test_node_notes_file_loading(temp_dir: str) -> None:
+    """Test that a node with a notes_file loads the notes from the file."""
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
+    # Create a node and manually write a notes file
+    node = Node(title='Node with Notes', content='Some content')
+    node.notes = 'Node notes content.'
+    markdown = adapter._node_to_markdown(node)  # noqa: SLF001
+    node_file = Path(temp_dir) / f'{node.id}.md'
+    node_file.write_text(markdown, encoding='utf-8')
+    notes_file = Path(temp_dir) / f'{node.id} notes.md'
+    notes_file.write_text(node.notes, encoding='utf-8')
+    # Now load the node
+    loaded_node = adapter._markdown_to_node(node_file)  # noqa: SLF001
+    assert loaded_node is not None
+    assert loaded_node.notes == 'Node notes content.'
+
+
+def test_load_project_metadata_no_frontmatter(temp_dir: str) -> None:
+    """Test _load_project_metadata returns empty dict if frontmatter is missing (no --- at all or empty file)."""
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
+    binder_path = Path(temp_dir) / '_binder.md'
+    # Case 1: File with no frontmatter at all
+    binder_path.write_text('no frontmatter here', encoding='utf-8')
+    result = adapter._load_project_metadata(Path(temp_dir))  # noqa: SLF001
+    assert result == {}
+    # Case 2: Empty file
+    binder_path.write_text('', encoding='utf-8')
+    result = adapter._load_project_metadata(Path(temp_dir))  # noqa: SLF001
+    assert result == {}
+
+
+def test_node_notes_file_missing_file(temp_dir: str) -> None:
+    """Test that a node with a notes_file specified but missing file results in empty notes."""
+    adapter = MarkdownFilesystemProjectRepository(temp_dir)
+    # Create a node and write a markdown file with notes_file, but do not create the notes file
+    node = Node(title='Node with Missing Notes', content='Some content')
+    node.notes = 'Should not be loaded'  # This will not be written to file
+    markdown = adapter._node_to_markdown(node)  # noqa: SLF001
+    # Remove the notes file reference from the file system
+    node_file = Path(temp_dir) / f'{node.id}.md'
+    node_file.write_text(markdown, encoding='utf-8')
+    notes_file = Path(temp_dir) / f'{node.id} notes.md'
+    if notes_file.exists():
+        notes_file.unlink()
+    # Now load the node
+    loaded_node = adapter._markdown_to_node(node_file)  # noqa: SLF001
+    assert loaded_node is not None
+    assert loaded_node.notes == ''
