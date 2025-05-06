@@ -159,7 +159,10 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         if links:
             lines.append('---')
-            lines.append(' | '.join(links))
+            # Put each link on its own line
+            lines.extend(links)
+            # Add a blank line before the closing ---
+            lines.append('')
             lines.append('---')
 
         # Add main content
