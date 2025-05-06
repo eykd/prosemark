@@ -13,6 +13,7 @@ from typing import Any
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
+from prosemark.services.outline_parser import generate_outline, parse_outline
 from prosemark.storages.repositories.base import ProjectRepository
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
@@ -178,8 +179,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         ])
         if project.description:
             lines.append(f'description: {json.dumps(project.description)}')
-        if root.children:
-            lines.append('children: [' + ', '.join(child.id for child in root.children) + ']')
+        # We no longer need to list children in frontmatter since the outline is the source of truth
         if root.notes:
             lines.append('notes_file: _binder notes.md')
         if root.notecard:
@@ -188,19 +188,13 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             lines.append('metadata:')
             lines.extend([f'  {key}: {json.dumps(value)}' for key, value in project.metadata.items()])
         lines.append('---\n')
-        # Add Markdown outline of the structure
-        lines.extend(self._generate_outline(root))
-        return '\n'.join(lines)
 
-    def _generate_outline(self, node: Node, level: int = 0) -> list[str]:
-        """Recursively generate a Markdown outline for the node and its descendants."""
-        lines = []
-        indent = '  ' * level
-        if node.id != '_binder':
-            lines.append(f'{indent}- [{node.title}]({node.id}.md)')
-        for child in node.children:
-            lines.extend(self._generate_outline(child, level + (0 if node.id == '_binder' else 1)))
-        return lines
+        # Use the outline generator to create the structure
+        outline = generate_outline(root)
+        if outline:
+            lines.append(outline)
+
+        return '\n'.join(lines)
 
     def _parse_id_line(self, line: str, data: dict[str, Any]) -> None:
         data['id'] = line.split(':', 1)[1].strip()
@@ -273,60 +267,130 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         frontmatter = frontmatter_match.group(1)
         return self._parse_frontmatter_lines(frontmatter)
 
-    def _load_nodes(self, project_dir: Path) -> dict[str, Node]:
-        """Load all nodes from the project directory, including _binder.md as root."""
-        nodes_by_id: dict[str, Node] = {}
-        for node_file in project_dir.glob('*.md'):
-            # Skip notes files and notecard files
-            if node_file.name.endswith(' notes.md') or node_file.name.endswith(' notecard.md'):
-                continue
-            # Convert file to node
-            node = self._markdown_to_node(node_file)
-            # Only add to dictionary if node was successfully created
-            if node is not None:  # pragma: no branch
-                nodes_by_id[node.id] = node
-        return nodes_by_id
+    def _load_node_contents(self, project_dir: Path, node: Node) -> None:
+        """Recursively load content for a node and its children.
+        
+        Args:
+            project_dir: The project directory.
+            node: The node to load content for.
 
-    def _setup_node_relationships(self, project_dir: Path, nodes_by_id: dict[str, Node]) -> None:
-        """Set up parent-child relationships between nodes, using _binder as root."""
-        for node_file in project_dir.glob('*.md'):
-            # Skip notes files and notecard files
-            if node_file.name.endswith(' notes.md') or node_file.name.endswith(' notecard.md'):
+        """
+        # Skip the root node
+        if node.id != '_binder':
+            node_path = project_dir / f'{node.id}.md'
+            if node_path.exists():
+                # Load the node content
+                node_content = self._load_node_content(node_path)
+                if node_content:
+                    node.content = node_content.get('content', '')
+                    node.metadata = node_content.get('metadata', {})
+
+            # Load notes if they exist
+            notes_path = project_dir / f'{node.id} notes.md'
+            if notes_path.exists():
+                node.notes = notes_path.read_text(encoding='utf-8')
+
+            # Load notecard if it exists
+            notecard_path = project_dir / f'{node.id} notecard.md'
+            if notecard_path.exists():
+                node.notecard = notecard_path.read_text(encoding='utf-8')
+
+        # Process all children recursively
+        for child in node.children:
+            self._load_node_contents(project_dir, child)
+
+    def _load_node_content(self, node_path: Path) -> dict[str, Any]:
+        """Load content and metadata from a node file.
+        
+        Args:
+            node_path: Path to the node file.
+            
+        Returns:
+            Dictionary with content and metadata.
+
+        """
+        content = node_path.read_text(encoding='utf-8')
+        result: dict[str, Any] = {'content': '', 'metadata': {}}
+
+        # Extract YAML frontmatter
+        frontmatter_match = re.match(r'---\n(.*?)\n---', content, re.DOTALL)
+        if not frontmatter_match:
+            return result
+
+        frontmatter = frontmatter_match.group(1)
+
+        # Parse metadata from frontmatter
+        metadata: dict[str, Any] = {}
+        for line in frontmatter.split('\n'):
+            if line.startswith('metadata:'):
                 continue
-            # Extract node relationships
-            node_id, child_ids = self._extract_node_relationships(node_file)
-            # Skip if node_id is None (invalid frontmatter)
-            if node_id is None:  # pragma: no cover
-                continue
-            if node_id in nodes_by_id:  # pragma: no branch
-                node = nodes_by_id[node_id]
-                for child_id in child_ids:
-                    if child_id in nodes_by_id:  # pragma: no branch
-                        child_node = nodes_by_id[child_id]
-                        if child_node not in node.children:  # pragma: no branch
-                            node.add_child(child_node)
+            if line.startswith('  ') and ':' in line and not line.startswith('  -'):
+                # This is a metadata item
+                key, value_str = line.strip().split(':', 1)
+                try:
+                    value = json.loads(value_str.strip())
+                    metadata[key] = value
+                except json.JSONDecodeError:  # pragma: no cover
+                    metadata[key] = value_str.strip()
+
+        # Remove frontmatter from content
+        content_without_frontmatter = content[frontmatter_match.end():]
+
+        # Process content - filter out the wikilinks section
+        wikilinks_pattern = r'\[\[.*? notecard\.md\]\]\n\[\[.*? notes\.md\]\]\n\n---\n\n'
+        main_content = re.sub(wikilinks_pattern, '', content_without_frontmatter, flags=re.DOTALL).strip()
+
+        result['content'] = main_content
+        result['metadata'] = metadata
+
+        return result
 
     def load(self) -> Project:
         """Load the project from the repository. If missing or malformed, return an empty Project."""
         project_dir = self.base_path
         binder_path = project_dir / '_binder.md'
+
         # If binder is missing, return empty Project
         if not binder_path.exists():
             return Project(name='', description='', root_node=Node(node_id='_binder', title=''))
+
+        # Load project metadata from _binder.md
         project_data = self._load_project_metadata(project_dir)
+
         # If project_data is empty, treat as malformed and return empty Project
         if not project_data:
             return Project(name='', description='', root_node=Node(node_id='_binder', title=''))
-        # Create the root node from _binder.md
-        nodes_by_id = self._load_nodes(project_dir)
-        self._setup_node_relationships(project_dir, nodes_by_id)
-        root_node = nodes_by_id.get('_binder')
-        if root_node is None:  # pragma: no cover
-            return Project(
-                name=project_data.get('name', ''),
-                description=project_data.get('description', ''),
-                root_node=Node(node_id='_binder', title=project_data.get('name', '')),
-            )
+
+        # Parse the outline from _binder.md to build the node structure
+        binder_content = binder_path.read_text(encoding='utf-8')
+
+        # Extract the outline part (after frontmatter)
+        frontmatter_match = re.match(r'---\n(.*?)\n---\n', binder_content, re.DOTALL)
+        if not frontmatter_match:
+            # If no valid frontmatter, return empty project
+            return Project(name='', description='', root_node=Node(node_id='_binder', title=''))
+
+        outline_content = binder_content[frontmatter_match.end():].strip()
+
+        # Parse the outline to create the node structure
+        root_node = parse_outline(outline_content)
+
+        # Set the root node ID and title
+        root_node.id = '_binder'
+        root_node.title = project_data.get('name', '')
+
+        # Load content for each node
+        self._load_node_contents(project_dir, root_node)
+
+        # Load notes and notecard for root node if they exist
+        notes_path = project_dir / '_binder notes.md'
+        if notes_path.exists():
+            root_node.notes = notes_path.read_text(encoding='utf-8')
+
+        notecard_path = project_dir / '_binder notecard.md'
+        if notecard_path.exists():
+            root_node.notecard = notecard_path.read_text(encoding='utf-8')
+
         return Project(
             name=project_data.get('name', ''),
             description=project_data.get('description', ''),
