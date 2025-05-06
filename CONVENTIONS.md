@@ -48,3 +48,14 @@ When writing Python code (`*.py`), follow these testing practices:
 - Use fixtures for complex setup.
 - Aim for 100% test coverage for code under `src/`.
 - When writing tests, move common fixtures to `tests/conftest.py`.
+
+## Variable naming
+
+When naming variables in Python code, follow these naming practices:
+
+- Use concise but descriptive variable names that clearly indicate purpose.
+- Avoid single-character variable names except in the simplest comprehensions and generator expressions.
+- Follow snake_case for all variable names.
+- Choose names that reveal intent and make code self-documenting.
+- Use plural forms for collections (lists, sets, dictionaries) and singular forms for individual items.
+- Prefix boolean variables with verbs like `is_`, `has_`, or `should_`.
