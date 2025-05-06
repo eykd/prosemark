@@ -388,24 +388,27 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                     metadata[key] = value_str.strip()
 
         # Remove frontmatter from content
-        content_without_frontmatter = content[frontmatter_match.end() :]
+        content_without_frontmatter = content[frontmatter_match.end():]
 
-        # Process content by filtering out wikilinks and the separator
-        content_lines = content_without_frontmatter.strip().split('\n')
-        filtered_content_lines = []
-        skip_until_separator = True  # Skip everything until we find the second '---'
+        # Process content - we need to filter out the wikilinks section
+        # Look for a pattern like:
+        # ---
+        #
+        # [[node_id notecard.md]]
+        # [[node_id notes.md]]
+        #
+        # ---
+        #
+        # And extract only the content after the second ---
 
-        for line in content_lines:
-            if skip_until_separator:
-                if line.strip() == '---':
-                    skip_until_separator = False  # Found the separator, stop skipping
-                # Skip all lines in the wikilinks section
-                continue
-            # We're past the separator, include all remaining lines
-            filtered_content_lines.append(line)
-
-        # The remaining content is the main content
-        main_content = '\n'.join(filtered_content_lines).strip()
+        # Find the last occurrence of '---' in the content
+        parts = content_without_frontmatter.split('---')
+        if len(parts) > 2:
+            # If we have more than one separator, take the content after the last one
+            main_content = parts[-1].strip()
+        else:
+            # Otherwise, just use the content as is
+            main_content = content_without_frontmatter.strip()
 
         # Load notes from separate file if it exists
         notes = ''
@@ -420,8 +423,6 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             notecard_path = file_path.parent / notecard_file
             if notecard_path.exists():  # pragma: no branch
                 notecard = notecard_path.read_text(encoding='utf-8')
-
-        # main_content is now set by the wikilinks filtering code above
 
         return Node(
             node_id=node_id,
