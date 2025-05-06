@@ -368,19 +368,19 @@ def test_edit_command_with_editor(runner: CliRunner) -> None:
         )
 
         # Mock the editor to return edited content
-        edited_text = """# Title: Edited Title
+        edited_text = """// Title: Edited Title
 
-# Notecard (brief summary):
+// Notecard (brief summary):
 Edited notecard
 
-# Content (main text):
+// Content (main text):
 Edited content
 
-# Notes (additional information):
+// Notes (additional information):
 Edited notes
 
-# Instructions:
-# Edit the content above. Lines starting with # are comments and will be ignored.
+// Instructions:
+// Edit the content above. Lines starting with // are comments and will be ignored.
 """
 
         with (
@@ -495,22 +495,22 @@ def test_parse_edit_markdown_with_comments(tmp_path: Path) -> None:
     adapter = MarkdownFilesystemProjectRepository(tmp_path)
 
     # Test with comments and multiple sections
-    markdown = """# Title: Test Title
+    markdown = """// Title: Test Title
 
-# Notecard (brief summary):
+// Notecard (brief summary):
 This is a notecard
-# This is a comment in the notecard section
+// This is a comment in the notecard section
 
-# Content (main text):
+// Content (main text):
 This is content
-# This is a comment in the content section
+// This is a comment in the content section
 
-# Notes (additional information):
+// Notes (additional information):
 These are notes
-# This is a comment in the notes section
+// This is a comment in the notes section
 
-# Instructions:
-# These are instructions that should be ignored
+// Instructions:
+// These are instructions that should be ignored
 """
     sections = adapter.parse_edit_markdown(markdown)
     assert sections['title'] == 'Test Title'
@@ -626,8 +626,8 @@ def test_parse_edit_markdown_with_instructions_only() -> None:
     adapter = MarkdownFilesystemProjectRepository(Path())
 
     # Test with only instructions
-    markdown = """# Instructions:
-# These are instructions that should be ignored
+    markdown = """// Instructions:
+// These are instructions that should be ignored
 """
     sections = adapter.parse_edit_markdown(markdown)
 

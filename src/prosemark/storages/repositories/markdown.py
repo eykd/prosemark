@@ -548,33 +548,33 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         section_content: list[str] = []
 
         for line in markdown.split('\n'):  # pragma: no branch
-            if line.startswith('# Title:'):
+            if line.startswith('// Title:'):
                 # Extract title directly from this line
-                title_value = line.replace('# Title:', '').strip()
+                title_value = line.replace('// Title:', '').strip()
                 # Always add title to sections, even if empty
                 sections['title'] = title_value
                 current_section = 'title'
                 section_content = []
-            elif line.startswith('# Notecard'):
+            elif line.startswith('// Notecard'):
                 if current_section and section_content and current_section != 'title':  # pragma: no cover
                     sections[current_section] = '\n'.join(section_content).strip()
                 current_section = 'notecard'
                 section_content = []
-            elif line.startswith('# Content'):
+            elif line.startswith('// Content'):
                 if current_section and section_content:  # pragma: no branch
                     sections[current_section] = '\n'.join(section_content).strip()
                 current_section = 'content'
                 section_content = []
-            elif line.startswith('# Notes'):
+            elif line.startswith('// Notes'):
                 if current_section and section_content:  # pragma: no branch
                     sections[current_section] = '\n'.join(section_content).strip()
                 current_section = 'notes'
                 section_content = []
-            elif line.startswith('# Instructions:'):
+            elif line.startswith('// Instructions:'):
                 if current_section and section_content:  # pragma: no branch
                     sections[current_section] = '\n'.join(section_content).strip()
                 break
-            elif not line.startswith('#'):  # pragma: no branch
+            elif not line.startswith('//'):  # pragma: no branch
                 section_content.append(line)
 
         # Save the last section
@@ -594,15 +594,15 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
 
         """
         lines = [
-            f'# Title: {node.title}\n',
-            '# Notecard (brief summary):',
+            f'// Title: {node.title}\n',
+            '// Notecard (brief summary):',
             f'{node.notecard}\n',
-            '# Content (main text):',
+            '// Content (main text):',
             f'{node.content}\n',
-            '# Notes (additional information):',
+            '// Notes (additional information):',
             f'{node.notes}\n',
-            '# Instructions:',
-            '# Edit the content above. Lines starting with # are comments and will be ignored.\n',
+            '// Instructions:',
+            '// Edit the content above. Lines starting with // are comments and will be ignored.\n',
         ]
         return '\n'.join(lines)
 
