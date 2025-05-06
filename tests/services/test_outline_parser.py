@@ -68,6 +68,23 @@ class TestOutlineParser:
         with pytest.raises(OutlineParseError):
             parse_outline(invalid_outline)
 
+    def test_invalid_indentation_structure(self) -> None:
+        """Test that invalid indentation structure raises appropriate errors."""
+        # Create a malformed outline with inconsistent indentation
+        invalid_outline = """- [Book 1](20250506032834876147.md)
+    - [Chapter 1](20250506032925694067.md)
+  - [Chapter 2](20250506032931240962.md)"""  # This line has less indentation than expected
+
+        with pytest.raises(OutlineParseError, match='Invalid indentation structure'):
+            parse_outline(invalid_outline)
+
+    def test_parse_line_error(self) -> None:
+        """Test that _parse_line raises ValueError for invalid line formats."""
+        from prosemark.services.outline_parser import _parse_line
+
+        with pytest.raises(ValueError, match='Line does not match expected format'):
+            _parse_line('  - Invalid line without proper markdown link')
+
     def test_generate_outline_empty(self) -> None:
         """Test generating an outline from an empty root node."""
         root = Node(node_id='root', title='Root')
