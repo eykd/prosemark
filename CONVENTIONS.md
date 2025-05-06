@@ -59,3 +59,22 @@ When naming variables in Python code, follow these naming practices:
 - Choose names that reveal intent and make code self-documenting.
 - Use plural forms for collections (lists, sets, dictionaries) and singular forms for individual items.
 - Prefix boolean variables with verbs like `is_`, `has_`, or `should_`.
+
+## Exception style
+
+When raising exceptions in Python code, follow these practices:
+
+- Do not raise generic exceptions like `Exception` or `RuntimeError`.
+- Use a specific exception defined in `src/prosemark/exceptions.py`.
+- Define a new specific exception in `src/prosemark/exceptions.py` if none exists for your situation.
+- Do not define `__init__` methods on custom exceptions.
+- When raising exceptions with a string message, do not use variable substitution in the error message.
+- Add extra context as further arguments to the exception instead of embedding variables in the message.
+- Example:
+  ```python
+  # Bad
+  raise ValueError(f"Node with ID {node_id} not found")
+  
+  # Good
+  raise NodeNotFoundError("Node not found", node_id)
+  ```
