@@ -46,12 +46,14 @@ def parse_outline(outline_text: str) -> Node:
                 node_stack.pop()
 
             if not node_stack:  # pragma: no cover
-                raise OutlineParseError(f'Invalid indentation structure at line: {line}')
+                msg = f'Invalid indentation structure at line: {line}'
+                raise OutlineParseError(msg)
 
             # Check if the indentation level is valid (should be exactly 2 more than parent's level)
             parent_node, parent_level = node_stack[-1]
             if indent_level > parent_level + 2:
-                raise OutlineParseError(f'Invalid indentation structure at line: {line}')
+                msg = f'Invalid indentation structure at line: {line}'
+                raise OutlineParseError(msg)
 
             # Create new node and add to parent
             new_node = Node(node_id=node_id, title=title)
@@ -61,7 +63,8 @@ def parse_outline(outline_text: str) -> Node:
             node_stack.append((new_node, indent_level))
 
         except (ValueError, IndexError) as e:
-            raise OutlineParseError(f'Failed to parse line: {line}. Error: {e!s}')
+            msg = f'Failed to parse line: {line}. Error: {e!s}'
+            raise OutlineParseError(msg) from e
 
     return root_node
 
