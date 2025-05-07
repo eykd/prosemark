@@ -13,6 +13,14 @@ class OutlineParseError(Exception):
     """Raised when the outline cannot be parsed correctly."""
 
 
+class OutlineLineFormatError(OutlineParseError):
+    """Raised when a line in the outline does not match the expected format."""
+
+
+class OutlineIndentationError(OutlineParseError):
+    """Raised when the indentation structure of the outline is invalid."""
+
+
 def parse_outline(outline_text: str) -> Node:
     """Parse a Markdown-formatted outline into a node tree.
 
@@ -40,31 +48,30 @@ def parse_outline(outline_text: str) -> Node:
         try:
             # Extract indentation level, title, and node_id
             indent_level, title, node_id = _parse_line(line)
-
-            # Find the appropriate parent for this node based on indentation
-            while node_stack and node_stack[-1][1] >= indent_level:
-                node_stack.pop()
-
-            if not node_stack:  # pragma: no cover
-                msg = f'Invalid indentation structure at line: {line}'
-                raise OutlineParseError(msg)
-
-            # Check if the indentation level is valid (should be exactly 2 more than parent's level)
-            parent_node, parent_level = node_stack[-1]
-            if indent_level > parent_level + 2:
-                msg = f'Invalid indentation structure at line: {line}'
-                raise OutlineParseError(msg)
-
-            # Create new node and add to parent
-            new_node = Node(node_id=node_id, title=title)
-            parent_node.add_child(new_node)
-
-            # Add this node to the stack for potential children
-            node_stack.append((new_node, indent_level))
-
-        except (ValueError, IndexError) as e:
+        except (OutlineLineFormatError, OutlineIndentationError):
+            raise
+        except Exception as e:
             msg = f'Failed to parse line: {line}. Error: {e!s}'
             raise OutlineParseError(msg) from e
+
+        # Find the appropriate parent for this node based on indentation
+        while node_stack and node_stack[-1][1] >= indent_level:
+            node_stack.pop()
+
+        if not node_stack:  # pragma: no cover
+            raise OutlineIndentationError(line)
+
+        # Check if the indentation level is valid (should be exactly 2 more than parent's level)
+        parent_node, parent_level = node_stack[-1]
+        if indent_level > parent_level + 2:
+            raise OutlineIndentationError(line)
+
+        # Create new node and add to parent
+        new_node = Node(node_id=node_id, title=title)
+        parent_node.add_child(new_node)
+
+        # Add this node to the stack for potential children
+        node_stack.append((new_node, indent_level))
 
     return root_node
 
@@ -98,13 +105,13 @@ def _parse_line(line: str) -> tuple[int, str, str]:
         A tuple of (indent_level, title, node_id)
 
     Raises:
-        ValueError: If the line format is invalid
+        OutlineLineFormatError: If the line format is invalid
 
     """
     # Count leading spaces to determine indentation level
     indent_match = re.match(r'^(\s*)', line)
     if not indent_match:  # pragma: no cover
-        raise ValueError('Could not determine indentation')
+        raise OutlineLineFormatError('Could not determine indentation')
 
     indent_level = len(indent_match.group(1))
 
@@ -113,7 +120,7 @@ def _parse_line(line: str) -> tuple[int, str, str]:
     match = re.match(pattern, line)
 
     if not match:
-        raise ValueError("Line does not match expected format: '- [Title](ID.md)'")
+        raise OutlineLineFormatError("Line does not match expected format: '- [Title](ID.md)'")
 
     title = match.group(1)
     node_id = match.group(2)
