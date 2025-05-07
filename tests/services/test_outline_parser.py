@@ -3,7 +3,12 @@
 import pytest
 
 from prosemark.domain.nodes import Node
-from prosemark.services.outline_parser import OutlineParseError, generate_outline, parse_outline
+from prosemark.services.outline_parser import (
+    OutlineIndentationError,
+    OutlineLineFormatError,
+    generate_outline,
+    parse_outline,
+)
 
 
 class TestOutlineParser:
@@ -65,7 +70,7 @@ class TestOutlineParser:
     def test_invalid_outline_format(self) -> None:
         """Test that invalid outline formats raise appropriate errors."""
         invalid_outline = '- Book 1 without proper format'
-        with pytest.raises(OutlineParseError):
+        with pytest.raises(OutlineLineFormatError):
             parse_outline(invalid_outline)
 
     def test_invalid_indentation_structure(self) -> None:
@@ -75,14 +80,14 @@ class TestOutlineParser:
     - [Chapter 1](20250506032925694067.md)
   - [Chapter 2](20250506032931240962.md)"""  # This line has less indentation than expected
 
-        with pytest.raises(OutlineParseError, match='Invalid indentation structure'):
+        with pytest.raises(OutlineIndentationError, match='Invalid indentation structure'):
             parse_outline(invalid_outline)
 
     def test_parse_line_error(self) -> None:
         """Test that _parse_line raises ValueError for invalid line formats."""
         from prosemark.services.outline_parser import _parse_line
 
-        with pytest.raises(ValueError, match='Line does not match expected format'):
+        with pytest.raises(OutlineLineFormatError, match='Line does not match expected format'):
             _parse_line('  - Invalid line without proper markdown link')
 
     def test_generate_outline_empty(self) -> None:
@@ -150,3 +155,9 @@ class TestOutlineParser:
         generated = generate_outline(parsed)
 
         assert generated == original
+
+    def test_blank_outline_item(self) -> None:
+        """Test that a blank outline item (just a dash) raises appropriate error."""
+        invalid_outline = '- \n'
+        with pytest.raises(OutlineLineFormatError, match='Line does not match expected format'):
+            parse_outline(invalid_outline)

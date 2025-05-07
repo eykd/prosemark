@@ -54,9 +54,8 @@ def parse_outline(outline_text: str) -> Node:
             indent_level, title, node_id = _parse_line(line)
         except (OutlineLineFormatError, OutlineIndentationError):
             raise
-        except Exception as e:
-            msg = f'Failed to parse line: {line}. Error: {e!s}'
-            raise OutlineParseError(msg) from e
+        except Exception as exc:  # pragma: no cover
+            raise OutlineParseError('Failed to parse line', line) from exc
 
         # Find the appropriate parent for this node based on indentation
         while node_stack and node_stack[-1][1] >= indent_level:
