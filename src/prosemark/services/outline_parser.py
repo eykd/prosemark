@@ -20,6 +20,10 @@ class OutlineLineFormatError(OutlineParseError):
 class OutlineIndentationError(OutlineParseError):
     """Raised when the indentation structure of the outline is invalid."""
 
+    def __init__(self, line: str, message: str = 'Invalid indentation structure') -> None:
+        self.line = line
+        super().__init__(f'{message}: {line}')
+
 
 def parse_outline(outline_text: str) -> Node:
     """Parse a Markdown-formatted outline into a node tree.
