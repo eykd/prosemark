@@ -101,7 +101,7 @@ class Node:
         if self.parent is None:
             return False
 
-        if sibling.parent is not None:
+        if sibling.parent is not None:  # pragma: no branch
             sibling.parent.remove_child(sibling)
 
         position = self.parent.children.index(self) + 1
