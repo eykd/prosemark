@@ -1,6 +1,7 @@
 """Tests for the filesystem storage adapter."""
 
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -19,7 +20,7 @@ class TestFilesystemMdNodeStorage:
     """Tests for the FilesystemMdNodeStorage class."""
 
     @pytest.fixture
-    def storage(self) -> FilesystemMdNodeStorage:
+    def storage(self) -> Generator[FilesystemMdNodeStorage, None, None]:
         """Create a temporary storage instance for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             yield FilesystemMdNodeStorage(Path(temp_dir))
