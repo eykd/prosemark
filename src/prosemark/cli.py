@@ -30,15 +30,25 @@ if TYPE_CHECKING:  # pragma: no cover
     help='Enable verbose output (print tracebacks on errors)',
 )
 @click.pass_context
-def main(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT001  # pragma: no cover
+def main(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT001
     """Prosemark - A tool for structured document creation and management.
 
     Prosemark helps you organize your writing projects with a hierarchical
     structure of nodes, each containing content, notes, and metadata.
     """
+    from pathlib import Path
+
+    from prosemark.repositories.project import ProjectRepository
+    from prosemark.storages.filesystem import FilesystemMdNodeStorage
+
     ctx.ensure_object(dict)
     ctx.obj['data_dir'] = data_dir
     ctx.obj['verbose'] = verbose
+
+    # Create storage and repository instances
+    storage = FilesystemMdNodeStorage(Path(data_dir))
+    repository = ProjectRepository(storage)
+    ctx.obj['repository'] = repository
 
 
 @main.command()
@@ -50,6 +60,19 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
 
     NAME is the name of the new project to create.
     """
+    from prosemark.domain.nodes import Node
+    from prosemark.domain.projects import Project
+
+    repository = ctx.obj['repository']
+
+    # Create a new project with a root node
+    root_node = Node(node_id='root', title='Root')
+    project = Project(name=name, description=description or '', root_node=root_node)
+
+    # Save the project, which will create the _binder.md file
+    repository.save_project(project)
+
+    click.echo(f"Project '{name}' initialized successfully in {ctx.obj['data_dir']}")
 
 
 @main.command()
