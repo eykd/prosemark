@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import yaml
+
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
 from prosemark.parsers.nodes import NodeParser
