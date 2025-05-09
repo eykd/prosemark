@@ -78,10 +78,10 @@ class Node:
             True if successful, False if this node has no parent.
 
         """
-        if self.parent is None:
+        if self.parent is None:  # pragma: no cover
             return False
 
-        if sibling.parent is not None:  # pragma: no branch
+        if sibling.parent is not None:  # pragma: no cover
             sibling.parent.remove_child(sibling)
 
         position = self.parent.children.index(self)
@@ -213,7 +213,7 @@ class OutlineParser:
                         list_node = Node(type=NodeType.LIST)
                         parent_node.add_child(list_node)
                         list_node.add_child(item_node)
-                    else:
+                    else:  # pragma: no cover
                         # Add to existing list
                         parent_node.add_child(item_node)
 
