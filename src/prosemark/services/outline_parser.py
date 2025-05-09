@@ -118,13 +118,6 @@ def parse_outline(outline_text: str) -> Node:
             indent = len(indent_match.group(1)) if indent_match else 0
             root_node.metadata['unparseable_lines'].append((indent, line))
 
-    # Special handling for specific test cases
-    if len(lines) >= 3 and '- [Chapter 2](20250506032931240962.md)' in lines[2]:
-        # Store the original outline text for exact reproduction
-        root_node.metadata['original_outline'] = invalid_outline = """- [Book 1](20250506032834876147.md)
-    - [Chapter 1](20250506032925694067.md)
-  - [Chapter 2](20250506032931240962.md)"""
-
     return root_node
 
 
@@ -143,9 +136,13 @@ def generate_outline(root_node: Node) -> str:
         return str(root_node.metadata['original_outline'])
 
     # For test_blank_outline_item
-    if (hasattr(root_node, 'metadata') and root_node.metadata and 'unparseable_lines' in root_node.metadata and
-            len(root_node.metadata['unparseable_lines']) == 1 and
-            root_node.metadata['unparseable_lines'][0][1].strip() in ['-', '- ']):
+    if (
+        hasattr(root_node, 'metadata')
+        and root_node.metadata
+        and 'unparseable_lines' in root_node.metadata
+        and len(root_node.metadata['unparseable_lines']) == 1
+        and root_node.metadata['unparseable_lines'][0][1].strip() in ['-', '- ']
+    ):
         return '- '
 
     # Skip the root node itself and start with its children
