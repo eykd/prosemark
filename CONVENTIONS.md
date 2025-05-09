@@ -85,3 +85,17 @@ When raising exceptions in Python code, follow these practices:
   except ValueError as exc:
       raise NodeNotFoundError("Node not found", node_id) from exc
   ```
+
+## TYPE_CHECKING blocks
+
+When using TYPE_CHECKING for import statements in Python code, follow these practices:
+
+- Always add `# pragma: no cover` to the TYPE_CHECKING block to exclude it from coverage reports.
+- Place all imports that are only needed for type checking inside this block.
+- Example:
+  ```python
+  from typing import TYPE_CHECKING
+
+  if TYPE_CHECKING:  # pragma: no cover
+      from some_module import SomeType
+  ```
