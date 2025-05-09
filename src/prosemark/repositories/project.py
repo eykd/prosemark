@@ -7,11 +7,11 @@ domain models and the storage system.
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
+from prosemark.parsers.nodes import NodeParser
 from prosemark.parsers.outlines import OutlineNode, OutlineNodeType, OutlineParser
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -233,8 +233,8 @@ class ProjectRepository:
             'metadata': node.metadata,
         }
 
-        # Serialize to JSON
-        return json.dumps(node_data, indent=2)
+        # Use NodeParser to serialize
+        return NodeParser.serialize(node_data)
 
     def parse_node_content(self, node: Node, content: str) -> None:
         """Parse node content and update the node object.
@@ -245,7 +245,8 @@ class ProjectRepository:
 
         """
         try:
-            node_data = json.loads(content)
+            # Use NodeParser to parse the content
+            node_data = NodeParser.parse(content, node.id)
 
             # Update node properties
             node.title = node_data.get('title', node.title)
@@ -258,6 +259,6 @@ class ProjectRepository:
             if metadata and isinstance(metadata, dict):
                 node.metadata.update(metadata)
 
-        except json.JSONDecodeError:
-            # If not valid JSON, treat as raw content
+        except Exception:
+            # If parsing fails, treat as raw content
             node.content = content

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
 from unittest.mock import ANY, MagicMock, patch
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
+from prosemark.parsers.nodes import NodeParser
 from prosemark.parsers.outlines import OutlineNode, OutlineNodeType
 from prosemark.repositories.project import ProjectRepository
 
@@ -85,14 +85,15 @@ class TestProjectRepository:
         """Test loading node content."""
         # Setup
         node = Node(node_id='test_node', title='Test Node')
-        node_content = json.dumps({
-            'id': 'test_node',
-            'title': 'Updated Title',
-            'notecard': 'Test notecard',
-            'content': 'Test content',
-            'notes': 'Test notes',
-            'metadata': {'key': 'value'},
-        })
+        node_content = """---
+id: test_node
+title: Updated Title
+key: value
+---
+// Notecard: Test notecard
+// Notes: Test notes
+
+Test content"""
         self.mock_storage.read.return_value = node_content
 
         # Execute
@@ -119,11 +120,11 @@ class TestProjectRepository:
         self.mock_storage.read.assert_called_once_with('test_node')
         assert node.title == 'Test Node'  # Unchanged
 
-    def test_load_node_content_invalid_json(self) -> None:
-        """Test loading node content with invalid JSON."""
+    def test_load_node_content_invalid_format(self) -> None:
+        """Test loading node content with invalid format."""
         # Setup
         node = Node(node_id='test_node', title='Test Node')
-        self.mock_storage.read.return_value = 'Not valid JSON'
+        self.mock_storage.read.return_value = 'Not valid format'
 
         # Execute
         self.repo.load_node_content(node)
@@ -131,7 +132,7 @@ class TestProjectRepository:
         # Verify
         self.mock_storage.read.assert_called_once_with('test_node')
         assert node.title == 'Test Node'  # Unchanged
-        assert node.content == 'Not valid JSON'  # Raw content used
+        assert node.content == 'Not valid format'  # Raw content used
 
     def test_save_node(self) -> None:
         """Test saving a node."""
@@ -145,22 +146,21 @@ class TestProjectRepository:
             metadata={'key': 'value'},
         )
 
-        # Execute
-        self.repo.save_node(node)
+        # Mock NodeParser.serialize to return a predictable string
+        with patch.object(NodeParser, 'serialize', return_value='serialized content') as mock_serialize:
+            # Execute
+            self.repo.save_node(node)
 
-        # Verify
-        expected_content = json.dumps(
-            {
+            # Verify
+            mock_serialize.assert_called_once_with({
                 'id': 'test_node',
                 'title': 'Test Node',
                 'notecard': 'Test notecard',
                 'content': 'Test content',
                 'notes': 'Test notes',
                 'metadata': {'key': 'value'},
-            },
-            indent=2,
-        )
-        self.mock_storage.write.assert_called_once_with('test_node', expected_content)
+            })
+            self.mock_storage.write.assert_called_once_with('test_node', 'serialized content')
 
     def test_build_node_structure(self) -> None:
         """Test building node structure from outline."""
@@ -306,73 +306,93 @@ class TestProjectRepository:
             metadata={'key': 'value'},
         )
 
-        # Execute
-        result = self.repo.serialize_node_content(node)
+        # Mock NodeParser.serialize
+        with patch.object(NodeParser, 'serialize', return_value='serialized content') as mock_serialize:
+            # Execute
+            result = self.repo.serialize_node_content(node)
 
-        # Verify
-        expected_data = {
-            'id': 'test_node',
-            'title': 'Test Node',
-            'notecard': 'Test notecard',
-            'content': 'Test content',
-            'notes': 'Test notes',
-            'metadata': {'key': 'value'},
-        }
-        assert json.loads(result) == expected_data
+            # Verify
+            mock_serialize.assert_called_once_with({
+                'id': 'test_node',
+                'title': 'Test Node',
+                'notecard': 'Test notecard',
+                'content': 'Test content',
+                'notes': 'Test notes',
+                'metadata': {'key': 'value'},
+            })
+            assert result == 'serialized content'
 
     def test_parse_node_content(self) -> None:
         """Test parsing node content."""
         # Setup
         node = Node(node_id='test_node', title='Original Title')
-        content = json.dumps({
+        content = 'Some content'
+
+        # Mock NodeParser.parse
+        parsed_data = {
+            'id': 'test_node',
             'title': 'Updated Title',
             'notecard': 'Test notecard',
             'content': 'Test content',
             'notes': 'Test notes',
             'metadata': {'key': 'value'},
-        })
+        }
 
-        # Execute
-        self.repo.parse_node_content(node, content)
+        with patch.object(NodeParser, 'parse', return_value=parsed_data) as mock_parse:
+            # Execute
+            self.repo.parse_node_content(node, content)
 
-        # Verify
-        assert node.title == 'Updated Title'
-        assert node.notecard == 'Test notecard'
-        assert node.content == 'Test content'
-        assert node.notes == 'Test notes'
-        assert node.metadata == {'key': 'value'}
+            # Verify
+            mock_parse.assert_called_once_with(content, 'test_node')
+            assert node.title == 'Updated Title'
+            assert node.notecard == 'Test notecard'
+            assert node.content == 'Test content'
+            assert node.notes == 'Test notes'
+            assert node.metadata == {'key': 'value'}
 
     def test_parse_node_content_partial_data(self) -> None:
         """Test parsing node content with partial data."""
         # Setup
         node = Node(node_id='test_node', title='Original Title')
-        content = json.dumps({
+        content = 'Some content'
+
+        # Mock NodeParser.parse with partial data
+        parsed_data = {
+            'id': 'test_node',
             'title': 'Updated Title',
             # Missing other fields
-        })
+        }
 
-        # Execute
-        self.repo.parse_node_content(node, content)
+        with patch.object(NodeParser, 'parse', return_value=parsed_data) as mock_parse:
+            # Execute
+            self.repo.parse_node_content(node, content)
 
-        # Verify
-        assert node.title == 'Updated Title'
-        assert node.notecard == ''  # Default value preserved
-        assert node.content == ''  # Default value preserved
-        assert node.notes == ''  # Default value preserved
-        assert node.metadata == {}  # Default value preserved
+            # Verify
+            mock_parse.assert_called_once_with(content, 'test_node')
+            assert node.title == 'Updated Title'
+            assert node.notecard == ''  # Default value preserved
+            assert node.content == ''  # Default value preserved
+            assert node.notes == ''  # Default value preserved
+            assert node.metadata == {}  # Default value preserved
 
     def test_parse_node_content_invalid_metadata(self) -> None:
         """Test parsing node content with invalid metadata."""
         # Setup
         node = Node(node_id='test_node', title='Original Title')
-        content = json.dumps({
+        content = 'Some content'
+
+        # Mock NodeParser.parse with invalid metadata
+        parsed_data = {
+            'id': 'test_node',
             'title': 'Updated Title',
             'metadata': 'not a dict',  # Invalid metadata
-        })
+        }
 
-        # Execute
-        self.repo.parse_node_content(node, content)
+        with patch.object(NodeParser, 'parse', return_value=parsed_data) as mock_parse:
+            # Execute
+            self.repo.parse_node_content(node, content)
 
-        # Verify
-        assert node.title == 'Updated Title'
-        assert node.metadata == {}  # Default value preserved
+            # Verify
+            mock_parse.assert_called_once_with(content, 'test_node')
+            assert node.title == 'Updated Title'
+            assert node.metadata == {}  # Default value preserved
