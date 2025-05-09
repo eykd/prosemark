@@ -4,13 +4,14 @@ This module provides a storage adapter that reads and writes Markdown files
 from the filesystem, using a timestamp-based ID system for filenames.
 """
 
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Protocol
 
 
-class NodeStoragePort(Protocol):
-    """Port defining the interface for node storage."""
+class NodeStoragePort(ABC):
+    """Abstract base class defining the interface for node storage."""
 
+    @abstractmethod
     def read(self, node_id: str) -> str:
         """Read the content of a node by ID.
 
@@ -21,8 +22,8 @@ class NodeStoragePort(Protocol):
             The content of the node as a string, or empty string if not found.
 
         """
-        ...  # pragma: no cover
 
+    @abstractmethod
     def write(self, node_id: str, content: str) -> None:
         """Write content to a node by ID.
 
@@ -31,10 +32,20 @@ class NodeStoragePort(Protocol):
             content: The content to write to the node.
 
         """
-        ...  # pragma: no cover
+
+    @abstractmethod
+    def get_binder(self) -> str:
+        """Read the content of the special _binder node.
+
+        The _binder node contains metadata about the project structure.
+
+        Returns:
+            The content of the _binder node as a string, or empty string if not found.
+
+        """
 
 
-class FilesystemMdNodeStorage:
+class FilesystemMdNodeStorage(NodeStoragePort):
     """Filesystem storage adapter for Markdown nodes.
 
     This adapter reads and writes Markdown files from the filesystem,
