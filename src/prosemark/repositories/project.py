@@ -259,6 +259,6 @@ class ProjectRepository:
             if metadata and isinstance(metadata, dict):
                 node.metadata.update(metadata)
 
-        except Exception:
+        except (ValueError, yaml.YAMLError):
             # If parsing fails, treat as raw content
             node.content = content

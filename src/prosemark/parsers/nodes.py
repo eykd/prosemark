@@ -73,7 +73,7 @@ class NodeParser:
             remaining_content = content
 
         # Process directives and extract content
-        content_lines, directives = cls._process_directives(remaining_content)
+        content_lines, directives = cls.process_directives(remaining_content)
 
         # Update node data with directives
         for key, value in directives.items():
@@ -91,7 +91,7 @@ class NodeParser:
         return node_data
 
     @classmethod
-    def _process_directives(cls, content: str) -> tuple[list[str], dict[str, str]]:
+    def process_directives(cls, content: str) -> tuple[list[str], dict[str, str]]:
         """Process directives and separate them from content.
 
         Args:

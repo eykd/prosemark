@@ -143,7 +143,7 @@ This is the content."""
 
 Content starts here."""
 
-        content_lines, directives = NodeParser._process_directives(content)
+        content_lines, directives = NodeParser.process_directives(content)
         assert directives == {'Directive1': 'Value1', 'Directive2': 'Value2'}
         assert content_lines == ['Content starts here.']
 
@@ -154,7 +154,7 @@ Some text
 // Directive2: Value2
 More text"""
 
-        content_lines, directives = NodeParser._process_directives(content)
+        content_lines, directives = NodeParser.process_directives(content)
         # Only the first directive should be processed
         assert directives == {'Directive1': 'Value1'}
         assert content_lines == ['Some text', '// Directive2: Value2', 'More text']
