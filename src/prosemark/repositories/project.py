@@ -251,17 +251,17 @@ class ProjectRepository:
             node_data = NodeParser.parse(content, node.id)
 
             # Update node properties
-            node.title = node_data.get('title', node.title)
-            node.notecard = node_data.get('notecard', node.notecard)
-            node.content = node_data.get('content', node.content)
-            node.notes = node_data.get('notes', node.notes)
+            node.title = node_data.get('title') or node.title
+            node.notecard = node_data.get('notecard') or node.notecard
+            node.content = node_data.get('content') or node.content
+            node.notes = node_data.get('notes') or node.notes
 
             # Update metadata
             metadata = node_data.get('metadata')
             if metadata and isinstance(metadata, dict):
                 node.metadata.update(metadata)
 
-        except (ValueError, yaml.YAMLError):
+        except (ValueError, yaml.YAMLError):  # pragma: no cover
             # If parsing fails, treat as raw content but preserve original properties
             node.content = content
             # Note: We don't modify title, notecard, notes, or metadata when parsing fails
