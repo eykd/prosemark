@@ -13,7 +13,7 @@ from typing import Any
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
-from prosemark.parsers.outlines import OutlineNodeType, OutlineParser
+from prosemark.parsers.outlines import OutlineNode, OutlineNodeType, OutlineParser
 from prosemark.storages.repositories.base import ProjectRepository
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
