@@ -150,17 +150,19 @@ class ProjectRepository:
 
         """
         # Simple parsing: assume format is "- ID: Title"
-        parts = content.strip().split(':', 1)
+        content_stripped = content.strip()
+
+        # Remove list marker if present
+        if content_stripped.startswith(('- ', '* ', '+ ')):
+            content_stripped = content_stripped[2:].strip()
+
+        parts = content_stripped.split(':', 1)
         if len(parts) == 2:
-            # Extract ID from the first part (removing the list marker and whitespace)
-            id_part = parts[0].strip()
-            if id_part.startswith(('- ', '* ', '+ ')):
-                id_part = id_part[2:].strip()
+            # Extract ID and title
+            return {'id': parts[0].strip(), 'title': parts[1].strip()}
 
-            return {'id': id_part, 'title': parts[1].strip()}
-
-        # Fallback: use the whole content as title
-        return {'title': content.strip()}
+        # Fallback: use the whole content as title (without list marker)
+        return {'title': content_stripped}
 
     def generate_binder_content(self, project: Project) -> str:
         """Generate the binder content from the project structure.
@@ -178,8 +180,9 @@ class ProjectRepository:
         if project.description:
             lines.append(f'{project.description}\n\n')
 
-        # Generate the structure as a nested list
-        self.append_node_to_binder(project.root_node, lines, 0)
+        # Generate the structure as a nested list - skip the root node itself
+        for child in project.root_node.children:
+            self.append_node_to_binder(child, lines, 0)
 
         return ''.join(lines)
 
