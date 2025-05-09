@@ -36,7 +36,7 @@ class NodeParser:
 
         """
         # Initialize with default values
-        node_data = {
+        node_data: dict[str, Any] = {
             'id': node_id,
             'title': '',
             'notecard': '',
