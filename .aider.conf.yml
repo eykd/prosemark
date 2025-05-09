@@ -3,7 +3,7 @@ read:
 
 
 ## Use architect edit format for the main chat
-architect: true
+architect: false
 
 model: sonnet
 
@@ -23,6 +23,3 @@ test-cmd: ./scripts/fulltests.sh
 
 ## Enable/disable automatic testing after changes (default: False)
 auto-test: true
-
-
-verbose: true
