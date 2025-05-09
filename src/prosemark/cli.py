@@ -79,6 +79,17 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
 @click.pass_context
 def info(ctx: ClickContext) -> None:
     """Display information about the current project."""
+    repository = ctx.obj['repository']
+    project = repository.load_project()
+
+    click.echo(f'Project: {project.name}')
+    click.echo(f'Description: {project.description}')
+    click.echo(f'Nodes: {project.get_node_count()}')
+
+    if project.metadata:
+        click.echo('\nMetadata:')
+        for key, value in project.metadata.items():
+            click.echo(f'  {key}: {value}')
 
 
 @main.command()
@@ -103,6 +114,22 @@ def add(
     PARENT_ID is the ID of the parent node.
     TITLE is the title of the new node.
     """
+    repository = ctx.obj['repository']
+    project = repository.load_project()
+
+    node = project.create_node(
+        parent_id=parent_id,
+        title=title,
+        notecard=notecard,
+        content=content,
+        notes=notes,
+        position=position,
+    )
+
+    repository.save_project(project)
+    repository.save_node(node)
+
+    click.echo(f'Node added successfully with ID: {node.node_id}')
 
 
 @main.command()
@@ -113,6 +140,15 @@ def remove(ctx: ClickContext, node_id: str) -> None:
 
     NODE_ID is the ID of the node to remove.
     """
+    repository = ctx.obj['repository']
+    project = repository.load_project()
+
+    node = project.remove_node(node_id)
+    if node:
+        repository.save_project(project)
+        click.echo(f"Node '{node.title}' removed successfully")
+    else:
+        click.echo(f"Node with ID '{node_id}' not found")
 
 
 @main.command()
@@ -126,6 +162,15 @@ def move(ctx: ClickContext, node_id: str, new_parent_id: str, position: int | No
     NODE_ID is the ID of the node to move.
     NEW_PARENT_ID is the ID of the new parent node.
     """
+    repository = ctx.obj['repository']
+    project = repository.load_project()
+
+    success = project.move_node(node_id, new_parent_id, position)
+    if success:
+        repository.save_project(project)
+        click.echo('Node moved successfully')
+    else:
+        click.echo(f"Failed to move node '{node_id}' to parent '{new_parent_id}'")
 
 
 @main.command()
@@ -136,6 +181,27 @@ def show(ctx: ClickContext, node_id: str) -> None:
 
     NODE_ID is the ID of the node to display.
     """
+    repository = ctx.obj['repository']
+    project = repository.load_project()
+
+    node = project.get_node_by_id(node_id)
+    if not node:
+        click.echo(f"Node with ID '{node_id}' not found")
+        return
+
+    repository.load_node_content(node)
+
+    click.echo(f'Title: {node.title}')
+    if node.notecard:
+        click.echo(f'\nNotecard: {node.notecard}')
+
+    if node.content:
+        click.echo('\nContent:')
+        click.echo(node.content)
+
+    if node.notes:
+        click.echo('\nNotes:')
+        click.echo(node.notes)
 
 
 @main.command()
@@ -159,6 +225,32 @@ def edit(
 
     NODE_ID is the ID of the node to edit.
     """
+    repository = ctx.obj['repository']
+    project = repository.load_project()
+
+    node = project.get_node_by_id(node_id)
+    if not node:
+        click.echo(f"Node with ID '{node_id}' not found")
+        return
+
+    repository.load_node_content(node)
+
+    # Update node properties if provided
+    if title is not None:
+        node.title = title
+    if notecard is not None:
+        node.notecard = notecard
+    if content is not None:
+        node.content = content
+    if notes is not None:
+        node.notes = notes
+
+    # TODO: Implement editor functionality
+    if editor:
+        click.echo('Editor functionality not implemented yet, using provided values')
+
+    repository.save_node(node)
+    click.echo('Node updated successfully')
 
 
 @main.command()
@@ -166,6 +258,24 @@ def edit(
 @click.pass_context
 def structure(ctx: ClickContext, node_id: str | None = None) -> None:
     """Display the project structure."""
+    repository = ctx.obj['repository']
+    project = repository.load_project()
+
+    if node_id:
+        start_node = project.get_node_by_id(node_id)
+        if not start_node:
+            click.echo(f"Node with ID '{node_id}' not found")
+            return
+    else:
+        start_node = project.root_node
+
+    def print_node(node: Node, level: int = 0) -> None:
+        indent = '  ' * level
+        click.echo(f'{indent}{node.node_id} - {node.title}')
+        for child in node.children:
+            print_node(child, level + 1)
+
+    print_node(start_node)
 
 
 if __name__ == '__main__':  # pragma: no cover
