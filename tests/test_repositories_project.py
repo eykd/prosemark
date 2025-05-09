@@ -60,8 +60,8 @@ class TestProjectRepository:
         """Test saving a project."""
         # Setup
         project = Project(name='Test Project')
-        node1 = Node(node_id='node1', title='First Node')
-        node2 = Node(node_id='node2', title='Second Node')
+        node1 = Node(id='node1', title='First Node')
+        node2 = Node(id='node2', title='Second Node')
         project.root_node.add_child(node1)
         node1.add_child(node2)
 
@@ -78,13 +78,13 @@ class TestProjectRepository:
         self.mock_storage.write.assert_any_call(
             project.root_node.id, self.repo.serialize_node_content(project.root_node)
         )
-        self.mock_storage.write.assert_any_call('node1', self.repo.serialize_node_content(node1))
-        self.mock_storage.write.assert_any_call('node2', self.repo.serialize_node_content(node2))
+        self.mock_storage.write.assert_any_call(node1.id, self.repo.serialize_node_content(node1))
+        self.mock_storage.write.assert_any_call(node2.id, self.repo.serialize_node_content(node2))
 
     def test_load_node_content(self) -> None:
         """Test loading node content."""
         # Setup
-        node = Node(node_id='test_node', title='Test Node')
+        node = Node(id='test_node', title='Test Node')
         node_content = """---
 id: test_node
 title: Updated Title
@@ -110,7 +110,7 @@ Test content"""
     def test_load_node_content_empty(self) -> None:
         """Test loading node content when storage returns empty string."""
         # Setup
-        node = Node(node_id='test_node', title='Test Node')
+        node = Node(id='test_node', title='Test Node')
         self.mock_storage.read.return_value = ''
 
         # Execute
@@ -123,7 +123,7 @@ Test content"""
     def test_load_node_content_invalid_format(self) -> None:
         """Test loading node content with invalid format."""
         # Setup
-        node = Node(node_id='test_node', title='Test Node')
+        node = Node(id='test_node', title='Test Node')
         self.mock_storage.read.return_value = 'Not valid format'
 
         # Execute
@@ -138,7 +138,7 @@ Test content"""
         """Test saving a node."""
         # Setup
         node = Node(
-            node_id='test_node',
+            id='test_node',
             title='Test Node',
             notecard='Test notecard',
             content='Test content',
@@ -196,7 +196,7 @@ Test content"""
     def test_process_list_items(self) -> None:
         """Test processing list items."""
         # Setup
-        parent_node = Node(node_id='parent', title='Parent')
+        parent_node = Node(id='parent', title='Parent')
         list_node = OutlineNode(type=OutlineNodeType.LIST)
         item1 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node1: First Node')
         item2 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node2: Second Node')
@@ -235,9 +235,9 @@ Test content"""
         """Test generating binder content."""
         # Setup
         project = Project(name='Test Project', description='Project description')
-        node1 = Node(node_id='node1', title='First Node')
-        node2 = Node(node_id='node2', title='Second Node')
-        node3 = Node(node_id='node3', title='Nested Node')
+        node1 = Node(id='node1', title='First Node')
+        node2 = Node(id='node2', title='Second Node')
+        node3 = Node(id='node3', title='Nested Node')
         project.root_node.add_child(node1)
         project.root_node.add_child(node2)
         node1.add_child(node3)
@@ -253,7 +253,7 @@ Test content"""
         """Test generating binder content without description."""
         # Setup
         project = Project(name='Test Project')
-        node1 = Node(node_id='node1', title='First Node')
+        node1 = Node(id='node1', title='First Node')
         project.root_node.add_child(node1)
 
         # Execute
@@ -267,8 +267,8 @@ Test content"""
         """Test appending node to binder content."""
         # Setup
         lines: list[str] = []
-        node = Node(node_id='node1', title='First Node')
-        child = Node(node_id='node2', title='Child Node')
+        node = Node(id='node1', title='First Node')
+        child = Node(id='node2', title='Child Node')
         node.add_child(child)
 
         # Execute
@@ -280,8 +280,8 @@ Test content"""
     def test_save_node_recursive(self) -> None:
         """Test saving node recursively."""
         # Setup
-        node = Node(node_id='node1', title='First Node')
-        child = Node(node_id='node2', title='Child Node')
+        node = Node(id='node1', title='First Node')
+        child = Node(id='node2', title='Child Node')
         node.add_child(child)
 
         # Mock save_node to track calls
@@ -298,7 +298,7 @@ Test content"""
         """Test serializing node content."""
         # Setup
         node = Node(
-            node_id='test_node',
+            id='test_node',
             title='Test Node',
             notecard='Test notecard',
             content='Test content',
@@ -325,7 +325,7 @@ Test content"""
     def test_parse_node_content(self) -> None:
         """Test parsing node content."""
         # Setup
-        node = Node(node_id='test_node', title='Original Title')
+        node = Node(id='test_node', title='Original Title')
         content = 'Some content'
 
         # Mock NodeParser.parse
@@ -353,7 +353,7 @@ Test content"""
     def test_parse_node_content_partial_data(self) -> None:
         """Test parsing node content with partial data."""
         # Setup
-        node = Node(node_id='test_node', title='Original Title')
+        node = Node(id='test_node', title='Original Title')
         content = 'Some content'
 
         # Mock NodeParser.parse with partial data
@@ -378,7 +378,7 @@ Test content"""
     def test_parse_node_content_invalid_metadata(self) -> None:
         """Test parsing node content with invalid metadata."""
         # Setup
-        node = Node(node_id='test_node', title='Original Title')
+        node = Node(id='test_node', title='Original Title')
         content = 'Some content'
 
         # Mock NodeParser.parse with invalid metadata

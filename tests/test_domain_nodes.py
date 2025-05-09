@@ -25,7 +25,7 @@ def test_node_initialization() -> None:
     child_node = Node()
 
     node2 = Node(
-        node_id=custom_id,
+        id=custom_id,
         title='Test Title',
         notecard='Test Notecard',
         content='Test Content',

@@ -51,8 +51,7 @@ def test_cli_add(runner: CliRunner) -> None:
 
         # Then add a node
         result = runner.invoke(
-            main,
-            ['add', 'root', 'New Node', '--notecard', 'A brief summary', '--content', 'Some content']
+            main, ['add', '_binder', 'New Node', '--notecard', 'A brief summary', '--content', 'Some content']
         )
         assert result.exit_code == 0
         assert 'Node added successfully' in result.output
@@ -63,7 +62,7 @@ def test_cli_remove(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         # First create a project with a node
         runner.invoke(main, ['init', 'Test Project'])
-        runner.invoke(main, ['add', 'root', 'Node to remove'])
+        runner.invoke(main, ['add', '_binder', 'Node to remove'])
 
         # Get the node ID from the structure
         structure_result = runner.invoke(main, ['structure'])
@@ -80,8 +79,8 @@ def test_cli_move(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         # First create a project with nodes
         runner.invoke(main, ['init', 'Test Project'])
-        runner.invoke(main, ['add', 'root', 'Parent Node'])
-        runner.invoke(main, ['add', 'root', 'Node to move'])
+        runner.invoke(main, ['add', '_binder', 'Parent Node'])
+        runner.invoke(main, ['add', '_binder', 'Node to move'])
 
         # Get node IDs from the structure
         structure_result = runner.invoke(main, ['structure'])
@@ -100,10 +99,7 @@ def test_cli_show(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         # First create a project with a node
         runner.invoke(main, ['init', 'Test Project'])
-        runner.invoke(
-            main,
-            ['add', 'root', 'Node to show', '--content', 'This is the content']
-        )
+        runner.invoke(main, ['add', '_binder', 'Node to show', '--content', 'This is the content'])
 
         # Get the node ID from the structure
         structure_result = runner.invoke(main, ['structure'])
@@ -122,17 +118,14 @@ def test_cli_edit(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         # First create a project with a node
         runner.invoke(main, ['init', 'Test Project'])
-        runner.invoke(main, ['add', 'root', 'Node to edit'])
+        runner.invoke(main, ['add', '_binder', 'Node to edit'])
 
         # Get the node ID from the structure
         structure_result = runner.invoke(main, ['structure'])
         node_id = structure_result.output.split('\n')[1].split()[0]
 
         # Then edit the node without opening an editor
-        result = runner.invoke(
-            main,
-            ['edit', node_id, '--title', 'Updated Title', '--no-editor']
-        )
+        result = runner.invoke(main, ['edit', node_id, '--title', 'Updated Title', '--no-editor'])
         assert result.exit_code == 0
         assert 'Node updated successfully' in result.output
 
@@ -142,12 +135,12 @@ def test_cli_structure(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         # First create a project with nodes
         runner.invoke(main, ['init', 'Test Project'])
-        runner.invoke(main, ['add', 'root', 'Child Node 1'])
-        runner.invoke(main, ['add', 'root', 'Child Node 2'])
+        runner.invoke(main, ['add', '_binder', 'Child Node 1'])
+        runner.invoke(main, ['add', '_binder', 'Child Node 2'])
 
         # Then display the structure
         result = runner.invoke(main, ['structure'])
         assert result.exit_code == 0
-        assert 'root - Root' in result.output
+        assert '_binder - _binder' in result.output
         assert 'Child Node 1' in result.output
         assert 'Child Node 2' in result.output

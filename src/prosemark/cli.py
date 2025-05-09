@@ -68,7 +68,7 @@ def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
     repository = ctx.obj['repository']
 
     # Create a new project with a root node
-    root_node = Node(node_id='root', title='Root')
+    root_node = Node(id='_binder', title=name)
     project = Project(name=name, description=description or '', root_node=root_node)
 
     # Save the project, which will create the _binder.md file
@@ -83,7 +83,6 @@ def info(ctx: ClickContext) -> None:
     """Display information about the current project."""
     repository = ctx.obj['repository']
     project = repository.load_project()
-
     click.echo(f'Project: {project.name}')
     click.echo(f'Description: {project.description}')
     click.echo(f'Nodes: {project.get_node_count()}')
@@ -131,7 +130,7 @@ def add(
     repository.save_project(project)
     repository.save_node(node)
 
-    click.echo(f'Node added successfully with ID: {node.node_id}')
+    click.echo(f'Node added successfully with ID: {node.id}')
 
 
 @main.command()
@@ -154,7 +153,7 @@ def remove(ctx: ClickContext, node_id: str) -> None:
 
 
 @main.command()
-@click.argument('node_id')
+@click.argument('id')
 @click.argument('new_parent_id')
 @click.option('--position', '-p', type=int, help='Position to insert the node')
 @click.pass_context
@@ -273,7 +272,7 @@ def structure(ctx: ClickContext, node_id: str | None = None) -> None:
 
     def print_node(node: Node, level: int = 0) -> None:
         indent = '  ' * level
-        click.echo(f'{indent}{node.node_id} - {node.title}')
+        click.echo(f'{indent}{node.id} - {node.title}')
         for child in node.children:
             print_node(child, level + 1)
 

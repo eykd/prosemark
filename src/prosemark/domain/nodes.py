@@ -5,10 +5,12 @@ This module defines the Node class which represents elements in a hierarchical d
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
 
+@dataclass
 class Node:
     """A node in a hierarchical document structure.
 
@@ -16,43 +18,28 @@ class Node:
     and relationships to other nodes.
     """
 
-    def __init__(
-        self,
-        node_id: str | None = None,
-        title: str = '',
-        notecard: str = '',
-        content: str = '',
-        notes: str = '',
-        metadata: dict[str, Any] | None = None,
-        parent: Node | None = None,
-        children: list[Node] | None = None,
-    ) -> None:
-        """Initialize a new Node.
+    title: str = ''
+    notecard: str = ''
+    content: str = ''
+    notes: str = ''
+    metadata: dict[str, Any] = field(default_factory=dict)
+    parent: Node | None = None
+    children: list[Node] = field(default_factory=list)
+    id: str = field(default_factory=lambda: Node.generate_id())
 
-        Args:
-            node_id: Unique identifier for the node. If None, a timestamp in YYYYMMDDHHmmssf format will be generated.
-            title: Short descriptive title for the node.
-            notecard: Brief summary of the node's content.
-            content: Main content of the node.
-            notes: Additional notes about the node.
-            metadata: Key-value pairs for additional information.
-            parent: Reference to the parent node.
-            children: List of child nodes.
-
-        """
-        self.id = node_id if node_id is not None else datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')
-        self.title = title
-        self.notecard = notecard
-        self.content = content
-        self.notes = notes
-        self.metadata = metadata or {}
-        self.parent = parent
-        self.children: list[Node] = []
-
-        # Add children if provided
-        if children:
+    def __post_init__(self) -> None:
+        """Initialize children and set up parent relationships."""
+        # Re-add children if provided
+        if self.children:
+            children = self.children
+            self.children = []
             for child in children:
                 self.add_child(child)
+
+    @classmethod
+    def generate_id(cls) -> str:
+        """Generate a unique ID for a node."""
+        return datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')
 
     def add_child(self, child: Node, position: int | None = None) -> None:
         """Add a child node to this node.

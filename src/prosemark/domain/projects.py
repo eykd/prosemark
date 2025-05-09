@@ -93,7 +93,7 @@ class Project:
             notecard=notecard,
             content=content,
             notes=notes,
-            metadata=metadata,
+            metadata=metadata if metadata is not None else {},
         )
 
         parent.add_child(new_node, position)

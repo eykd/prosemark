@@ -47,17 +47,23 @@ class ProjectRepository:
             The loaded Project object.
 
         """
-        # First stage: Load the binder node
+        # First stage: Load and parse the binder node
         binder_content = self.storage.get_binder()
         if not binder_content:
             # Handle case of new/empty project
             return Project(name='New Project')
 
-        # Second stage: Parse the outline structure
-        outline_root = OutlineParser.parse(binder_content)
+        # Create the binder node and parse its content
+        binder_node = Node(id='_binder', title='Binder')
+        self.parse_node_content(binder_node, binder_content)
 
-        # Create project and build node structure
-        project = Project(name='Project')  # Default name
+        # Second stage: Parse the outline structure from the binder node's content
+        outline_root = OutlineParser.parse(binder_node.content)
+
+        # Create project with the binder node as root
+        project = Project(name=binder_node.title, root_node=binder_node)
+
+        # Build the rest of the node structure
         self.build_node_structure(project, outline_root)
 
         return project
@@ -129,7 +135,7 @@ class ProjectRepository:
 
                 # Create a new node
                 node = Node(
-                    node_id=node_info.get('id'),
+                    id=node_info.get('id', Node.generate_id()),
                     title=node_info.get('title', ''),
                 )
 
