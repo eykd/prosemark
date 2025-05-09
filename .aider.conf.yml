@@ -12,7 +12,7 @@ model: sonnet
 ## Specify multiple values like this:
 lint-cmd:
   - "python: uv run ruff format"
-  - "python: uv run ruff --fix check"
+  - "python: uv run ruff check --fix"
   - "python: uv run mypy --package-root=src"
 
 ## Enable/disable automatic linting after changes (default: True)
@@ -23,3 +23,6 @@ test-cmd: ./scripts/fulltests.sh
 
 ## Enable/disable automatic testing after changes (default: False)
 auto-test: true
+
+
+verbose: true

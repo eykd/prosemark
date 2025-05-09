@@ -6,7 +6,9 @@ set -a # automatically export all variables
 source .env.test
 set +a
 
-## # Automatically reformat code, but ignore breakpoint() and commented code:
+uv run ruff check --fix
+uv run ruff format
+uv run mypy src tests
 uv run  --env-file=.env.test \
    pytest \
    -vv \
