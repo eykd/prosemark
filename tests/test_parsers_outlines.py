@@ -115,6 +115,24 @@ class TestNode:
         result = node1.add_sibling_after(node2)
         assert result is False
 
+    def test_add_sibling_with_existing_parent(self) -> None:
+        """Test adding a sibling that already has a parent."""
+        parent1 = Node(type=NodeType.DOCUMENT)
+        parent2 = Node(type=NodeType.DOCUMENT)
+        child1 = Node(type=NodeType.TEXT, content='Child 1')
+        child2 = Node(type=NodeType.TEXT, content='Child 2')
+
+        parent1.add_child(child1)
+        parent2.add_child(child2)
+
+        # Now child2 has a parent (parent2)
+        child1.add_sibling_after(child2)
+
+        # child2 should be moved from parent2 to parent1
+        assert len(parent1.children) == 2
+        assert len(parent2.children) == 0
+        assert child2.parent == parent1
+
     def test_remove_sibling(self) -> None:
         """Test removing a sibling node."""
         parent = Node(type=NodeType.DOCUMENT)

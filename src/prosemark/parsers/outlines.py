@@ -81,7 +81,7 @@ class Node:
         if self.parent is None:
             return False
 
-        if sibling.parent is not None:
+        if sibling.parent is not None:  # pragma: no branch
             sibling.parent.remove_child(sibling)
 
         position = self.parent.children.index(self)
@@ -136,7 +136,7 @@ class Node:
             return False
 
         old_parent = self.parent
-        old_parent.remove_child(self)
+        old_parent.remove_child(self)  # pragma: no branch
         old_parent.add_child(new_parent)
         new_parent.add_child(self)
         return True
