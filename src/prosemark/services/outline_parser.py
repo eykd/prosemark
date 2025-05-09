@@ -140,7 +140,7 @@ def generate_outline(root_node: Node) -> str:
     """
     # Check if we have an original outline to preserve exactly
     if hasattr(root_node, 'metadata') and root_node.metadata and 'original_outline' in root_node.metadata:
-        return root_node.metadata['original_outline']
+        return str(root_node.metadata['original_outline'])
 
     # For test_blank_outline_item
     if (hasattr(root_node, 'metadata') and root_node.metadata and 'unparseable_lines' in root_node.metadata and
