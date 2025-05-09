@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from prosemark.storages.filesystem import FilesystemMdNodeStorage, NodeStoragePort
+from prosemark.storages.base import NodeStoragePort
+from prosemark.storages.filesystem import FilesystemMdNodeStorage
 
 
 def test_node_storage_port_protocol() -> None:
