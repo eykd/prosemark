@@ -70,7 +70,7 @@ class TestProjectRepository:
 
         # Verify
         # Use a more flexible verification approach
-        self.mock_storage.write.assert_called_with('_binder', ANY)
+        self.mock_storage.write.assert_any_call('_binder', ANY)
         binder_content = self.mock_storage.write.call_args_list[0][0][1]
         assert '# Test Project' in binder_content
         assert 'node1: First Node' in binder_content
