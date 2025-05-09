@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 
-class NodeType(Enum):
+class OutlineNodeType(Enum):
     """Types of nodes in the outline AST."""
 
     DOCUMENT = auto()
@@ -22,19 +22,19 @@ class NodeType(Enum):
 
 
 @dataclass
-class Node:
+class OutlineNode:
     """A node in the outline AST.
 
     Represents a single node in the document tree with content and
     relationships to other nodes.
     """
 
-    type: NodeType
+    type: OutlineNodeType
     content: str = ''
-    children: list[Node] = field(default_factory=list)
-    parent: Node | None = None
+    children: list[OutlineNode] = field(default_factory=list)
+    parent: OutlineNode | None = None
 
-    def add_child(self, child: Node, position: int | None = None) -> None:
+    def add_child(self, child: OutlineNode, position: int | None = None) -> None:
         """Add a child node to this node.
 
         Args:
@@ -52,7 +52,7 @@ class Node:
         else:
             self.children.insert(min(position, len(self.children)), child)
 
-    def remove_child(self, child: Node) -> Node | None:
+    def remove_child(self, child: OutlineNode) -> OutlineNode | None:
         """Remove a child node from this node.
 
         Args:
@@ -68,7 +68,7 @@ class Node:
             return child
         return None
 
-    def add_sibling_before(self, sibling: Node) -> bool:
+    def add_sibling_before(self, sibling: OutlineNode) -> bool:
         """Add a sibling node before this node.
 
         Args:
@@ -88,7 +88,7 @@ class Node:
         self.parent.add_child(sibling, position)
         return True
 
-    def add_sibling_after(self, sibling: Node) -> bool:
+    def add_sibling_after(self, sibling: OutlineNode) -> bool:
         """Add a sibling node after this node.
 
         Args:
@@ -108,7 +108,7 @@ class Node:
         self.parent.add_child(sibling, position)
         return True
 
-    def remove_sibling(self, sibling: Node) -> Node | None:
+    def remove_sibling(self, sibling: OutlineNode) -> OutlineNode | None:
         """Remove a sibling node.
 
         Args:
@@ -122,7 +122,7 @@ class Node:
             return None
         return self.parent.remove_child(sibling)
 
-    def add_parent(self, new_parent: Node) -> bool:
+    def add_parent(self, new_parent: OutlineNode) -> bool:
         """Insert a new parent between this node and its current parent.
 
         Args:
@@ -157,7 +157,7 @@ class OutlineParser:
     LIST_ITEM_PATTERN = re.compile(r'^(\s*)([*+-])(\s+)(.*)$')
 
     @classmethod
-    def parse(cls, text: str) -> Node:  # noqa: C901
+    def parse(cls, text: str) -> OutlineNode:  # noqa: C901
         """Parse a document containing Commonmark-style unordered lists into an AST.
 
         Args:
@@ -167,15 +167,15 @@ class OutlineParser:
             The root node of the AST.
 
         """
-        root = Node(type=NodeType.DOCUMENT)
+        root = OutlineNode(type=OutlineNodeType.DOCUMENT)
         lines = text.splitlines(True)  # Keep line endings  # noqa: FBT003
 
         # Handle empty document
         if not lines:
             return root
 
-        current_list: Node | None = None
-        current_items: list[tuple[int, Node]] = []  # (indent_level, node)
+        current_list: OutlineNode | None = None
+        current_items: list[tuple[int, OutlineNode]] = []  # (indent_level, node)
 
         line_index = 0
         while line_index < len(lines):
@@ -189,12 +189,12 @@ class OutlineParser:
 
                 # Create list node if we're not in a list yet
                 if current_list is None:
-                    current_list = Node(type=NodeType.LIST)
+                    current_list = OutlineNode(type=OutlineNodeType.LIST)
                     root.add_child(current_list)
 
                 # Create the list item node - preserve the full line including indentation
                 item_content = line.rstrip('\n')
-                item_node = Node(type=NodeType.LIST_ITEM, content=item_content)
+                item_node = OutlineNode(type=OutlineNodeType.LIST_ITEM, content=item_content)
 
                 # Find the parent based on indentation
                 while current_items and current_items[-1][0] >= indent_level:
@@ -208,9 +208,9 @@ class OutlineParser:
                     _parent_indent, parent_node = current_items[-1]
 
                     # Check if we need a new list container for this item
-                    if parent_node.type == NodeType.LIST_ITEM:
+                    if parent_node.type == OutlineNodeType.LIST_ITEM:
                         # Create a new list under the parent item
-                        list_node = Node(type=NodeType.LIST)
+                        list_node = OutlineNode(type=OutlineNodeType.LIST)
                         parent_node.add_child(list_node)
                         list_node.add_child(item_node)
                     else:  # pragma: no cover
@@ -236,13 +236,13 @@ class OutlineParser:
                     line_index += 1
 
                 if text_content:  # pragma: no branch
-                    text_node = Node(type=NodeType.TEXT, content=text_content)
+                    text_node = OutlineNode(type=OutlineNodeType.TEXT, content=text_content)
                     root.add_child(text_node)
 
         return root
 
     @classmethod
-    def to_text(cls, node: Node) -> str:
+    def to_text(cls, node: OutlineNode) -> str:
         """Convert an AST back to text.
 
         Args:
@@ -252,16 +252,16 @@ class OutlineParser:
             The text representation of the AST.
 
         """
-        if node.type == NodeType.DOCUMENT:
+        if node.type == OutlineNodeType.DOCUMENT:
             return ''.join(cls.to_text(child) for child in node.children)
 
-        if node.type == NodeType.TEXT:
+        if node.type == OutlineNodeType.TEXT:
             return node.content
 
-        if node.type == NodeType.LIST:
+        if node.type == OutlineNodeType.LIST:
             return ''.join(cls.to_text(child) for child in node.children)
 
-        if node.type == NodeType.LIST_ITEM:
+        if node.type == OutlineNodeType.LIST_ITEM:
             result = node.content
 
             # Add newline if not already present

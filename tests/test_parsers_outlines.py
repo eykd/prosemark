@@ -2,7 +2,7 @@
 
 from enum import Enum, auto
 
-from prosemark.parsers.outlines import Node, NodeType, OutlineParser
+from prosemark.parsers.outlines import OutlineNode, OutlineNodeType, OutlineParser
 
 
 class TestNode:
@@ -10,20 +10,20 @@ class TestNode:
 
     def test_node_initialization(self) -> None:
         """Test that a node can be initialized with the correct properties."""
-        node = Node(type=NodeType.DOCUMENT)
-        assert node.type == NodeType.DOCUMENT
+        node = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        assert node.type == OutlineNodeType.DOCUMENT
         assert node.content == ''
         assert node.children == []
         assert node.parent is None
 
-        node_with_content = Node(type=NodeType.TEXT, content='Hello world')
-        assert node_with_content.type == NodeType.TEXT
+        node_with_content = OutlineNode(type=OutlineNodeType.TEXT, content='Hello world')
+        assert node_with_content.type == OutlineNodeType.TEXT
         assert node_with_content.content == 'Hello world'
 
     def test_add_child(self) -> None:
         """Test adding a child node."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child = Node(type=NodeType.TEXT, content='Child')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child = OutlineNode(type=OutlineNodeType.TEXT, content='Child')
 
         parent.add_child(child)
 
@@ -33,10 +33,10 @@ class TestNode:
 
     def test_add_child_with_position(self) -> None:
         """Test adding a child node at a specific position."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child1 = Node(type=NodeType.TEXT, content='Child 1')
-        child2 = Node(type=NodeType.TEXT, content='Child 2')
-        child3 = Node(type=NodeType.TEXT, content='Child 3')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child1 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 1')
+        child2 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 2')
+        child3 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 3')
 
         parent.add_child(child1)
         parent.add_child(child3)
@@ -49,9 +49,9 @@ class TestNode:
 
     def test_add_child_with_existing_parent(self) -> None:
         """Test adding a child that already has a parent."""
-        parent1 = Node(type=NodeType.DOCUMENT)
-        parent2 = Node(type=NodeType.DOCUMENT)
-        child = Node(type=NodeType.TEXT, content='Child')
+        parent1 = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        parent2 = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child = OutlineNode(type=OutlineNodeType.TEXT, content='Child')
 
         parent1.add_child(child)
         assert len(parent1.children) == 1
@@ -63,8 +63,8 @@ class TestNode:
 
     def test_remove_child(self) -> None:
         """Test removing a child node."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child = Node(type=NodeType.TEXT, content='Child')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child = OutlineNode(type=OutlineNodeType.TEXT, content='Child')
 
         parent.add_child(child)
         assert len(parent.children) == 1
@@ -76,17 +76,17 @@ class TestNode:
 
     def test_remove_nonexistent_child(self) -> None:
         """Test removing a child that doesn't exist."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child = Node(type=NodeType.TEXT, content='Child')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child = OutlineNode(type=OutlineNodeType.TEXT, content='Child')
 
         removed = parent.remove_child(child)
         assert removed is None
 
     def test_add_sibling(self) -> None:
         """Test adding a sibling node."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child1 = Node(type=NodeType.TEXT, content='Child 1')
-        child2 = Node(type=NodeType.TEXT, content='Child 2')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child1 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 1')
+        child2 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 2')
 
         parent.add_child(child1)
         child1.add_sibling_after(child2)
@@ -98,9 +98,9 @@ class TestNode:
 
     def test_add_sibling_before(self) -> None:
         """Test adding a sibling node before the current node."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child1 = Node(type=NodeType.TEXT, content='Child 1')
-        child2 = Node(type=NodeType.TEXT, content='Child 2')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child1 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 1')
+        child2 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 2')
 
         parent.add_child(child1)
         child1.add_sibling_before(child2)
@@ -111,18 +111,18 @@ class TestNode:
 
     def test_add_sibling_no_parent(self) -> None:
         """Test adding a sibling to a node without a parent."""
-        node1 = Node(type=NodeType.TEXT, content='Node 1')
-        node2 = Node(type=NodeType.TEXT, content='Node 2')
+        node1 = OutlineNode(type=OutlineNodeType.TEXT, content='Node 1')
+        node2 = OutlineNode(type=OutlineNodeType.TEXT, content='Node 2')
 
         result = node1.add_sibling_after(node2)
         assert result is False
 
     def test_add_sibling_with_existing_parent(self) -> None:
         """Test adding a sibling that already has a parent."""
-        parent1 = Node(type=NodeType.DOCUMENT)
-        parent2 = Node(type=NodeType.DOCUMENT)
-        child1 = Node(type=NodeType.TEXT, content='Child 1')
-        child2 = Node(type=NodeType.TEXT, content='Child 2')
+        parent1 = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        parent2 = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child1 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 1')
+        child2 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 2')
 
         parent1.add_child(child1)
         parent2.add_child(child2)
@@ -137,9 +137,9 @@ class TestNode:
 
     def test_remove_sibling(self) -> None:
         """Test removing a sibling node."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child1 = Node(type=NodeType.TEXT, content='Child 1')
-        child2 = Node(type=NodeType.TEXT, content='Child 2')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child1 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 1')
+        child2 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 2')
 
         parent.add_child(child1)
         parent.add_child(child2)
@@ -151,9 +151,9 @@ class TestNode:
 
     def test_remove_nonexistent_sibling(self) -> None:
         """Test removing a sibling that doesn't exist."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child1 = Node(type=NodeType.TEXT, content='Child 1')
-        child2 = Node(type=NodeType.TEXT, content='Child 2')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child1 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 1')
+        child2 = OutlineNode(type=OutlineNodeType.TEXT, content='Child 2')
 
         parent.add_child(child1)
 
@@ -162,17 +162,17 @@ class TestNode:
 
     def test_remove_sibling_no_parent(self) -> None:
         """Test removing a sibling when the node has no parent."""
-        node1 = Node(type=NodeType.TEXT, content='Node 1')
-        node2 = Node(type=NodeType.TEXT, content='Node 2')
+        node1 = OutlineNode(type=OutlineNodeType.TEXT, content='Node 1')
+        node2 = OutlineNode(type=OutlineNodeType.TEXT, content='Node 2')
 
         removed = node1.remove_sibling(node2)
         assert removed is None
 
     def test_add_parent(self) -> None:
         """Test adding a new parent between a node and its current parent."""
-        original_parent = Node(type=NodeType.DOCUMENT)
-        new_parent = Node(type=NodeType.LIST)
-        child = Node(type=NodeType.TEXT, content='Child')
+        original_parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        new_parent = OutlineNode(type=OutlineNodeType.LIST)
+        child = OutlineNode(type=OutlineNodeType.TEXT, content='Child')
 
         original_parent.add_child(child)
         result = child.add_parent(new_parent)
@@ -187,8 +187,8 @@ class TestNode:
 
     def test_add_child_with_position_beyond_length(self) -> None:
         """Test adding a child at a position beyond the current length of children."""
-        parent = Node(type=NodeType.DOCUMENT)
-        child = Node(type=NodeType.TEXT, content='Child')
+        parent = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        child = OutlineNode(type=OutlineNodeType.TEXT, content='Child')
 
         # Position is beyond current length (0), should add at the end
         parent.add_child(child, position=5)
@@ -198,8 +198,8 @@ class TestNode:
 
     def test_add_parent_no_parent(self) -> None:
         """Test adding a parent to a node without a parent."""
-        node = Node(type=NodeType.TEXT, content='Node')
-        new_parent = Node(type=NodeType.LIST)
+        node = OutlineNode(type=OutlineNodeType.TEXT, content='Node')
+        new_parent = OutlineNode(type=OutlineNodeType.LIST)
 
         result = node.add_parent(new_parent)
         assert result is False
@@ -213,7 +213,7 @@ class TestOutlineParser:
         text = ''
         root = OutlineParser.parse(text)
 
-        assert root.type == NodeType.DOCUMENT
+        assert root.type == OutlineNodeType.DOCUMENT
         assert len(root.children) == 0
 
     def test_parse_text_only(self) -> None:
@@ -221,9 +221,9 @@ class TestOutlineParser:
         text = 'This is a paragraph.\n\nThis is another paragraph.'
         root = OutlineParser.parse(text)
 
-        assert root.type == NodeType.DOCUMENT
+        assert root.type == OutlineNodeType.DOCUMENT
         assert len(root.children) == 1
-        assert root.children[0].type == NodeType.TEXT
+        assert root.children[0].type == OutlineNodeType.TEXT
         assert root.children[0].content == text
 
     def test_parse_simple_list(self) -> None:
@@ -231,14 +231,14 @@ class TestOutlineParser:
         text = '- Item 1\n- Item 2\n- Item 3\n'
         root = OutlineParser.parse(text)
 
-        assert root.type == NodeType.DOCUMENT
+        assert root.type == OutlineNodeType.DOCUMENT
         assert len(root.children) == 1
 
         list_node = root.children[0]
-        assert list_node.type == NodeType.LIST
+        assert list_node.type == OutlineNodeType.LIST
         assert len(list_node.children) == 3
 
-        assert list_node.children[0].type == NodeType.LIST_ITEM
+        assert list_node.children[0].type == OutlineNodeType.LIST_ITEM
         assert list_node.children[0].content == '- Item 1'
         assert list_node.children[1].content == '- Item 2'
         assert list_node.children[2].content == '- Item 3'
@@ -248,28 +248,28 @@ class TestOutlineParser:
         text = '- Item 1\n  - Nested 1\n  - Nested 2\n- Item 2\n'
         root = OutlineParser.parse(text)
 
-        assert root.type == NodeType.DOCUMENT
+        assert root.type == OutlineNodeType.DOCUMENT
         assert len(root.children) == 1
 
         list_node = root.children[0]
-        assert list_node.type == NodeType.LIST
+        assert list_node.type == OutlineNodeType.LIST
         assert len(list_node.children) == 2
 
         item1 = list_node.children[0]
-        assert item1.type == NodeType.LIST_ITEM
+        assert item1.type == OutlineNodeType.LIST_ITEM
         assert item1.content == '- Item 1'
         assert len(item1.children) == 2
 
         # The parser creates separate list nodes for each nested item
-        assert item1.children[0].type == NodeType.LIST
+        assert item1.children[0].type == OutlineNodeType.LIST
         assert len(item1.children[0].children) == 1
-        assert item1.children[1].type == NodeType.LIST
+        assert item1.children[1].type == OutlineNodeType.LIST
         assert len(item1.children[1].children) == 1
         assert item1.children[0].children[0].content == '  - Nested 1'
         assert item1.children[1].children[0].content == '  - Nested 2'
 
         item2 = list_node.children[1]
-        assert item2.type == NodeType.LIST_ITEM
+        assert item2.type == OutlineNodeType.LIST_ITEM
         assert item2.content == '- Item 2'
 
     def test_parse_mixed_content(self) -> None:
@@ -277,16 +277,16 @@ class TestOutlineParser:
         text = 'This is a paragraph.\n\n- Item 1\n- Item 2\n\nAnother paragraph.'
         root = OutlineParser.parse(text)
 
-        assert root.type == NodeType.DOCUMENT
+        assert root.type == OutlineNodeType.DOCUMENT
         assert len(root.children) == 3
 
-        assert root.children[0].type == NodeType.TEXT
+        assert root.children[0].type == OutlineNodeType.TEXT
         assert root.children[0].content == 'This is a paragraph.\n\n'
 
-        assert root.children[1].type == NodeType.LIST
+        assert root.children[1].type == OutlineNodeType.LIST
         assert len(root.children[1].children) == 2
 
-        assert root.children[2].type == NodeType.TEXT
+        assert root.children[2].type == OutlineNodeType.TEXT
         assert root.children[2].content == '\nAnother paragraph.'
 
     def test_parse_different_markers(self) -> None:
@@ -301,23 +301,23 @@ class TestOutlineParser:
 
     def test_to_text_empty_document(self) -> None:
         """Test converting an empty document back to text."""
-        root = Node(type=NodeType.DOCUMENT)
+        root = OutlineNode(type=OutlineNodeType.DOCUMENT)
         text = OutlineParser.to_text(root)
 
         assert text == ''
 
     def test_to_text_simple_document(self) -> None:
         """Test converting a simple document back to text."""
-        root = Node(type=NodeType.DOCUMENT)
-        root.add_child(Node(type=NodeType.TEXT, content='This is a paragraph.\n\n'))
+        root = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        root.add_child(OutlineNode(type=OutlineNodeType.TEXT, content='This is a paragraph.\n\n'))
 
-        list_node = Node(type=NodeType.LIST)
+        list_node = OutlineNode(type=OutlineNodeType.LIST)
         root.add_child(list_node)
 
-        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 1'))
-        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 2'))
+        list_node.add_child(OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- Item 1'))
+        list_node.add_child(OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- Item 2'))
 
-        root.add_child(Node(type=NodeType.TEXT, content='\nAnother paragraph.'))
+        root.add_child(OutlineNode(type=OutlineNodeType.TEXT, content='\nAnother paragraph.'))
 
         text = OutlineParser.to_text(root)
         expected = 'This is a paragraph.\n\n- Item 1\n- Item 2\n\nAnother paragraph.'
@@ -325,20 +325,20 @@ class TestOutlineParser:
 
     def test_to_text_nested_list(self) -> None:
         """Test converting a document with a nested list back to text."""
-        root = Node(type=NodeType.DOCUMENT)
-        list_node = Node(type=NodeType.LIST)
+        root = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        list_node = OutlineNode(type=OutlineNodeType.LIST)
         root.add_child(list_node)
 
-        item1 = Node(type=NodeType.LIST_ITEM, content='- Item 1')
+        item1 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- Item 1')
         list_node.add_child(item1)
 
-        nested_list = Node(type=NodeType.LIST)
+        nested_list = OutlineNode(type=OutlineNodeType.LIST)
         item1.add_child(nested_list)
 
-        nested_list.add_child(Node(type=NodeType.LIST_ITEM, content='  - Nested 1'))
-        nested_list.add_child(Node(type=NodeType.LIST_ITEM, content='  - Nested 2'))
+        nested_list.add_child(OutlineNode(type=OutlineNodeType.LIST_ITEM, content='  - Nested 1'))
+        nested_list.add_child(OutlineNode(type=OutlineNodeType.LIST_ITEM, content='  - Nested 2'))
 
-        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 2'))
+        list_node.add_child(OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- Item 2'))
 
         text = OutlineParser.to_text(root)
         expected = '- Item 1\n  - Nested 1\n  - Nested 2\n- Item 2\n'
@@ -364,12 +364,12 @@ class TestOutlineParser:
 
     def test_to_text_list_item_without_newline(self) -> None:
         """Test converting a list item without a newline back to text."""
-        root = Node(type=NodeType.DOCUMENT)
-        list_node = Node(type=NodeType.LIST)
+        root = OutlineNode(type=OutlineNodeType.DOCUMENT)
+        list_node = OutlineNode(type=OutlineNodeType.LIST)
         root.add_child(list_node)
 
         # Create a list item without a newline at the end
-        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 1'))
+        list_node.add_child(OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- Item 1'))
 
         text = OutlineParser.to_text(root)
         assert text == '- Item 1\n'
@@ -382,7 +382,7 @@ class TestOutlineParser:
             UNKNOWN = auto()
 
         # Create a node with the unknown type
-        node = Node(type=CustomNodeType.UNKNOWN)  # type: ignore[arg-type]
+        node = OutlineNode(type=CustomNodeType.UNKNOWN)  # type: ignore[arg-type]
 
         # Should return empty string for unknown node types
         text = OutlineParser.to_text(node)
@@ -393,15 +393,15 @@ class TestOutlineParser:
         text = '- Item 1\n  - Nested 1\n    - Deeply nested\n  - Nested 2\n- Item 2\n'
         root = OutlineParser.parse(text)
 
-        assert root.type == NodeType.DOCUMENT
+        assert root.type == OutlineNodeType.DOCUMENT
         assert len(root.children) == 1
 
         list_node = root.children[0]
-        assert list_node.type == NodeType.LIST
+        assert list_node.type == OutlineNodeType.LIST
         assert len(list_node.children) == 2
 
         item1 = list_node.children[0]
-        assert item1.type == NodeType.LIST_ITEM
+        assert item1.type == OutlineNodeType.LIST_ITEM
         assert item1.content == '- Item 1'
 
         # Check the deeply nested structure
@@ -417,19 +417,19 @@ class TestOutlineParser:
         text = '- Item 1\nSome text\n- Item 2\n'
         root = OutlineParser.parse(text)
 
-        assert root.type == NodeType.DOCUMENT
+        assert root.type == OutlineNodeType.DOCUMENT
         assert len(root.children) == 3
 
         # First list with one item
-        assert root.children[0].type == NodeType.LIST
+        assert root.children[0].type == OutlineNodeType.LIST
         assert len(root.children[0].children) == 1
         assert root.children[0].children[0].content == '- Item 1'
 
         # Text in between
-        assert root.children[1].type == NodeType.TEXT
+        assert root.children[1].type == OutlineNodeType.TEXT
         assert root.children[1].content == 'Some text\n'
 
         # Second list with one item
-        assert root.children[2].type == NodeType.LIST
+        assert root.children[2].type == OutlineNodeType.LIST
         assert len(root.children[2].children) == 1
         assert root.children[2].children[0].content == '- Item 2'
