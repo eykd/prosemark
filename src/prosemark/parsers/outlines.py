@@ -192,8 +192,9 @@ class OutlineParser:
                     current_list = Node(type=NodeType.LIST)
                     root.add_child(current_list)
 
-                # Create the list item node
-                item_node = Node(type=NodeType.LIST_ITEM, content=f'{marker}{space}{content}')
+                # Create the list item node - preserve the full line including indentation
+                item_content = line.rstrip('\n')
+                item_node = Node(type=NodeType.LIST_ITEM, content=item_content)
 
                 # Find the parent based on indentation
                 while current_items and current_items[-1][0] >= indent_level:
@@ -263,12 +264,13 @@ class OutlineParser:
         if node.type == NodeType.LIST_ITEM:
             result = node.content
 
+            # Add newline if not already present
+            if not result.endswith('\n'):
+                result += '\n'
+
             # Process children (which could be nested lists)
             if node.children:
                 child_text = ''.join(cls.to_text(child) for child in node.children)
-                # If the item content doesn't end with a newline, add one before children
-                if not result.endswith('\n'):
-                    result += '\n'
                 result += child_text
 
             return result

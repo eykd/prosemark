@@ -328,14 +328,4 @@ class TestOutlineParser:
         for original in original_texts:
             root = OutlineParser.parse(original)
             result = OutlineParser.to_text(root)
-            # The current implementation has limitations with nested lists and indentation
-            # This is a known limitation that we're accepting for now
-            if '- Item' in original:
-                if '  -' in original:
-                    # For nested lists, we need to handle the indentation differently
-                    expected = original.replace('\n- ', '- ').replace('\n  - ', '- ')
-                else:
-                    expected = original.replace('\n- ', '- ')
-                assert result == expected
-            else:
-                assert result == original
+            assert result == original
