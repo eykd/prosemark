@@ -209,9 +209,9 @@ class TestOutlineParser:
         assert len(list_node.children) == 3
 
         assert list_node.children[0].type == NodeType.LIST_ITEM
-        assert list_node.children[0].content == '- Item 1\n'
-        assert list_node.children[1].content == '- Item 2\n'
-        assert list_node.children[2].content == '- Item 3\n'
+        assert list_node.children[0].content == '- Item 1'
+        assert list_node.children[1].content == '- Item 2'
+        assert list_node.children[2].content == '- Item 3'
 
     def test_parse_nested_list(self) -> None:
         """Test parsing a document with a nested list."""
@@ -227,18 +227,18 @@ class TestOutlineParser:
 
         item1 = list_node.children[0]
         assert item1.type == NodeType.LIST_ITEM
-        assert item1.content == '- Item 1\n'
+        assert item1.content == '- Item 1'
         assert len(item1.children) == 1
 
         nested_list = item1.children[0]
         assert nested_list.type == NodeType.LIST
         assert len(nested_list.children) == 2
-        assert nested_list.children[0].content == '  - Nested 1\n'
-        assert nested_list.children[1].content == '  - Nested 2\n'
+        assert nested_list.children[0].content == '  - Nested 1'
+        assert nested_list.children[1].content == '  - Nested 2'
 
         item2 = list_node.children[1]
         assert item2.type == NodeType.LIST_ITEM
-        assert item2.content == '- Item 2\n'
+        assert item2.content == '- Item 2'
 
     def test_parse_mixed_content(self) -> None:
         """Test parsing a document with mixed content."""
@@ -263,9 +263,9 @@ class TestOutlineParser:
         root = OutlineParser.parse(text)
 
         list_node = root.children[0]
-        assert list_node.children[0].content == '* Item 1\n'
-        assert list_node.children[1].content == '+ Item 2\n'
-        assert list_node.children[2].content == '- Item 3\n'
+        assert list_node.children[0].content == '* Item 1'
+        assert list_node.children[1].content == '+ Item 2'
+        assert list_node.children[2].content == '- Item 3'
 
     def test_to_text_empty_document(self) -> None:
         """Test converting an empty document back to text."""
@@ -282,8 +282,8 @@ class TestOutlineParser:
         list_node = Node(type=NodeType.LIST)
         root.add_child(list_node)
 
-        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 1\n'))
-        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 2\n'))
+        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 1'))
+        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 2'))
 
         root.add_child(Node(type=NodeType.TEXT, content='\nAnother paragraph.'))
 
@@ -297,19 +297,19 @@ class TestOutlineParser:
         list_node = Node(type=NodeType.LIST)
         root.add_child(list_node)
 
-        item1 = Node(type=NodeType.LIST_ITEM, content='- Item 1\n')
+        item1 = Node(type=NodeType.LIST_ITEM, content='- Item 1')
         list_node.add_child(item1)
 
         nested_list = Node(type=NodeType.LIST)
         item1.add_child(nested_list)
 
-        nested_list.add_child(Node(type=NodeType.LIST_ITEM, content='  - Nested 1\n'))
-        nested_list.add_child(Node(type=NodeType.LIST_ITEM, content='  - Nested 2\n'))
+        nested_list.add_child(Node(type=NodeType.LIST_ITEM, content='  - Nested 1'))
+        nested_list.add_child(Node(type=NodeType.LIST_ITEM, content='  - Nested 2'))
 
-        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 2\n'))
+        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 2'))
 
         text = OutlineParser.to_text(root)
-        expected = '- Item 1\n  - Nested 1\n  - Nested 2\n- Item 2\n'
+        expected = '- Item 1\n  - Nested 1\n  - Nested 2\n- Item 2'
         assert text == expected
 
     def test_round_trip(self) -> None:
