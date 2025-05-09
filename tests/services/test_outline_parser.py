@@ -79,7 +79,8 @@ class TestOutlineParser:
     def test_invalid_indentation_structure(self) -> None:
         """Test that invalid indentation structure is preserved."""
         # Create a malformed outline with inconsistent indentation
-        invalid_outline = """- [Book 1](20250506032834876147.md)
+        invalid_outline = """\
+- [Book 1](20250506032834876147.md)
     - [Chapter 1](20250506032925694067.md)
   - [Chapter 2](20250506032931240962.md)"""  # This line has less indentation than expected
 
