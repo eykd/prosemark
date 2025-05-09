@@ -399,7 +399,7 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                         if child_node not in parent_node.children:
                             parent_node.add_child(child_node)
 
-                        # Process any nested lists for this item
+                        # Process any nested lists for this item - make sure to pass the correct parent
                         for nested in item.children:
                             if nested.type == OutlineNodeType.LIST:
                                 self._build_node_hierarchy(nested, child_node, node_map)
