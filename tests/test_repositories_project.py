@@ -256,7 +256,7 @@ class TestProjectRepository:
     def test_append_node_to_binder(self) -> None:
         """Test appending node to binder content."""
         # Setup
-        lines = []
+        lines: list[str] = []
         node = Node(node_id='node1', title='First Node')
         child = Node(node_id='node2', title='Child Node')
         node.add_child(child)
