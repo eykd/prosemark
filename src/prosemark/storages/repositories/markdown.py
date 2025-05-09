@@ -318,6 +318,9 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
         # Create the root node
         root_node = Node(node_id='_binder', title='')
 
+        # Create a mapping of node IDs to nodes for quick lookup
+        node_map = {'_binder': root_node}
+
         # Find the first list in the document
         list_node = None
         for child in outline_root.children:
@@ -325,22 +328,26 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                 list_node = child
                 break
 
-        # If we found a list, process its items
+        # First pass: create all nodes
         if list_node:
+            # Process all top-level items first
             for item in list_node.children:
                 if item.type == OutlineNodeType.LIST_ITEM:
                     # Parse the item content to extract title and ID
                     node_info = self._parse_outline_item(item.content)
                     if node_info:
                         title, node_id = node_info
-                        # Create a new node and add it to the root
+                        # Create a new node (don't add to parent yet)
                         child_node = Node(node_id=node_id, title=title)
+                        node_map[node_id] = child_node
+
+                        # Add directly to root node
                         root_node.add_child(child_node)
 
-                        # Process any nested lists for this item
+                        # Process nested nodes recursively
                         for nested in item.children:
                             if nested.type == OutlineNodeType.LIST:
-                                self._process_nested_outline_list(nested, child_node)
+                                self._process_outline_list_first_pass(nested, child_node, node_map)
 
         return root_node
 
@@ -361,12 +368,13 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             return title, node_id
         return None
 
-    def _process_nested_outline_list(self, list_node: OutlineNode, parent_node: Node) -> None:
-        """Process a nested list in the outline and add nodes to the parent.
+    def _process_outline_list_first_pass(self, list_node: OutlineNode, parent_node: Node, node_map: dict[str, Node]) -> None:
+        """Process a list in the outline and create all nodes.
         
         Args:
             list_node: The OutlineNode of type LIST to process
-            parent_node: The parent domain Node to add children to
+            parent_node: The parent domain Node
+            node_map: Dictionary mapping node IDs to Node objects
 
         """
         for item in list_node.children:
@@ -377,12 +385,13 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                     title, node_id = node_info
                     # Create a new node and add it to the parent
                     child_node = Node(node_id=node_id, title=title)
+                    node_map[node_id] = child_node
                     parent_node.add_child(child_node)
 
                     # Process any nested lists for this item
                     for nested in item.children:
                         if nested.type == OutlineNodeType.LIST:
-                            self._process_nested_outline_list(nested, child_node)
+                            self._process_outline_list_first_pass(nested, child_node, node_map)
 
     def _load_project_metadata(self, project_dir: Path) -> dict[str, Any]:
         """Load project metadata from the _binder.md file. If missing or malformed, return empty dict."""
