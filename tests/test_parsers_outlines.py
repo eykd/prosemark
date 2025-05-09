@@ -348,3 +348,61 @@ class TestOutlineParser:
             result = OutlineParser.to_text(root)
             # Strip any trailing newline for comparison
             assert result.rstrip('\n') == original.rstrip('\n')
+
+    def test_to_text_list_item_without_newline(self) -> None:
+        """Test converting a list item without a newline back to text."""
+        root = Node(type=NodeType.DOCUMENT)
+        list_node = Node(type=NodeType.LIST)
+        root.add_child(list_node)
+
+        # Create a list item without a newline at the end
+        list_node.add_child(Node(type=NodeType.LIST_ITEM, content='- Item 1'))
+
+        text = OutlineParser.to_text(root)
+        assert text == '- Item 1\n'
+
+    def test_parse_list_with_multiple_indentation_levels(self) -> None:
+        """Test parsing a list with multiple indentation levels."""
+        text = '- Item 1\n  - Nested 1\n    - Deeply nested\n  - Nested 2\n- Item 2\n'
+        root = OutlineParser.parse(text)
+
+        assert root.type == NodeType.DOCUMENT
+        assert len(root.children) == 1
+
+        list_node = root.children[0]
+        assert list_node.type == NodeType.LIST
+        assert len(list_node.children) == 2
+
+        item1 = list_node.children[0]
+        assert item1.type == NodeType.LIST_ITEM
+        assert item1.content == '- Item 1'
+
+        # Check the deeply nested structure
+        nested1 = item1.children[0].children[0]  # First nested list item
+        assert nested1.content == '  - Nested 1'
+        assert len(nested1.children) == 1
+
+        deeply_nested = nested1.children[0].children[0]
+        assert deeply_nested.content == '    - Deeply nested'
+
+    def test_parse_list_with_text_between_items(self) -> None:
+        """Test parsing a list with text between list items."""
+        text = '- Item 1\nSome text\n- Item 2\n'
+        root = OutlineParser.parse(text)
+
+        assert root.type == NodeType.DOCUMENT
+        assert len(root.children) == 3
+
+        # First list with one item
+        assert root.children[0].type == NodeType.LIST
+        assert len(root.children[0].children) == 1
+        assert root.children[0].children[0].content == '- Item 1'
+
+        # Text in between
+        assert root.children[1].type == NodeType.TEXT
+        assert root.children[1].content == 'Some text\n'
+
+        # Second list with one item
+        assert root.children[2].type == NodeType.LIST
+        assert len(root.children[2].children) == 1
+        assert root.children[2].children[0].content == '- Item 2'
