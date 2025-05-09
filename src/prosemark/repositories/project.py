@@ -262,5 +262,6 @@ class ProjectRepository:
                 node.metadata.update(metadata)
 
         except (ValueError, yaml.YAMLError):
-            # If parsing fails, treat as raw content
+            # If parsing fails, treat as raw content but preserve original properties
             node.content = content
+            # Note: We don't modify title, notecard, notes, or metadata when parsing fails
