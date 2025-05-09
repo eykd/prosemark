@@ -382,7 +382,7 @@ class TestOutlineParser:
             UNKNOWN = auto()
 
         # Create a node with the unknown type
-        node = Node(type=CustomNodeType.UNKNOWN)
+        node = Node(type=CustomNodeType.UNKNOWN)  # type: ignore[arg-type]
 
         # Should return empty string for unknown node types
         text = OutlineParser.to_text(node)
