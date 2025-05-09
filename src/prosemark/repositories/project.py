@@ -56,7 +56,7 @@ class ProjectRepository:
 
         # Create project and build node structure
         project = Project(name='Project')  # Default name
-        self._build_node_structure(project, outline_root)
+        self.build_node_structure(project, outline_root)
 
         return project
 
@@ -68,13 +68,13 @@ class ProjectRepository:
 
         """
         # Update the binder to reflect the current structure
-        binder_content = self._generate_binder_content(project)
+        binder_content = self.generate_binder_content(project)
         self.storage.write('_binder', binder_content)
 
         # Save any modified nodes to storage
         # In a real implementation, we would track modified nodes
         # and only save those that have changed
-        self._save_node(project.root_node)
+        self.save_node_recursive(project.root_node)
 
     def load_node_content(self, node: Node) -> None:
         """Load the full content of a node from storage.
@@ -85,7 +85,7 @@ class ProjectRepository:
         """
         node_content = self.storage.read(node.id)
         if node_content:
-            self._parse_node_content(node, node_content)
+            self.parse_node_content(node, node_content)
 
     def save_node(self, node: Node) -> None:
         """Save a node to storage.
@@ -94,10 +94,10 @@ class ProjectRepository:
             node: The Node object to save.
 
         """
-        node_content = self._serialize_node_content(node)
+        node_content = self.serialize_node_content(node)
         self.storage.write(node.id, node_content)
 
-    def _build_node_structure(self, project: Project, outline_root: OutlineNode) -> None:
+    def build_node_structure(self, project: Project, outline_root: OutlineNode) -> None:
         """Build the node structure from the parsed outline.
 
         Args:
@@ -109,10 +109,10 @@ class ProjectRepository:
         for child in outline_root.children:
             if child.type == OutlineNodeType.LIST:
                 # Process the list items
-                self._process_list_items(project.root_node, child)
+                self.process_list_items(project.root_node, child)
             # Ignore TEXT nodes in the binder
 
-    def _process_list_items(self, parent_node: Node, list_node: OutlineNode) -> None:
+    def process_list_items(self, parent_node: Node, list_node: OutlineNode) -> None:
         """Process list items from the outline and create corresponding nodes.
 
         Args:
@@ -123,7 +123,7 @@ class ProjectRepository:
         for item in list_node.children:
             if item.type == OutlineNodeType.LIST_ITEM:
                 # Extract node ID and title from the list item content
-                node_info = self._parse_list_item(item.content)
+                node_info = self.parse_list_item(item.content)
 
                 # Create a new node
                 node = Node(
@@ -137,9 +137,9 @@ class ProjectRepository:
                 # Process nested lists if any
                 for child in item.children:
                     if child.type == OutlineNodeType.LIST:
-                        self._process_list_items(node, child)
+                        self.process_list_items(node, child)
 
-    def _parse_list_item(self, content: str) -> dict[str, str]:
+    def parse_list_item(self, content: str) -> dict[str, str]:
         """Parse a list item content to extract node information.
 
         Args:
@@ -162,7 +162,7 @@ class ProjectRepository:
         # Fallback: use the whole content as title
         return {'title': content.strip()}
 
-    def _generate_binder_content(self, project: Project) -> str:
+    def generate_binder_content(self, project: Project) -> str:
         """Generate the binder content from the project structure.
 
         Args:
@@ -179,11 +179,11 @@ class ProjectRepository:
             lines.append(f'{project.description}\n\n')
 
         # Generate the structure as a nested list
-        self._append_node_to_binder(project.root_node, lines, 0)
+        self.append_node_to_binder(project.root_node, lines, 0)
 
         return ''.join(lines)
 
-    def _append_node_to_binder(self, node: Node, lines: list[str], level: int) -> None:
+    def append_node_to_binder(self, node: Node, lines: list[str], level: int) -> None:
         """Append a node and its children to the binder content.
 
         Args:
@@ -196,9 +196,9 @@ class ProjectRepository:
         lines.append(f'{indent}- {node.id}: {node.title}\n')
 
         for child in node.children:
-            self._append_node_to_binder(child, lines, level + 1)
+            self.append_node_to_binder(child, lines, level + 1)
 
-    def _save_node(self, node: Node) -> None:
+    def save_node_recursive(self, node: Node) -> None:
         """Save a node and all its children recursively.
 
         Args:
@@ -208,9 +208,9 @@ class ProjectRepository:
         self.save_node(node)
 
         for child in node.children:
-            self._save_node(child)
+            self.save_node_recursive(child)
 
-    def _serialize_node_content(self, node: Node) -> str:
+    def serialize_node_content(self, node: Node) -> str:
         """Serialize a node's content to a string.
 
         Args:
@@ -233,7 +233,7 @@ class ProjectRepository:
         # Serialize to JSON
         return json.dumps(node_data, indent=2)
 
-    def _parse_node_content(self, node: Node, content: str) -> None:
+    def parse_node_content(self, node: Node, content: str) -> None:
         """Parse node content and update the node object.
 
         Args:
