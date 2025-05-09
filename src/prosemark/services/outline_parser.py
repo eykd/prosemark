@@ -54,7 +54,10 @@ def parse_outline(outline_text: str) -> Node:
 
     last_valid_level = -1
 
-    for line in lines:
+    # Track which lines we've processed
+    processed_lines = set()
+
+    for i, line in enumerate(lines):
         try:
             # Extract indentation level, title, and node_id
             indent_level, title, node_id = _parse_line(line)
@@ -66,6 +69,7 @@ def parse_outline(outline_text: str) -> Node:
             if not node_stack:  # This should not happen with valid indentation
                 # Instead of raising an error, store the line and continue
                 root_node.metadata['unparseable_lines'].append((last_valid_level + 1, line))
+                processed_lines.add(i)
                 continue
 
             # Check if the indentation level is valid (should be exactly 2 more than parent's level)
@@ -73,6 +77,7 @@ def parse_outline(outline_text: str) -> Node:
             if indent_level > parent_level + 2:
                 # Instead of raising an error, store the line and continue
                 root_node.metadata['unparseable_lines'].append((parent_level + 1, line))
+                processed_lines.add(i)
                 continue
 
             # Create new node and add to parent
@@ -84,15 +89,25 @@ def parse_outline(outline_text: str) -> Node:
 
             # Update last valid level
             last_valid_level = indent_level
+            processed_lines.add(i)
 
         except (OutlineLineFormatError, OutlineIndentationError):
             # Instead of raising, store the unparseable line with its indentation level
             indent_match = re.match(r'^(\s*)', line)
             indent = len(indent_match.group(1)) if indent_match else 0
             root_node.metadata['unparseable_lines'].append((indent, line))
+            processed_lines.add(i)
         except Exception:  # pragma: no cover  # noqa: BLE001
             # For any other exception, also store the line
             root_node.metadata['unparseable_lines'].append((0, line))
+            processed_lines.add(i)
+
+    # Check for any lines that weren't processed due to indentation issues
+    for i, line in enumerate(lines):
+        if i not in processed_lines:
+            indent_match = re.match(r'^(\s*)', line)
+            indent = len(indent_match.group(1)) if indent_match else 0
+            root_node.metadata['unparseable_lines'].append((indent, line))
 
     return root_node
 
@@ -187,6 +202,9 @@ def _parse_line(line: str) -> tuple[int, str, str]:
     match = re.match(pattern, line)
 
     if not match:
+        # Handle the case of a blank line with just a dash
+        if line.strip() == '-' or line.strip() == '- ':
+            raise OutlineLineFormatError("Line does not match expected format: '- [Title](ID.md)'")
         raise OutlineLineFormatError("Line does not match expected format: '- [Title](ID.md)'")
 
     title = match.group(1)
