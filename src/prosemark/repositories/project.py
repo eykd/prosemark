@@ -8,11 +8,14 @@ domain models and the storage system.
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
 from prosemark.parsers.outlines import OutlineNode, OutlineNodeType, OutlineParser
-from prosemark.storages.base import NodeStoragePort
+
+if TYPE_CHECKING:
+    from prosemark.storages.base import NodeStoragePort
 
 
 class ProjectRepository:
@@ -154,10 +157,7 @@ class ProjectRepository:
             if id_part.startswith(('- ', '* ', '+ ')):
                 id_part = id_part[2:].strip()
 
-            return {
-                'id': id_part,
-                'title': parts[1].strip()
-            }
+            return {'id': id_part, 'title': parts[1].strip()}
 
         # Fallback: use the whole content as title
         return {'title': content.strip()}
@@ -227,7 +227,7 @@ class ProjectRepository:
             'notecard': node.notecard,
             'content': node.content,
             'notes': node.notes,
-            'metadata': node.metadata
+            'metadata': node.metadata,
         }
 
         # Serialize to JSON
