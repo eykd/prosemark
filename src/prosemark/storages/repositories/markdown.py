@@ -13,7 +13,7 @@ from typing import Any
 
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
-from prosemark.services.outline_parser import generate_outline, parse_outline
+from prosemark.parsers.outlines import OutlineNodeType, OutlineParser
 from prosemark.storages.repositories.base import ProjectRepository
 from prosemark.storages.repositories.exceptions import ProjectExistsError, ProjectNotFoundError
 
@@ -189,10 +189,13 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             lines.extend([f'  {key}: {json.dumps(value)}' for key, value in project.metadata.items()])
         lines.append('---\n')
 
-        # Use the outline generator to create the structure
-        outline = generate_outline(root)
-        if outline:
-            lines.append(outline)
+        # Convert the node structure to an outline AST
+        outline_root = self._convert_node_to_outline(root)
+
+        # Use the outline parser to generate the text
+        outline_text = OutlineParser.to_text(outline_root)
+        if outline_text:
+            lines.append(outline_text)
 
         return '\n'.join(lines)
 
@@ -254,6 +257,132 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             data['description'] = json.loads(value)
         except json.JSONDecodeError:  # pragma: no cover
             data['description'] = value
+
+    def _convert_node_to_outline(self, node: Node) -> OutlineNode:
+        """Convert a domain Node to an OutlineNode structure.
+        
+        Args:
+            node: The domain Node to convert
+            
+        Returns:
+            An OutlineNode representing the document structure
+
+        """
+        # Create the document root
+        doc_root = OutlineNode(type=OutlineNodeType.DOCUMENT)
+
+        # Skip the root node (_binder) itself, just process its children
+        if node.children:
+            # Create a list for the top-level items
+            list_node = OutlineNode(type=OutlineNodeType.LIST)
+            doc_root.add_child(list_node)
+
+            # Process all children recursively
+            for child in node.children:
+                self._add_node_to_outline(child, list_node)
+
+        return doc_root
+
+    def _add_node_to_outline(self, node: Node, parent_list: OutlineNode) -> None:
+        """Recursively add a node and its children to the outline structure.
+        
+        Args:
+            node: The domain Node to add
+            parent_list: The parent OutlineNode (should be a LIST type)
+
+        """
+        # Create a list item for this node
+        item_content = f'- {node.title} ({node.id})'
+        item_node = OutlineNode(type=OutlineNodeType.LIST_ITEM, content=item_content)
+        parent_list.add_child(item_node)
+
+        # If this node has children, create a nested list
+        if node.children:
+            nested_list = OutlineNode(type=OutlineNodeType.LIST)
+            item_node.add_child(nested_list)
+
+            # Process all children recursively
+            for child in node.children:
+                self._add_node_to_outline(child, nested_list)
+
+    def _convert_outline_to_nodes(self, outline_root: OutlineNode) -> Node:
+        """Convert an OutlineNode structure to domain Nodes.
+        
+        Args:
+            outline_root: The root OutlineNode from the parser
+            
+        Returns:
+            A domain Node representing the project structure
+
+        """
+        # Create the root node
+        root_node = Node(node_id='_binder', title='')
+
+        # Find the first list in the document
+        list_node = None
+        for child in outline_root.children:
+            if child.type == OutlineNodeType.LIST:
+                list_node = child
+                break
+
+        # If we found a list, process its items
+        if list_node:
+            for item in list_node.children:
+                if item.type == OutlineNodeType.LIST_ITEM:
+                    # Parse the item content to extract title and ID
+                    node_info = self._parse_outline_item(item.content)
+                    if node_info:
+                        title, node_id = node_info
+                        # Create a new node and add it to the root
+                        child_node = Node(node_id=node_id, title=title)
+                        root_node.add_child(child_node)
+
+                        # Process any nested lists for this item
+                        for nested in item.children:
+                            if nested.type == OutlineNodeType.LIST:
+                                self._process_nested_outline_list(nested, child_node)
+
+        return root_node
+
+    def _parse_outline_item(self, content: str) -> tuple[str, str] | None:
+        """Parse an outline item to extract title and ID.
+        
+        Args:
+            content: The content of a list item, e.g. "- Title (id)"
+            
+        Returns:
+            A tuple of (title, id) or None if parsing fails
+
+        """
+        # Match patterns like "- Title (id)" or "* Title (id)"
+        match = re.match(r'^[*+-]\s+(.*?)\s+\(([\w-]+)\)$', content.strip())
+        if match:
+            title, node_id = match.groups()
+            return title, node_id
+        return None
+
+    def _process_nested_outline_list(self, list_node: OutlineNode, parent_node: Node) -> None:
+        """Process a nested list in the outline and add nodes to the parent.
+        
+        Args:
+            list_node: The OutlineNode of type LIST to process
+            parent_node: The parent domain Node to add children to
+
+        """
+        for item in list_node.children:
+            if item.type == OutlineNodeType.LIST_ITEM:
+                # Parse the item content to extract title and ID
+                node_info = self._parse_outline_item(item.content)
+                if node_info:
+                    title, node_id = node_info
+                    # Create a new node and add it to the parent
+                    child_node = Node(node_id=node_id, title=title)
+                    parent_node.add_child(child_node)
+
+                    # Process any nested lists for this item
+                    for nested in item.children:
+                        if nested.type == OutlineNodeType.LIST:
+                            self._process_nested_outline_list(nested, child_node)
 
     def _load_project_metadata(self, project_dir: Path) -> dict[str, Any]:
         """Load project metadata from the _binder.md file. If missing or malformed, return empty dict."""
@@ -370,10 +499,13 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             # If no valid frontmatter, return empty project
             return Project(name='', description='', root_node=Node(node_id='_binder', title=''))
 
-        outline_content = binder_content[frontmatter_match.end() :].strip()
+        outline_content = binder_content[frontmatter_match.end():].strip()
 
-        # Parse the outline to create the node structure
-        root_node = parse_outline(outline_content)
+        # Parse the outline to create the node structure using the new OutlineParser
+        outline_root = OutlineParser.parse(outline_content)
+
+        # Convert the outline structure to domain Nodes
+        root_node = self._convert_outline_to_nodes(outline_root)
 
         # Set the root node ID and title
         root_node.id = '_binder'
