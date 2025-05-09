@@ -78,7 +78,7 @@ def parse_outline(outline_text: str) -> Node:
 
             # Check if the indentation level is valid (should be exactly 2 more than parent's level)
             parent_node, parent_level = node_stack[-1]
-            if indent_level > parent_level + 2 or (parent_level > -1 and indent_level <= parent_level):
+            if indent_level > parent_level + 2 or (parent_level > -1 and indent_level != parent_level + 2):
                 # Instead of raising an error, store the line and continue
                 root_node.metadata['unparseable_lines'].append((parent_level + 1, line))
                 processed_lines.add(i)
