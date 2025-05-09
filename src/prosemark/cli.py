@@ -13,6 +13,8 @@ import click
 if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
 
+    from prosemark.domain.nodes import Node
+
 
 @click.group()
 @click.version_option()
