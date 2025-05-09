@@ -29,7 +29,7 @@ class OutlineIndentationError(OutlineParseError):
         super().__init__(f'{message}: {line}')
 
 
-def parse_outline(outline_text: str) -> Node:
+def parse_outline(outline_text: str) -> Node:  # noqa: C901
     """Parse a Markdown-formatted outline into a node tree.
 
     Args:
