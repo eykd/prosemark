@@ -4,7 +4,6 @@ This module provides a storage adapter that reads and writes Markdown files
 from the filesystem, using a timestamp-based ID system for filenames.
 """
 
-import os
 from pathlib import Path
 from typing import Protocol
 
@@ -14,33 +13,33 @@ class NodeStoragePort(Protocol):
 
     def read(self, node_id: str) -> str:
         """Read the content of a node by ID.
-        
+
         Args:
             node_id: The unique identifier for the node.
-            
+
         Returns:
             The content of the node as a string, or empty string if not found.
 
         """
-        ...
+        ...  # pragma: no cover
 
     def write(self, node_id: str, content: str) -> None:
         """Write content to a node by ID.
-        
+
         Args:
             node_id: The unique identifier for the node.
             content: The content to write to the node.
 
         """
-        ...
+        ...  # pragma: no cover
 
 
 class FilesystemMdNodeStorage:
     """Filesystem storage adapter for Markdown nodes.
-    
+
     This adapter reads and writes Markdown files from the filesystem,
     using a timestamp-based ID system for filenames.
-    
+
     Attributes:
         base_path: The base directory where node files are stored.
 
@@ -48,21 +47,21 @@ class FilesystemMdNodeStorage:
 
     def __init__(self, base_path: Path) -> None:
         """Initialize the storage adapter.
-        
+
         Args:
             base_path: The base directory where node files are stored.
 
         """
         self.base_path = base_path
         # Ensure the directory exists
-        os.makedirs(base_path, exist_ok=True)
+        base_path.mkdir(parents=True, exist_ok=True)
 
     def read(self, node_id: str) -> str:
         """Read the content of a node by ID.
-        
+
         Args:
             node_id: The unique identifier for the node.
-            
+
         Returns:
             The content of the node as a string, or empty string if not found.
 
@@ -73,13 +72,13 @@ class FilesystemMdNodeStorage:
 
         try:
             return file_path.read_text(encoding='utf-8')
-        except Exception:
-            # Return empty string if file can't be read
+        except (OSError, UnicodeDecodeError):
+            # Return empty string if file can't be read or decoded
             return ''
 
     def write(self, node_id: str, content: str) -> None:
         """Write content to a node by ID.
-        
+
         Args:
             node_id: The unique identifier for the node.
             content: The content to write to the node.
@@ -91,10 +90,10 @@ class FilesystemMdNodeStorage:
 
     def _get_file_path(self, node_id: str) -> Path:
         """Get the file path for a node ID.
-        
+
         Args:
             node_id: The unique identifier for the node.
-            
+
         Returns:
             The Path object for the node's file.
 

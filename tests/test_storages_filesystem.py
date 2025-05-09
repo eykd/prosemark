@@ -94,5 +94,5 @@ class TestFilesystemMdNodeStorage:
         node_id = 'test-node'
         expected_path = storage.base_path / f'{node_id}.md'
 
-        path = storage._get_file_path(node_id)
+        path = storage._get_file_path(node_id)  # noqa: SLF001
         assert path == expected_path
