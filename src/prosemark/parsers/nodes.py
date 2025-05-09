@@ -63,8 +63,10 @@ class NodeParser:
                     # Store remaining header data as metadata
                     node_data['metadata'].update(header_data)
 
-                # Remove the header from content
-                remaining_content = content[header_match.end():]
+                    # Remove the header from content
+                    remaining_content = content[header_match.end() :]
+                else:
+                    remaining_content = content
             except yaml.YAMLError:
                 # If YAML parsing fails, treat everything as content
                 remaining_content = content
