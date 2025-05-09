@@ -4,45 +4,9 @@ This module provides a storage adapter that reads and writes Markdown files
 from the filesystem, using a timestamp-based ID system for filenames.
 """
 
-from abc import ABC, abstractmethod
 from pathlib import Path
 
-
-class NodeStoragePort(ABC):
-    """Abstract base class defining the interface for node storage."""
-
-    @abstractmethod
-    def read(self, node_id: str) -> str:
-        """Read the content of a node by ID.
-
-        Args:
-            node_id: The unique identifier for the node.
-
-        Returns:
-            The content of the node as a string, or empty string if not found.
-
-        """
-
-    @abstractmethod
-    def write(self, node_id: str, content: str) -> None:
-        """Write content to a node by ID.
-
-        Args:
-            node_id: The unique identifier for the node.
-            content: The content to write to the node.
-
-        """
-
-    @abstractmethod
-    def get_binder(self) -> str:
-        """Read the content of the special _binder node.
-
-        The _binder node contains metadata about the project structure.
-
-        Returns:
-            The content of the _binder node as a string, or empty string if not found.
-
-        """
+from prosemark.storages.base import NodeStoragePort
 
 
 class FilesystemMdNodeStorage(NodeStoragePort):
