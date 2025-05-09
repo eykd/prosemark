@@ -69,10 +69,14 @@ class TestProjectRepository:
         self.repo.save_project(project)
 
         # Verify
-        self.mock_storage.write.assert_any_call('_binder', '# Test Project\n\n- node1: First Node\n  - node2: Second Node\n')
-        self.mock_storage.write.assert_any_call(project.root_node.id, self.repo._serialize_node_content(project.root_node))
-        self.mock_storage.write.assert_any_call('node1', self.repo._serialize_node_content(node1))
-        self.mock_storage.write.assert_any_call('node2', self.repo._serialize_node_content(node2))
+        self.mock_storage.write.assert_any_call(
+            '_binder', '# Test Project\n\n- node1: First Node\n  - node2: Second Node\n'
+        )
+        self.mock_storage.write.assert_any_call(
+            project.root_node.id, self.repo.serialize_node_content(project.root_node)
+        )
+        self.mock_storage.write.assert_any_call('node1', self.repo.serialize_node_content(node1))
+        self.mock_storage.write.assert_any_call('node2', self.repo.serialize_node_content(node2))
 
     def test_load_node_content(self) -> None:
         """Test loading node content."""
@@ -84,7 +88,7 @@ class TestProjectRepository:
             'notecard': 'Test notecard',
             'content': 'Test content',
             'notes': 'Test notes',
-            'metadata': {'key': 'value'}
+            'metadata': {'key': 'value'},
         })
         self.mock_storage.read.return_value = node_content
 
@@ -135,21 +139,24 @@ class TestProjectRepository:
             notecard='Test notecard',
             content='Test content',
             notes='Test notes',
-            metadata={'key': 'value'}
+            metadata={'key': 'value'},
         )
 
         # Execute
         self.repo.save_node(node)
 
         # Verify
-        expected_content = json.dumps({
-            'id': 'test_node',
-            'title': 'Test Node',
-            'notecard': 'Test notecard',
-            'content': 'Test content',
-            'notes': 'Test notes',
-            'metadata': {'key': 'value'}
-        }, indent=2)
+        expected_content = json.dumps(
+            {
+                'id': 'test_node',
+                'title': 'Test Node',
+                'notecard': 'Test notecard',
+                'content': 'Test content',
+                'notes': 'Test notes',
+                'metadata': {'key': 'value'},
+            },
+            indent=2,
+        )
         self.mock_storage.write.assert_called_once_with('test_node', expected_content)
 
     def test_build_node_structure(self) -> None:
@@ -171,7 +178,7 @@ class TestProjectRepository:
         nested_list.add_child(nested_item)
 
         # Execute
-        self.repo._build_node_structure(project, doc_node)
+        self.repo.build_node_structure(project, doc_node)
 
         # Verify
         assert len(project.root_node.children) == 2
@@ -194,7 +201,7 @@ class TestProjectRepository:
         list_node.add_child(item2)
 
         # Execute
-        self.repo._process_list_items(parent_node, list_node)
+        self.repo.process_list_items(parent_node, list_node)
 
         # Verify
         assert len(parent_node.children) == 2
@@ -206,19 +213,19 @@ class TestProjectRepository:
     def test_parse_list_item(self) -> None:
         """Test parsing list item content."""
         # Test with standard format
-        result = self.repo._parse_list_item('- node1: First Node')
+        result = self.repo.parse_list_item('- node1: First Node')
         assert result == {'id': 'node1', 'title': 'First Node'}
 
         # Test with different list marker
-        result = self.repo._parse_list_item('* node2: Second Node')
+        result = self.repo.parse_list_item('* node2: Second Node')
         assert result == {'id': 'node2', 'title': 'Second Node'}
 
         # Test with + marker
-        result = self.repo._parse_list_item('+ node3: Third Node')
+        result = self.repo.parse_list_item('+ node3: Third Node')
         assert result == {'id': 'node3', 'title': 'Third Node'}
 
         # Test without colon
-        result = self.repo._parse_list_item('- Just a title')
+        result = self.repo.parse_list_item('- Just a title')
         assert result == {'title': 'Just a title'}
 
     def test_generate_binder_content(self) -> None:
@@ -233,7 +240,7 @@ class TestProjectRepository:
         node1.add_child(node3)
 
         # Execute
-        result = self.repo._generate_binder_content(project)
+        result = self.repo.generate_binder_content(project)
 
         # Verify
         expected = '# Test Project\n\nProject description\n\n- node1: First Node\n  - node3: Nested Node\n- node2: Second Node\n'
@@ -247,7 +254,7 @@ class TestProjectRepository:
         project.root_node.add_child(node1)
 
         # Execute
-        result = self.repo._generate_binder_content(project)
+        result = self.repo.generate_binder_content(project)
 
         # Verify
         expected = '# Test Project\n\n- node1: First Node\n'
@@ -262,7 +269,7 @@ class TestProjectRepository:
         node.add_child(child)
 
         # Execute
-        self.repo._append_node_to_binder(node, lines, 0)
+        self.repo.append_node_to_binder(node, lines, 0)
 
         # Verify
         assert lines == ['- node1: First Node\n', '  - node2: Child Node\n']
@@ -277,7 +284,7 @@ class TestProjectRepository:
         # Mock save_node to track calls
         with patch.object(self.repo, 'save_node') as mock_save:
             # Execute
-            self.repo._save_node(node)
+            self.repo.save_node_recursive(node)
 
             # Verify
             assert mock_save.call_count == 2
@@ -293,11 +300,11 @@ class TestProjectRepository:
             notecard='Test notecard',
             content='Test content',
             notes='Test notes',
-            metadata={'key': 'value'}
+            metadata={'key': 'value'},
         )
 
         # Execute
-        result = self.repo._serialize_node_content(node)
+        result = self.repo.serialize_node_content(node)
 
         # Verify
         expected_data = {
@@ -306,7 +313,7 @@ class TestProjectRepository:
             'notecard': 'Test notecard',
             'content': 'Test content',
             'notes': 'Test notes',
-            'metadata': {'key': 'value'}
+            'metadata': {'key': 'value'},
         }
         assert json.loads(result) == expected_data
 
@@ -319,11 +326,11 @@ class TestProjectRepository:
             'notecard': 'Test notecard',
             'content': 'Test content',
             'notes': 'Test notes',
-            'metadata': {'key': 'value'}
+            'metadata': {'key': 'value'},
         })
 
         # Execute
-        self.repo._parse_node_content(node, content)
+        self.repo.parse_node_content(node, content)
 
         # Verify
         assert node.title == 'Updated Title'
@@ -342,13 +349,13 @@ class TestProjectRepository:
         })
 
         # Execute
-        self.repo._parse_node_content(node, content)
+        self.repo.parse_node_content(node, content)
 
         # Verify
         assert node.title == 'Updated Title'
         assert node.notecard == ''  # Default value preserved
-        assert node.content == ''   # Default value preserved
-        assert node.notes == ''     # Default value preserved
+        assert node.content == ''  # Default value preserved
+        assert node.notes == ''  # Default value preserved
         assert node.metadata == {}  # Default value preserved
 
     def test_parse_node_content_invalid_metadata(self) -> None:
@@ -357,11 +364,11 @@ class TestProjectRepository:
         node = Node(node_id='test_node', title='Original Title')
         content = json.dumps({
             'title': 'Updated Title',
-            'metadata': 'not a dict'  # Invalid metadata
+            'metadata': 'not a dict',  # Invalid metadata
         })
 
         # Execute
-        self.repo._parse_node_content(node, content)
+        self.repo.parse_node_content(node, content)
 
         # Verify
         assert node.title == 'Updated Title'
