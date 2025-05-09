@@ -68,12 +68,11 @@ class Node:
             return child
         return None
 
-    def add_sibling(self, sibling: Node, after: bool = True) -> bool:
-        """Add a sibling node next to this node.
+    def add_sibling_before(self, sibling: Node) -> bool:
+        """Add a sibling node before this node.
 
         Args:
             sibling: The sibling node to add.
-            after: If True, add after this node; if False, add before.
 
         Returns:
             True if successful, False if this node has no parent.
@@ -86,9 +85,26 @@ class Node:
             sibling.parent.remove_child(sibling)
 
         position = self.parent.children.index(self)
-        if after:
-            position += 1
+        self.parent.add_child(sibling, position)
+        return True
 
+    def add_sibling_after(self, sibling: Node) -> bool:
+        """Add a sibling node after this node.
+
+        Args:
+            sibling: The sibling node to add.
+
+        Returns:
+            True if successful, False if this node has no parent.
+
+        """
+        if self.parent is None:
+            return False
+
+        if sibling.parent is not None:
+            sibling.parent.remove_child(sibling)
+
+        position = self.parent.children.index(self) + 1
         self.parent.add_child(sibling, position)
         return True
 
@@ -141,7 +157,7 @@ class OutlineParser:
     LIST_ITEM_PATTERN = re.compile(r'^(\s*)([*+-])(\s+)(.*)$')
 
     @classmethod
-    def parse(cls, text: str) -> Node:
+    def parse(cls, text: str) -> Node:  # noqa: C901
         """Parse a document containing Commonmark-style unordered lists into an AST.
 
         Args:
@@ -152,7 +168,7 @@ class OutlineParser:
 
         """
         root = Node(type=NodeType.DOCUMENT)
-        lines = text.splitlines(True)  # Keep line endings
+        lines = text.splitlines(True)  # Keep line endings  # noqa: FBT003
 
         # Handle empty document
         if not lines:
@@ -188,7 +204,7 @@ class OutlineParser:
                     current_list.add_child(item_node)
                 else:
                     # Nested list item
-                    parent_indent, parent_node = current_items[-1]
+                    _parent_indent, parent_node = current_items[-1]
 
                     # Check if we need a new list container for this item
                     if parent_node.type == NodeType.LIST_ITEM:

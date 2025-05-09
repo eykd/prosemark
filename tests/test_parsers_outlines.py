@@ -1,6 +1,5 @@
 """Tests for the outline parser module."""
 
-
 from prosemark.parsers.outlines import Node, NodeType, OutlineParser
 
 
@@ -88,7 +87,7 @@ class TestNode:
         child2 = Node(type=NodeType.TEXT, content='Child 2')
 
         parent.add_child(child1)
-        child1.add_sibling(child2)
+        child1.add_sibling_after(child2)
 
         assert len(parent.children) == 2
         assert parent.children[0] == child1
@@ -102,7 +101,7 @@ class TestNode:
         child2 = Node(type=NodeType.TEXT, content='Child 2')
 
         parent.add_child(child1)
-        child1.add_sibling(child2, after=False)
+        child1.add_sibling_before(child2)
 
         assert len(parent.children) == 2
         assert parent.children[0] == child2
@@ -113,7 +112,7 @@ class TestNode:
         node1 = Node(type=NodeType.TEXT, content='Node 1')
         node2 = Node(type=NodeType.TEXT, content='Node 2')
 
-        result = node1.add_sibling(node2)
+        result = node1.add_sibling_after(node2)
         assert result is False
 
     def test_remove_sibling(self) -> None:
@@ -323,7 +322,7 @@ class TestOutlineParser:
             '- Item 1\n  - Nested 1\n  - Nested 2\n- Item 2',
             'This is a paragraph.\n\n- Item 1\n- Item 2\n\nAnother paragraph.',
             '* Item 1\n+ Item 2\n- Item 3',
-            '# Heading\n\n- List item\n  - Nested item\n\nParagraph after list.'
+            '# Heading\n\n- List item\n  - Nested item\n\nParagraph after list.',
         ]
 
         for original in original_texts:
