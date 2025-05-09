@@ -183,6 +183,17 @@ class TestNode:
         assert child.parent == new_parent
         assert new_parent.parent == original_parent
 
+    def test_add_child_with_position_beyond_length(self) -> None:
+        """Test adding a child at a position beyond the current length of children."""
+        parent = Node(type=NodeType.DOCUMENT)
+        child = Node(type=NodeType.TEXT, content='Child')
+
+        # Position is beyond current length (0), should add at the end
+        parent.add_child(child, position=5)
+
+        assert len(parent.children) == 1
+        assert parent.children[0] == child
+
     def test_add_parent_no_parent(self) -> None:
         """Test adding a parent to a node without a parent."""
         node = Node(type=NodeType.TEXT, content='Node')
@@ -360,6 +371,19 @@ class TestOutlineParser:
 
         text = OutlineParser.to_text(root)
         assert text == '- Item 1\n'
+
+    def test_to_text_unknown_node_type(self) -> None:
+        """Test converting a node with an unknown type."""
+        # Create a custom NodeType that's not handled in to_text
+        class CustomNodeType(Enum):
+            UNKNOWN = auto()
+
+        # Create a node with the unknown type
+        node = Node(type=CustomNodeType.UNKNOWN)  # type: ignore
+
+        # Should return empty string for unknown node types
+        text = OutlineParser.to_text(node)  # type: ignore
+        assert text == ''
 
     def test_parse_list_with_multiple_indentation_levels(self) -> None:
         """Test parsing a list with multiple indentation levels."""
