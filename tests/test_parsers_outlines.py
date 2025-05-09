@@ -1,5 +1,7 @@
 """Tests for the outline parser module."""
 
+from enum import Enum, auto
+
 from prosemark.parsers.outlines import Node, NodeType, OutlineParser
 
 
@@ -374,15 +376,16 @@ class TestOutlineParser:
 
     def test_to_text_unknown_node_type(self) -> None:
         """Test converting a node with an unknown type."""
+
         # Create a custom NodeType that's not handled in to_text
         class CustomNodeType(Enum):
             UNKNOWN = auto()
 
         # Create a node with the unknown type
-        node = Node(type=CustomNodeType.UNKNOWN)  # type: ignore
+        node = Node(type=CustomNodeType.UNKNOWN)
 
         # Should return empty string for unknown node types
-        text = OutlineParser.to_text(node)  # type: ignore
+        text = OutlineParser.to_text(node)
         assert text == ''
 
     def test_parse_list_with_multiple_indentation_levels(self) -> None:
