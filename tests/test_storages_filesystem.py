@@ -96,3 +96,12 @@ class TestFilesystemMdNodeStorage:
 
         path = storage._get_file_path(node_id)  # noqa: SLF001
         assert path == expected_path
+
+    def test_get_binder(self, storage: FilesystemMdNodeStorage) -> None:
+        """Test that get_binder returns the content of the _binder node."""
+        expected_content = '# Binder Content\n\nThis is the binder.'
+        file_path = storage.base_path / '_binder.md'
+        file_path.write_text(expected_content, encoding='utf-8')
+
+        content = storage.get_binder()
+        assert content == expected_content
