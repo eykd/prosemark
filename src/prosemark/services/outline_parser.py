@@ -90,7 +90,7 @@ def parse_outline(outline_text: str) -> Node:
             indent_match = re.match(r'^(\s*)', line)
             indent = len(indent_match.group(1)) if indent_match else 0
             root_node.metadata['unparseable_lines'].append((indent, line))
-        except Exception:  # pragma: no cover
+        except Exception:  # pragma: no cover  # noqa: BLE001
             # For any other exception, also store the line
             root_node.metadata['unparseable_lines'].append((0, line))
 
@@ -125,7 +125,9 @@ def generate_outline(root_node: Node) -> str:
         _generate_node_line(child, lines, indent_level=0, line_positions=line_positions)
 
     # Insert unparseable lines at their appropriate positions
-    for indent, unparseable_line in sorted(unparseable_lines, key=lambda x: _find_insertion_point(x[0], line_positions)):
+    for indent, unparseable_line in sorted(
+        unparseable_lines, key=lambda x: _find_insertion_point(x[0], line_positions)
+    ):
         # Find the closest position to insert this line based on indentation
         insertion_point = _find_insertion_point(indent, line_positions)
         if insertion_point < len(lines):
@@ -138,11 +140,11 @@ def generate_outline(root_node: Node) -> str:
 
 def _find_insertion_point(indent: int, line_positions: list[tuple[int, int]]) -> int:
     """Find the appropriate insertion point for an unparseable line based on indentation.
-    
+
     Args:
         indent: The indentation level of the unparseable line
         line_positions: List of (indent_level, position) tuples for all generated lines
-        
+
     Returns:
         The position where the unparseable line should be inserted
 
@@ -152,7 +154,7 @@ def _find_insertion_point(indent: int, line_positions: list[tuple[int, int]]) ->
         return 0
 
     # Find the first position with an indentation level less than or equal to this one
-    for i, (pos_indent, pos) in enumerate(line_positions):
+    for pos_indent, pos in line_positions:
         if pos_indent <= indent:
             return pos
 
@@ -193,8 +195,7 @@ def _parse_line(line: str) -> tuple[int, str, str]:
     return indent_level, title, node_id
 
 
-def _generate_node_line(node: Node, lines: list[str], indent_level: int,
-                        line_positions: list[tuple[int, int]]) -> None:
+def _generate_node_line(node: Node, lines: list[str], indent_level: int, line_positions: list[tuple[int, int]]) -> None:
     """Recursively generate Markdown lines for a node and its children.
 
     Args:
