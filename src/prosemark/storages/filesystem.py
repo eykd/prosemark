@@ -102,9 +102,9 @@ class FilesystemMdNodeStorage:
 
     def get_binder(self) -> str:
         """Read the content of the special _binder node.
-        
+
         The _binder node contains metadata about the project structure.
-        
+
         Returns:
             The content of the _binder node as a string, or empty string if not found.
 
