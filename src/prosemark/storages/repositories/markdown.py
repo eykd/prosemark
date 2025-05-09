@@ -328,26 +328,13 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                 list_node = child
                 break
 
-        # First pass: create all nodes
+        # Process the outline structure
         if list_node:
-            # Process all top-level items first
-            for item in list_node.children:
-                if item.type == OutlineNodeType.LIST_ITEM:
-                    # Parse the item content to extract title and ID
-                    node_info = self._parse_outline_item(item.content)
-                    if node_info:
-                        title, node_id = node_info
-                        # Create a new node (don't add to parent yet)
-                        child_node = Node(node_id=node_id, title=title)
-                        node_map[node_id] = child_node
+            # First pass: create all nodes
+            self._process_outline_nodes(list_node, node_map)
 
-                        # Add directly to root node
-                        root_node.add_child(child_node)
-
-                        # Process nested nodes recursively
-                        for nested in item.children:
-                            if nested.type == OutlineNodeType.LIST:
-                                self._process_outline_list_first_pass(nested, child_node, node_map)
+            # Second pass: build the hierarchy
+            self._build_node_hierarchy(list_node, root_node, node_map)
 
         return root_node
 
@@ -368,8 +355,31 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
             return title, node_id
         return None
 
-    def _process_outline_list_first_pass(self, list_node: OutlineNode, parent_node: Node, node_map: dict[str, Node]) -> None:
-        """Process a list in the outline and create all nodes.
+    def _process_outline_nodes(self, list_node: OutlineNode, node_map: dict[str, Node]) -> None:
+        """Process all nodes in the outline and create Node objects.
+        
+        Args:
+            list_node: The OutlineNode of type LIST to process
+            node_map: Dictionary mapping node IDs to Node objects
+
+        """
+        for item in list_node.children:
+            if item.type == OutlineNodeType.LIST_ITEM:
+                # Parse the item content to extract title and ID
+                node_info = self._parse_outline_item(item.content)
+                if node_info:
+                    title, node_id = node_info
+                    # Create a new node (don't add to parent yet)
+                    if node_id not in node_map:
+                        node_map[node_id] = Node(node_id=node_id, title=title)
+
+                    # Process any nested lists for this item
+                    for nested in item.children:
+                        if nested.type == OutlineNodeType.LIST:
+                            self._process_outline_nodes(nested, node_map)
+
+    def _build_node_hierarchy(self, list_node: OutlineNode, parent_node: Node, node_map: dict[str, Node]) -> None:
+        """Build the node hierarchy from the outline structure.
         
         Args:
             list_node: The OutlineNode of type LIST to process
@@ -382,16 +392,17 @@ class MarkdownFilesystemProjectRepository(ProjectRepository):
                 # Parse the item content to extract title and ID
                 node_info = self._parse_outline_item(item.content)
                 if node_info:
-                    title, node_id = node_info
-                    # Create a new node and add it to the parent
-                    child_node = Node(node_id=node_id, title=title)
-                    node_map[node_id] = child_node
-                    parent_node.add_child(child_node)
+                    _, node_id = node_info
+                    if node_id in node_map:
+                        child_node = node_map[node_id]
+                        # Add to parent if not already a child
+                        if child_node not in parent_node.children:
+                            parent_node.add_child(child_node)
 
-                    # Process any nested lists for this item
-                    for nested in item.children:
-                        if nested.type == OutlineNodeType.LIST:
-                            self._process_outline_list_first_pass(nested, child_node, node_map)
+                        # Process any nested lists for this item
+                        for nested in item.children:
+                            if nested.type == OutlineNodeType.LIST:
+                                self._build_node_hierarchy(nested, child_node, node_map)
 
     def _load_project_metadata(self, project_dir: Path) -> dict[str, Any]:
         """Load project metadata from the _binder.md file. If missing or malformed, return empty dict."""
