@@ -78,6 +78,7 @@ class ProjectRepository:
         """
         # Update the binder to reflect the current structure
         binder_content = self.generate_binder_content(project)
+        project.root_node.content = binder_content  # Ensure content is updated for persistence
         self.storage.write('_binder', binder_content)
 
         # Save any modified nodes to storage

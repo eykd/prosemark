@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+NodeID = str
+
 
 @dataclass
 class Node:
@@ -25,7 +27,7 @@ class Node:
     metadata: dict[str, Any] = field(default_factory=dict)
     parent: Node | None = None
     children: list[Node] = field(default_factory=list)
-    id: str = field(default_factory=lambda: Node.generate_id())
+    id: NodeID = field(default_factory=lambda: Node.generate_id())
 
     def __post_init__(self) -> None:
         """Initialize children and set up parent relationships."""
@@ -37,7 +39,7 @@ class Node:
                 self.add_child(child)
 
     @classmethod
-    def generate_id(cls) -> str:
+    def generate_id(cls) -> NodeID:
         """Generate a unique ID for a node."""
         return datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')
 
@@ -58,7 +60,7 @@ class Node:
         else:
             self.children.insert(position, child)
 
-    def remove_child(self, child: Node | str) -> Node | None:
+    def remove_child(self, child: Node | NodeID) -> Node | None:
         """Remove a child node from this node.
 
         Args:
@@ -70,7 +72,7 @@ class Node:
 
         """
         # Find the child node
-        child_node = self.get_child_by_id(child) if isinstance(child, str) else child
+        child_node = self.get_child_by_id(child) if isinstance(child, NodeID) else child
 
         # Remove the child if found in children list
         if child_node in self.children:
@@ -80,7 +82,7 @@ class Node:
 
         return None
 
-    def get_child_by_id(self, node_id: str) -> Node | None:
+    def get_child_by_id(self, node_id: NodeID) -> Node | None:
         """Get a child node by its ID.
 
         Args:
@@ -122,7 +124,7 @@ class Node:
             current = current.parent
         return ancestors
 
-    def move_child(self, child: Node | str, position: int) -> bool:
+    def move_child(self, child: Node | NodeID, position: int) -> bool:
         """Move a child node to a new position in the children list.
 
         Args:

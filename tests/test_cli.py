@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import textwrap
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from click.testing import CliRunner
 
 from prosemark.cli import main
+
+if TYPE_CHECKING:  # pragma: no cover
+    from prosemark.domain.nodes import NodeID
 
 
 @pytest.fixture
@@ -67,12 +71,12 @@ def test_cli_remove(runner: CliRunner) -> None:
 
         # Get the node ID from the structure
         structure_result = runner.invoke(main, ['structure'])
-        node_id = structure_result.output.split('\n')[1].split()[0]
+        node_id = structure_result.output.split('\n')[1].split()[1]
 
         # Then remove the node
         result = runner.invoke(main, ['remove', node_id])
         assert result.exit_code == 0
-        assert 'Node removed successfully' in result.output
+        assert 'removed successfully' in result.output
 
 
 def test_cli_move(runner: CliRunner) -> None:
@@ -86,8 +90,8 @@ def test_cli_move(runner: CliRunner) -> None:
         # Get node IDs from the structure
         structure_result = runner.invoke(main, ['structure'])
         lines = structure_result.output.split('\n')
-        parent_id = lines[1].split()[0]
-        node_id = lines[2].split()[0]
+        parent_id = lines[1].split()[1]
+        node_id = lines[2].split()[1]
 
         # Then move the node
         result = runner.invoke(main, ['move', node_id, parent_id])
@@ -104,7 +108,7 @@ def test_cli_show(runner: CliRunner) -> None:
 
         # Get the node ID from the structure
         structure_result = runner.invoke(main, ['structure'])
-        node_id = structure_result.output.split('\n')[1].split()[0]
+        node_id = structure_result.output.split('\n')[1].split()[1]
 
         # Then show the node
         result = runner.invoke(main, ['show', node_id])
@@ -123,7 +127,7 @@ def test_cli_edit(runner: CliRunner) -> None:
 
         # Get the node ID from the structure
         structure_result = runner.invoke(main, ['structure'])
-        node_id = structure_result.output.split('\n')[1].split()[0]
+        node_id = structure_result.output.split('\n')[1].split()[1]
 
         # Then edit the node without opening an editor
         result = runner.invoke(main, ['edit', node_id, '--title', 'Updated Title', '--no-editor'])
@@ -131,7 +135,7 @@ def test_cli_edit(runner: CliRunner) -> None:
         assert 'Node updated successfully' in result.output
 
 
-def test_cli_structure(runner: CliRunner) -> None:
+def test_cli_structure(runner: CliRunner, node_ids: list[NodeID]) -> None:
     """Test the structure command."""
     with runner.isolated_filesystem():
         # First create a project with nodes
@@ -143,10 +147,10 @@ def test_cli_structure(runner: CliRunner) -> None:
         result = runner.invoke(main, ['structure'])
         assert result.exit_code == 0
         expected = textwrap.dedent(
-            """\
+            f"""\
             _binder - Test Project
-            - Child Node 1
-            - Child Node 2
+            - {node_ids[1]} Child Node 1
+            - {node_ids[3]} Child Node 2
             """
         )
         assert result.output == expected
