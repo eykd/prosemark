@@ -85,7 +85,7 @@ def info(ctx: ClickContext) -> None:
     click.echo(f'Description: {project.notecard}')
     click.echo(f'Nodes: {project.get_node_count()}')
 
-    if project.metadata:
+    if hasattr(project, 'metadata') and project.metadata:
         click.echo('\nMetadata:')
         for key, value in project.metadata.items():
             click.echo(f'  {key}: {value}')
@@ -270,7 +270,10 @@ def structure(ctx: ClickContext, node_id: str | None = None) -> None:
 
     def print_node(node: Node, level: int = 0) -> None:
         indent = '  ' * level
-        click.echo(f'{indent}{node.id} - {node.title}')
+        if level == 0:
+            click.echo(f'{node.id} - {node.title}')
+        else:
+            click.echo(f'{indent}- {node.title}')
         for child in node.children:
             print_node(child, level + 1)
 
