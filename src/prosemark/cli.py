@@ -274,7 +274,6 @@ def structure(ctx: ClickContext, node_id: str | None = None) -> None:
         for child in node.children:
             print_node(child, level + 1)
 
-    breakpoint()
     print_node(start_node)
 
 
