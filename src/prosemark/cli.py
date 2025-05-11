@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import click
 
+from prosemark.domain.factories import NodeFactory, ProjectFactory
+
 if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
 
@@ -54,27 +56,23 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT0
 
 
 @main.command()
-@click.argument('name')
+@click.argument('title')
 @click.option('--description', '-d', help='Description of the project')
 @click.pass_context
-def init(ctx: ClickContext, name: str, description: str | None = None) -> None:
+def init(ctx: ClickContext, title: str, description: str | None = None) -> None:
     """Create a new project.
 
-    NAME is the name of the new project to create.
+    TITLE is the title of the new project to create.
     """
-    from prosemark.domain.nodes import Node
-    from prosemark.domain.projects import Project
-
     repository = ctx.obj['repository']
 
     # Create a new project with a root node
-    root_node = Node(id='_binder', title=name)
-    project = Project(name=name, description=description or '', root_node=root_node)
+    project = ProjectFactory.build(root_node=NodeFactory.build(id='_binder', title=title, notecard=description or ''))
 
     # Save the project, which will create the _binder.md file
     repository.save_project(project)
 
-    click.echo(f"Project '{name}' initialized successfully in {ctx.obj['data_dir']}")
+    click.echo(f"Project '{title}' initialized successfully in {ctx.obj['data_dir']}")
 
 
 @main.command()
@@ -83,7 +81,7 @@ def info(ctx: ClickContext) -> None:
     """Display information about the current project."""
     repository = ctx.obj['repository']
     project = repository.load_project()
-    click.echo(f'Project: {project.name}')
+    click.echo(f'Project: {project.title}')
     click.echo(f'Description: {project.description}')
     click.echo(f'Nodes: {project.get_node_count()}')
 
@@ -276,6 +274,7 @@ def structure(ctx: ClickContext, node_id: str | None = None) -> None:
         for child in node.children:
             print_node(child, level + 1)
 
+    breakpoint()
     print_node(start_node)
 
 

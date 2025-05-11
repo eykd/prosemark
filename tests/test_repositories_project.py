@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import ANY, MagicMock, patch
 
+from prosemark.domain.factories import NodeFactory, ProjectFactory, RootNodeFactory
 from prosemark.domain.nodes import Node
-from prosemark.domain.projects import Project
 from prosemark.parsers.nodes import NodeParser
 from prosemark.parsers.outlines import OutlineNode, OutlineNodeType
 from prosemark.repositories.project import ProjectRepository
@@ -32,7 +32,7 @@ class TestProjectRepository:
         project = self.repo.load_project()
 
         # Verify
-        assert project.name == 'New Project'
+        assert project.title == 'New Project'
         assert len(project.root_node.children) == 0
         self.mock_storage.get_binder.assert_called_once()
 
@@ -46,7 +46,7 @@ class TestProjectRepository:
         project = self.repo.load_project()
 
         # Verify
-        assert project.name == 'Project'  # Default name
+        assert project.title == 'New Project'  # Default name
         assert len(project.root_node.children) == 1
         child = project.root_node.children[0]
         assert child.id == 'node1'
@@ -59,9 +59,10 @@ class TestProjectRepository:
     def test_save_project(self) -> None:
         """Test saving a project."""
         # Setup
-        project = Project(name='Test Project')
-        node1 = Node(id='node1', title='First Node')
-        node2 = Node(id='node2', title='Second Node')
+        project = ProjectFactory.build()
+        project.root_node.title = 'Test Project'
+        node1 = NodeFactory.build(id='node1', title='First Node')
+        node2 = NodeFactory.build(id='node2', title='Second Node')
         project.root_node.add_child(node1)
         node1.add_child(node2)
 
@@ -84,6 +85,8 @@ class TestProjectRepository:
     def test_load_node_content(self) -> None:
         """Test loading node content."""
         # Setup
+        project = ProjectFactory.build()
+        project.root_node.title = 'Test Project'
         node = Node(id='test_node', title='Test Node')
         node_content = """---
 id: test_node
@@ -110,7 +113,9 @@ Test content"""
     def test_load_node_content_empty(self) -> None:
         """Test loading node content when storage returns empty string."""
         # Setup
-        node = Node(id='test_node', title='Test Node')
+        project = ProjectFactory.build()
+        project.root_node.title = 'Test Project'
+        node = NodeFactory.build(id='test_node', title='Test Node')
         self.mock_storage.read.return_value = ''
 
         # Execute
@@ -123,7 +128,9 @@ Test content"""
     def test_load_node_content_invalid_format(self) -> None:
         """Test loading node content with invalid format."""
         # Setup
-        node = Node(id='test_node', title='Test Node')
+        project = ProjectFactory.build()
+        project.root_node.title = 'Test Project'
+        node = NodeFactory.build(id='test_node', title='Test Node')
         self.mock_storage.read.return_value = 'Not valid format'
 
         # Execute
@@ -137,7 +144,10 @@ Test content"""
     def test_save_node(self) -> None:
         """Test saving a node."""
         # Setup
-        node = Node(
+        project = ProjectFactory.build()
+        project.root_node.title = 'Test Project'
+        project.root_node.notecard = 'Project description'
+        node = NodeFactory.build(
             id='test_node',
             title='Test Node',
             notecard='Test notecard',
@@ -165,7 +175,7 @@ Test content"""
     def test_build_node_structure(self) -> None:
         """Test building node structure from outline."""
         # Setup
-        project = Project(name='Test Project')
+        project = ProjectFactory.build()
         doc_node = OutlineNode(type=OutlineNodeType.DOCUMENT)
         list_node = OutlineNode(type=OutlineNodeType.LIST)
         item1 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node1: First Node')
@@ -234,10 +244,15 @@ Test content"""
     def test_generate_binder_content(self) -> None:
         """Test generating binder content."""
         # Setup
-        project = Project(name='Test Project', description='Project description')
-        node1 = Node(id='node1', title='First Node')
-        node2 = Node(id='node2', title='Second Node')
-        node3 = Node(id='node3', title='Nested Node')
+        project = ProjectFactory.build(
+            root_node=RootNodeFactory.build(
+                title='Test Project',
+                notecard='Project description',
+            )
+        )
+        node1 = NodeFactory.build(id='node1', title='First Node')
+        node2 = NodeFactory.build(id='node2', title='Second Node')
+        node3 = NodeFactory.build(id='node3', title='Nested Node')
         project.root_node.add_child(node1)
         project.root_node.add_child(node2)
         node1.add_child(node3)
@@ -252,15 +267,20 @@ Test content"""
     def test_generate_binder_content_no_description(self) -> None:
         """Test generating binder content without description."""
         # Setup
-        project = Project(name='Test Project')
-        node1 = Node(id='node1', title='First Node')
+        project = ProjectFactory.build(
+            root_node=RootNodeFactory.build(
+                title='New Project',
+                notecard='Test description',
+            )
+        )
+        node1 = NodeFactory.build(id='node1', title='First Node')
         project.root_node.add_child(node1)
 
         # Execute
         result = self.repo.generate_binder_content(project)
 
         # Verify
-        expected = '# Test Project\n\n- node1: First Node\n'
+        expected = '# New Project\n\nTest description\n\n- node1: First Node\n'
         assert result == expected
 
     def test_append_node_to_binder(self) -> None:

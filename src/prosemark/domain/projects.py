@@ -5,38 +5,30 @@ This module defines the Project class which represents a complete document proje
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from prosemark.domain.nodes import Node
 
 
+@dataclass
 class Project:
     """A project in the prosemark system.
 
     Represents a complete document project with a hierarchical structure of nodes.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str = '',
-        root_node: Node | None = None,
-        metadata: dict[str, Any] | None = None,
-    ) -> None:
-        """Initialize a new Project.
+    root_node: Node
 
-        Args:
-            name: The name of the project.
-            description: A longer description of the project's purpose and contents.
-            root_node: The root node of the project's document tree. If None, a new
-                empty root Node will be created automatically.
-            metadata: Additional metadata about the project.
+    @property
+    def title(self) -> str:
+        """Get the title of the project."""
+        return self.root_node.title
 
-        """
-        self.name = name
-        self.description = description
-        self.root_node = root_node or Node(title=name)
-        self.metadata = metadata or {}
+    @property
+    def notecard(self) -> str:
+        """Get the notecard of the project."""
+        return self.root_node.notecard
 
     def get_node_by_id(self, node_id: str) -> Node | None:
         """Retrieve a node from anywhere in the project tree by its ID.

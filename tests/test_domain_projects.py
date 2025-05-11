@@ -2,40 +2,31 @@
 
 from __future__ import annotations
 
-from prosemark.domain.nodes import Node
-from prosemark.domain.projects import Project
+from prosemark.domain.factories import NodeFactory, ProjectFactory
 
 
 def test_project_initialization() -> None:
     """Test that a Project can be initialized with default and custom values."""
     # Test with default values
-    project1 = Project(name='Test Project')
-    assert project1.name == 'Test Project'
-    assert project1.description == ''
+    project1 = ProjectFactory.build()
+    assert project1.title == 'New Project'
+    assert project1.notecard == ''
     assert project1.root_node is not None
-    assert project1.root_node.title == 'Test Project'
-    assert project1.metadata == {}
+    assert project1.root_node.title == 'New Project'
 
     # Test with custom values
-    root_node = Node(title='Custom Root')
-    metadata = {'author': 'Test Author', 'version': '1.0'}
+    root_node = NodeFactory.build(title='Custom Root', notecard='Custom notecard')
+    project2 = ProjectFactory.build(root_node=root_node)
 
-    project2 = Project(
-        name='Custom Project',
-        description='A test project',
-        root_node=root_node,
-        metadata=metadata,
-    )
-
-    assert project2.name == 'Custom Project'
-    assert project2.description == 'A test project'
+    assert project2.title == 'Custom Root'
+    assert project2.notecard == 'Custom notecard'
     assert project2.root_node is root_node
-    assert project2.metadata == metadata
 
 
 def test_get_node_by_id() -> None:
     """Test retrieving a node by ID."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
+    project.root_node.title = 'Test Project'
 
     # Root node should be retrievable
     root_id = project.root_node.id
@@ -60,7 +51,8 @@ def test_get_node_by_id() -> None:
 
 def test_create_node() -> None:
     """Test creating a new node."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
+    project.root_node.title = 'Test Project'
     root_id = project.root_node.id
 
     # Create node with minimal parameters
@@ -98,7 +90,8 @@ def test_create_node() -> None:
 
 def test_move_node() -> None:
     """Test moving a node to a new parent."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
+    project.root_node.title = 'Test Project'
     root_id = project.root_node.id
 
     # Create some nodes
@@ -145,7 +138,8 @@ def test_move_node() -> None:
 
 def test_remove_node() -> None:
     """Test removing a node from the project."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
+    project.root_node.title = 'Test Project'
     root_id = project.root_node.id
 
     # Create some nodes
@@ -173,7 +167,8 @@ def test_remove_node() -> None:
 
 def test_get_node_count() -> None:
     """Test counting the nodes in a project."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
+    project.root_node.title = 'Test Project'
 
     # Initially just the root node
     assert project.get_node_count() == 1
@@ -194,7 +189,8 @@ def test_get_node_count() -> None:
 
 def test_get_structure() -> None:
     """Test getting the structure representation of a project."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
+    project.root_node.title = 'Test Project'
 
     # Create a simple structure
     node1 = project.create_node(project.root_node.id, title='Chapter 1')
@@ -226,7 +222,7 @@ def test_get_structure() -> None:
 
 def test_move_node_with_circular_reference() -> None:
     """Test that moving a node to its own descendant fails."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
     root_id = project.root_node.id
 
     # Create a hierarchy
@@ -246,7 +242,7 @@ def test_move_node_with_circular_reference() -> None:
 
 def test_build_structure_with_empty_node() -> None:
     """Test building structure with a node that has no children."""
-    project = Project(name='Test Project')
+    project = ProjectFactory.build()
 
     # Create a node with no children
     leaf_node = project.create_node(project.root_node.id, title='Leaf Node')

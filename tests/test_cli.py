@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -141,6 +142,11 @@ def test_cli_structure(runner: CliRunner) -> None:
         # Then display the structure
         result = runner.invoke(main, ['structure'])
         assert result.exit_code == 0
-        assert '_binder - _binder' in result.output
-        assert 'Child Node 1' in result.output
-        assert 'Child Node 2' in result.output
+        expected = textwrap.dedent(
+            """\
+            _binder - Test Project
+            - Child Node 1
+            - Child Node 2
+            """
+        )
+        assert result.output == expected

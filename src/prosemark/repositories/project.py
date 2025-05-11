@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import yaml
 
+from prosemark.domain.factories import ProjectFactory, RootNodeFactory
 from prosemark.domain.nodes import Node
 from prosemark.domain.projects import Project
 from prosemark.parsers.nodes import NodeParser
@@ -51,17 +52,17 @@ class ProjectRepository:
         binder_content = self.storage.get_binder()
         if not binder_content:
             # Handle case of new/empty project
-            return Project(name='New Project')
+            return ProjectFactory.build(root_node=RootNodeFactory.build())
 
         # Create the binder node and parse its content
-        binder_node = Node(id='_binder', title='Binder')
+        binder_node = Node(id='_binder', title='New Project')
         self.parse_node_content(binder_node, binder_content)
 
         # Second stage: Parse the outline structure from the binder node's content
         outline_root = OutlineParser.parse(binder_node.content)
 
         # Create project with the binder node as root
-        project = Project(name=binder_node.title, root_node=binder_node)
+        project = Project(root_node=binder_node)
 
         # Build the rest of the node structure
         self.build_node_structure(project, outline_root)
@@ -182,11 +183,11 @@ class ProjectRepository:
             The binder content as a string.
 
         """
-        lines = [f'# {project.name}\n\n']
+        lines = [f'# {project.title}\n\n']
 
         # Add project description if available
-        if project.description:
-            lines.append(f'{project.description}\n\n')
+        if project.notecard:
+            lines.append(f'{project.notecard}\n\n')
 
         # Generate the structure as a nested list - skip the root node itself
         for child in project.root_node.children:
