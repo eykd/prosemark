@@ -82,7 +82,7 @@ def info(ctx: ClickContext) -> None:
     repository = ctx.obj['repository']
     project = repository.load_project()
     click.echo(f'Project: {project.title}')
-    click.echo(f'Description: {project.description}')
+    click.echo(f'Description: {project.notecard}')
     click.echo(f'Nodes: {project.get_node_count()}')
 
     if project.metadata:
@@ -151,7 +151,7 @@ def remove(ctx: ClickContext, node_id: str) -> None:
 
 
 @main.command()
-@click.argument('id')
+@click.argument('node_id')
 @click.argument('new_parent_id')
 @click.option('--position', '-p', type=int, help='Position to insert the node')
 @click.pass_context
