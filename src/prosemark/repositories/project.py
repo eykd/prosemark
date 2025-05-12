@@ -159,17 +159,21 @@ class ProjectRepository:
             A dictionary containing the node ID and title.
 
         """
-        # Simple parsing: assume format is "- ID: Title"
+        # Simple parsing: assume format is "- [Title](ID.md)"
         content_stripped = content.strip()
 
         # Remove list marker if present
         if content_stripped.startswith(('- ', '* ', '+ ')):  # pragma: no branch
             content_stripped = content_stripped[2:].strip()
 
-        parts = content_stripped.split(':', 1)
-        if len(parts) == 2:
-            # Extract ID and title
-            return {'id': parts[0].strip(), 'title': parts[1].strip()}
+        # Check for markdown link format: [Title](ID.md)
+        import re
+
+        link_match = re.match(r'\[(.*?)\]\((.*?)\.md\)', content_stripped)
+        if link_match:
+            title = link_match.group(1)
+            node_id = link_match.group(2)
+            return {'id': node_id, 'title': title}
 
         # Fallback: use the whole content as title (without list marker)
         return {'title': content_stripped}

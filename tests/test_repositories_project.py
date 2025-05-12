@@ -39,7 +39,7 @@ class TestProjectRepository:
     def test_load_project_with_binder(self) -> None:
         """Test loading a project with a binder."""
         # Setup
-        binder_content = '# Test Project\n\n- node1: First Node\n  - node2: Second Node\n'
+        binder_content = '# Test Project\n\n- [First Node](node1.md)\n  - [Second Node](node2.md)\n'
         self.mock_storage.get_binder.return_value = binder_content
 
         # Execute
@@ -74,8 +74,8 @@ class TestProjectRepository:
         self.mock_storage.write.assert_any_call('_binder', ANY)
         binder_content = self.mock_storage.write.call_args_list[0][0][1]
         assert '# Test Project' in binder_content
-        assert 'node1: First Node' in binder_content
-        assert 'node2: Second Node' in binder_content
+        assert '[First Node](node1.md)' in binder_content
+        assert '[Second Node](node2.md)' in binder_content
         self.mock_storage.write.assert_any_call(
             project.root_node.id, self.repo.serialize_node_content(project.root_node)
         )
@@ -226,18 +226,18 @@ Test content"""
     def test_parse_list_item(self) -> None:
         """Test parsing list item content."""
         # Test with standard format
-        result = self.repo.parse_list_item('- node1: First Node')
+        result = self.repo.parse_list_item('- [First Node](node1.md)')
         assert result == {'id': 'node1', 'title': 'First Node'}
 
         # Test with different list marker
-        result = self.repo.parse_list_item('* node2: Second Node')
+        result = self.repo.parse_list_item('* [Second Node](node2.md)')
         assert result == {'id': 'node2', 'title': 'Second Node'}
 
         # Test with + marker
-        result = self.repo.parse_list_item('+ node3: Third Node')
+        result = self.repo.parse_list_item('+ [Third Node](node3.md)')
         assert result == {'id': 'node3', 'title': 'Third Node'}
 
-        # Test without colon
+        # Test without markdown link format
         result = self.repo.parse_list_item('- Just a title')
         assert result == {'title': 'Just a title'}
 
@@ -261,7 +261,7 @@ Test content"""
         result = self.repo.generate_binder_content(project)
 
         # Verify
-        expected = '# Test Project\n\nProject description\n\n- node1: First Node\n  - node3: Nested Node\n- node2: Second Node\n'
+        expected = '# Test Project\n\nProject description\n\n- [First Node](node1.md)\n  - [Nested Node](node3.md)\n- [Second Node](node2.md)\n'
         assert result == expected
 
     def test_generate_binder_content_no_description(self) -> None:
@@ -280,7 +280,7 @@ Test content"""
         result = self.repo.generate_binder_content(project)
 
         # Verify
-        expected = '# New Project\n\nTest description\n\n- node1: First Node\n'
+        expected = '# New Project\n\nTest description\n\n- [First Node](node1.md)\n'
         assert result == expected
 
     def test_append_node_to_binder(self) -> None:
@@ -295,7 +295,7 @@ Test content"""
         self.repo.append_node_to_binder(node, lines, 0)
 
         # Verify
-        assert lines == ['- node1: First Node\n', '  - node2: Child Node\n']
+        assert lines == ['- [First Node](node1.md)\n', '  - [Child Node](node2.md)\n']
 
     def test_save_node_recursive(self) -> None:
         """Test saving node recursively."""
