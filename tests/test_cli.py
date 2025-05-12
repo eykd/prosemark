@@ -187,9 +187,9 @@ def test_cli_structure(
 
         [[_binder notecard.md]]
 
-        - 202505111234567891: Child 1
-          - 202505111234567893: Grandchild
-        - 202505111234567892: Child 2
+        - [Child 1](202505111234567891.md)
+          - [Grandchild](202505111234567893.md)
+        - [Child 2](202505111234567892.md)
         """
     )
 
