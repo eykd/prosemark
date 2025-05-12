@@ -270,7 +270,8 @@ def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
         if level == 0:
             click.echo(f'{node.id} - {node.title}')
         else:
-            click.echo(f'- {node.id} {node.title}')
+            indent = '  ' * (level - 1)
+            click.echo(f'{indent}- {node.id} {node.title}')
         for child in node.children:
             print_node(child, level + 1)
 
