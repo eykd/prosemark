@@ -12,18 +12,21 @@ class NodeFactory(DataclassFactory[Node]):
 
     __model__ = Node
 
-
-class RootNodeFactory(NodeFactory):
-    """Factory for creating root Node objects"""
-
-    id = '_binder'
-    title = 'New Project'
+    id = Use(Node.generate_id)
+    title = ''
     notecard = ''
     content = ''
     notes = ''
     metadata: dict[str, str] = Use(dict)  # type: ignore[assignment]
     parent = None
     children: list[Node] = Use(list)  # type: ignore[assignment]
+
+
+class RootNodeFactory(NodeFactory):
+    """Factory for creating root Node objects"""
+
+    id = '_binder'  # type: ignore[assignment]
+    title = 'New Project'
 
 
 class ProjectFactory(DataclassFactory[Project]):

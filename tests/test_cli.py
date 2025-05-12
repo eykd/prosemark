@@ -30,7 +30,11 @@ def test_cli_init(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(main, ['init', 'Test Project', '--description', 'A test project'])
         assert result.exit_code == 0
-        assert "Project 'Test Project' initialized successfully" in result.output
+        assert result.output == textwrap.dedent(
+            """\
+            Project 'Test Project' initialized successfully in .
+            """
+        )
         assert Path('_binder.md').exists()
 
 
@@ -43,12 +47,19 @@ def test_cli_info(runner: CliRunner) -> None:
         # Then get info about it
         result = runner.invoke(main, ['info'])
         assert result.exit_code == 0
-        assert 'Project: Test Project' in result.output
-        assert 'Description: A test project' in result.output
-        assert 'Nodes: 1' in result.output
+        expected = textwrap.dedent(
+            """\
+            Project: Test Project
+            Description: A test project
+            Nodes: 1
+
+            Metadata:
+            """
+        )
+        assert result.output == expected
 
 
-def test_cli_add(runner: CliRunner) -> None:
+def test_cli_add(runner: CliRunner, node_ids: list[NodeID]) -> None:
     """Test the add command."""
     with runner.isolated_filesystem():
         # First create a project
@@ -59,7 +70,12 @@ def test_cli_add(runner: CliRunner) -> None:
             main, ['add', '_binder', 'New Node', '--notecard', 'A brief summary', '--content', 'Some content']
         )
         assert result.exit_code == 0
-        assert 'Node added successfully' in result.output
+        expected = textwrap.dedent(
+            f"""\
+            Node added successfully with ID: {node_ids[1]}
+            """
+        )
+        assert result.output == expected
 
 
 def test_cli_remove(runner: CliRunner) -> None:
@@ -76,7 +92,12 @@ def test_cli_remove(runner: CliRunner) -> None:
         # Then remove the node
         result = runner.invoke(main, ['remove', node_id])
         assert result.exit_code == 0
-        assert 'removed successfully' in result.output
+        expected = textwrap.dedent(
+            """\
+            Node 'Node to remove' removed successfully
+            """
+        )
+        assert result.output == expected
 
 
 def test_cli_move(runner: CliRunner) -> None:
@@ -96,10 +117,10 @@ def test_cli_move(runner: CliRunner) -> None:
         # Then move the node
         result = runner.invoke(main, ['move', node_id, parent_id])
         assert result.exit_code == 0
-        assert 'Node moved successfully' in result.output
+        assert result.output == 'Node moved successfully\n'
 
 
-def test_cli_show(runner: CliRunner) -> None:
+def test_cli_show(runner: CliRunner, node_ids: list[NodeID]) -> None:
     """Test the show command."""
     with runner.isolated_filesystem():
         # First create a project with a node
@@ -113,9 +134,19 @@ def test_cli_show(runner: CliRunner) -> None:
         # Then show the node
         result = runner.invoke(main, ['show', node_id])
         assert result.exit_code == 0
-        assert 'Title: Node to show' in result.output
-        assert 'Content:' in result.output
-        assert 'This is the content' in result.output
+        assert result.output == textwrap.dedent(
+            f"""\
+            Title: Node to show
+
+            Notecard: [[{node_ids[1]} notecard.md]]
+
+            Content:
+            This is the content
+
+            Notes:
+            [[{node_ids[1]} notes.md]]
+            """
+        )
 
 
 def test_cli_edit(runner: CliRunner) -> None:
@@ -132,7 +163,12 @@ def test_cli_edit(runner: CliRunner) -> None:
         # Then edit the node without opening an editor
         result = runner.invoke(main, ['edit', node_id, '--title', 'Updated Title', '--no-editor'])
         assert result.exit_code == 0
-        assert 'Node updated successfully' in result.output
+        expected = textwrap.dedent(
+            """\
+            Node updated successfully
+            """
+        )
+        assert result.output == expected
 
 
 def test_cli_structure(runner: CliRunner, node_ids: list[NodeID]) -> None:

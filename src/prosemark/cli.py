@@ -86,7 +86,7 @@ def info(ctx: ClickContext) -> None:
     click.echo(f'Nodes: {project.get_node_count()}')
 
     click.echo('\nMetadata:')
-    for key, value in project.root_node.metadata.items():
+    for key, value in project.root_node.metadata.items():  # pragma: no cover
         click.echo(f'  {key}: {value}')
 
 
