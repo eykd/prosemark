@@ -269,7 +269,7 @@ class NodeParser:
 
         # Parse sections
         current_section = None
-        section_content = []
+        section_content: list[str] = []
 
         while i < len(lines):
             line = lines[i]
