@@ -104,8 +104,16 @@ class ProjectRepository:
             node: The Node object to save.
 
         """
+        # Save the main node content
         node_content = self.serialize_node_content(node)
         self.storage.write(node.id, node_content)
+
+        # Save notecard and notes to separate files if they exist
+        if node.notecard:
+            self.storage.write(f'{node.id} notecard', node.notecard)
+
+        if node.notes:
+            self.storage.write(f'{node.id} notes', node.notes)
 
     def build_node_structure(self, project: Project, outline_root: OutlineNode) -> None:
         """Build the node structure from the parsed outline.

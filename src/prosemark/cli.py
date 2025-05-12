@@ -222,6 +222,8 @@ def edit(
 
     NODE_ID is the ID of the node to edit.
     """
+    from prosemark.parsers.nodes import NodeParser
+
     repository = ctx.obj['repository']
     project = repository.load_project()
 
@@ -232,20 +234,52 @@ def edit(
 
     repository.load_node_content(node)
 
-    # Update node properties if provided
-    if title is not None:  # pragma: no branch
+    # Update node properties if provided via command line options
+    if title is not None:
         node.title = title
-    if notecard is not None:  # pragma: no cover
+    if notecard is not None:
         node.notecard = notecard
-    if content is not None:  # pragma: no cover
+    if content is not None:
         node.content = content
-    if notes is not None:  # pragma: no cover
+    if notes is not None:
         node.notes = notes
 
-    # TODO: Implement editor functionality
-    if editor:  # pragma: no cover
-        click.echo('Editor functionality not implemented yet, using provided values')
+    # If editor flag is set, open the node in an external editor
+    if editor:
+        # Prepare node data for editing
+        node_data = {
+            'id': node.id,
+            'title': node.title,
+            'notecard': node.notecard,
+            'notes': node.notes,
+            'content': node.content,
+            'metadata': node.metadata,
+        }
 
+        # Format the content for the editor
+        editor_content = NodeParser.prepare_for_editor(node_data)
+
+        # Open the editor with the formatted content
+        edited_content = click.edit(editor_content)
+
+        # If the user saved changes (didn't abort)
+        if edited_content is not None:
+            # Parse the edited content back into node data
+            updated_data = NodeParser.parse_from_editor(edited_content)
+
+            # Update the node with the edited values
+            if 'title' in updated_data:
+                node.title = updated_data['title']
+            if 'notecard' in updated_data:
+                node.notecard = updated_data['notecard']
+            if 'notes' in updated_data:
+                node.notes = updated_data['notes']
+            if 'content' in updated_data:
+                node.content = updated_data['content']
+            if updated_data.get('metadata'):
+                node.metadata.update(updated_data['metadata'])
+
+    # Save the updated node
     repository.save_node(node)
     click.echo('Node updated successfully')
 

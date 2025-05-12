@@ -170,3 +170,133 @@ class NodeParser:
             lines.append(content)
 
         return '\n'.join(lines)
+
+    @classmethod
+    def prepare_for_editor(cls, node_data: dict[str, Any]) -> str:
+        """Prepare node data for editing in an external editor.
+        
+        Args:
+            node_data: The node data to prepare for editing.
+            
+        Returns:
+            A string representation suitable for editing.
+
+        """
+        # Extract basic properties
+        node_id = node_data.get('id', '')
+        title = node_data.get('title', '')
+        notecard = node_data.get('notecard', '')
+        notes = node_data.get('notes', '')
+        content = node_data.get('content', '')
+        metadata = node_data.get('metadata', {})
+
+        # Create YAML header (simplified for editing)
+        header = f'id: {node_id}\ntitle: {title}\n'
+
+        # Add metadata if present
+        if metadata:
+            for key, value in metadata.items():
+                if key not in ('id', 'title'):
+                    header += f'{key}: {value}\n'
+
+        # Build the full content for editing
+        lines = [header]
+
+        # Add notecard section
+        lines.append('\n// Notecard')
+        if notecard:
+            lines.append(notecard)
+
+        # Add notes section
+        lines.append('\n// Notes')
+        if notes:
+            lines.append(notes)
+
+        # Add content section
+        lines.append('\n// Content')
+        if content:
+            lines.append(content)
+
+        return '\n'.join(lines)
+
+    @classmethod
+    def parse_from_editor(cls, content: str) -> dict[str, Any]:
+        """Parse content from the editor format back into node data.
+        
+        Args:
+            content: The content from the editor.
+            
+        Returns:
+            A dictionary containing the parsed node data.
+
+        """
+        if not content:
+            return {}
+
+        lines = content.split('\n')
+
+        # Initialize with default values
+        node_data: dict[str, Any] = {
+            'id': '',
+            'title': '',
+            'notecard': '',
+            'content': '',
+            'notes': '',
+            'metadata': {},
+        }
+
+        # Parse header (everything before first section marker)
+        header_lines = []
+        i = 0
+        while i < len(lines) and not lines[i].startswith('// '):
+            if lines[i].strip():  # Skip empty lines
+                header_lines.append(lines[i])
+            i += 1
+
+        # Process header lines
+        for line in header_lines:
+            if ':' in line:
+                key, value = line.split(':', 1)
+                key = key.strip()
+                value = value.strip()
+
+                if key == 'id':
+                    node_data['id'] = value
+                elif key == 'title':
+                    node_data['title'] = value
+                else:
+                    node_data['metadata'][key] = value
+
+        # Parse sections
+        current_section = None
+        section_content = []
+
+        while i < len(lines):
+            line = lines[i]
+
+            # Check for section markers
+            if line.startswith('// Notecard'):
+                if current_section:
+                    node_data[current_section] = '\n'.join(section_content).strip()
+                current_section = 'notecard'
+                section_content = []
+            elif line.startswith('// Notes'):
+                if current_section:
+                    node_data[current_section] = '\n'.join(section_content).strip()
+                current_section = 'notes'
+                section_content = []
+            elif line.startswith('// Content'):
+                if current_section:
+                    node_data[current_section] = '\n'.join(section_content).strip()
+                current_section = 'content'
+                section_content = []
+            else:
+                section_content.append(line)
+
+            i += 1
+
+        # Add the last section
+        if current_section:
+            node_data[current_section] = '\n'.join(section_content).strip()
+
+        return node_data
