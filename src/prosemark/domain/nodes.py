@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-NodeID = str
+type NodeID = str
 
 
 @dataclass
@@ -72,7 +72,7 @@ class Node:
 
         """
         # Find the child node
-        child_node = self.get_child_by_id(child) if isinstance(child, NodeID) else child
+        child_node = self.get_child_by_id(child) if isinstance(child, str) else child
 
         # Remove the child if found in children list
         if child_node in self.children:
