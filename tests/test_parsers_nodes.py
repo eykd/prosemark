@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import textwrap
+
 from prosemark.parsers.nodes import NodeParser
 
 
@@ -10,9 +12,9 @@ class TestNodeParser:
 
     def test_parse_empty_content(self) -> None:
         """Test parsing empty content."""
-        result = NodeParser.parse('', 'test_id')
+        result = NodeParser.parse('', 'node123')
         assert result == {
-            'id': 'test_id',
+            'id': 'node123',
             'title': '',
             'notecard': '',
             'content': '',
@@ -158,3 +160,123 @@ More text"""
         # Only the first directive should be processed
         assert directives == {'Directive1': 'Value1'}
         assert content_lines == ['Some text', '// Directive2: Value2', 'More text']
+
+    def test_prepare_for_editor_minimal(self) -> None:
+        """Test preparing minimal node data for editor."""
+        from prosemark.domain.nodes import Node
+
+        node = Node(
+            id='node123',
+            title='Test Node',
+        )
+        result = NodeParser.prepare_for_editor(node)
+        expected = textwrap.dedent(
+            """\
+            id: node123
+            title: Test Node
+
+            // Notecard
+
+            // Notes
+
+            // Content"""
+        )
+        assert result == expected
+
+    def test_prepare_for_editor_complete(self) -> None:
+        """Test preparing complete node data for editor."""
+        from prosemark.domain.nodes import Node
+
+        node = Node(
+            id='node123',
+            title='Test Node',
+            notecard='This is a notecard',
+            notes='These are notes',
+            content='This is the content',
+            metadata={'custom_field': 'custom value'},
+        )
+        result = NodeParser.prepare_for_editor(node)
+        expected = textwrap.dedent(
+            """\
+            id: node123
+            title: Test Node
+            custom_field: custom value
+
+            // Notecard
+            This is a notecard
+
+            // Notes
+            These are notes
+
+            // Content
+            This is the content"""
+        )
+        assert result == expected
+
+    def test_parse_from_editor_minimal(self) -> None:
+        """Test parsing minimal editor content."""
+        content = """id: node123
+title: Test Node
+
+// Notecard
+
+// Notes
+
+// Content"""
+        result = NodeParser.parse_from_editor('node123', content)
+        assert result.id == 'node123'
+        assert result.title == 'Test Node'
+        assert result.notecard == ''
+        assert result.notes == ''
+        assert result.content == ''
+        assert result.metadata == {}
+
+    def test_parse_from_editor_complete(self) -> None:
+        """Test parsing complete editor content."""
+        content = """id: node123
+title: Test Node
+custom_field: custom value
+
+// Notecard
+This is a notecard
+
+// Notes
+These are notes
+
+// Content
+This is the content"""
+        result = NodeParser.parse_from_editor('node123', content)
+        assert result.id == 'node123'
+        assert result.title == 'Test Node'
+        assert result.notecard == 'This is a notecard'
+        assert result.notes == 'These are notes'
+        assert result.content == 'This is the content'
+        assert result.metadata == {'custom_field': 'custom value'}
+
+    def test_parse_from_editor_empty(self) -> None:
+        """Test parsing empty editor content."""
+        result = NodeParser.parse_from_editor('node123', '')
+        assert result.id == 'node123'
+        assert result.title == ''
+        assert result.notecard == ''
+        assert result.notes == ''
+        assert result.content == ''
+        assert result.metadata == {}
+
+    def test_parse_from_editor_malformed(self) -> None:
+        """Test parsing malformed editor content."""
+        content = """id: node123
+title: Test Node
+// Notecard
+This is a notecard
+// Notes
+These are notes
+// Content
+This is the content"""
+        result = NodeParser.parse_from_editor('node123', content)
+        assert result.id == 'node123'
+        assert result.title == 'Test Node'
+        assert result.notecard == 'This is a notecard'
+        assert result.notes == 'These are notes'
+        assert result.content == 'This is the content'
+        assert result.metadata == {}

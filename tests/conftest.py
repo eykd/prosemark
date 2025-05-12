@@ -11,6 +11,7 @@ from click.testing import CliRunner
 from prosemark.domain.nodes import Node, NodeID
 from prosemark.repositories.project import ProjectRepository
 from prosemark.storages.filesystem import FilesystemMdNodeStorage
+from prosemark.storages.inmemory import InMemoryNodeStorage
 
 # Add the src directory to the Python path
 src_path = Path(__file__).parent.parent / 'src'
@@ -58,6 +59,18 @@ def fs_storage(runner_path: Path) -> FilesystemMdNodeStorage:
 
 
 @pytest.fixture
-def project_repository(fs_storage: FilesystemMdNodeStorage) -> ProjectRepository:
+def fs_project_repository(fs_storage: FilesystemMdNodeStorage) -> ProjectRepository:
     """Fixture to create a ProjectRepository instance."""
     return ProjectRepository(fs_storage)
+
+
+@pytest.fixture
+def mem_storage() -> InMemoryNodeStorage:
+    """Fixture to create an InMemoryNodeStorage instance."""
+    return InMemoryNodeStorage()
+
+
+@pytest.fixture
+def mem_project_repository(mem_storage: InMemoryNodeStorage) -> ProjectRepository:
+    """Fixture to create a ProjectRepository instance."""
+    return ProjectRepository(mem_storage)

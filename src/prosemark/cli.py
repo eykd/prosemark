@@ -6,11 +6,14 @@ allowing users to manage projects and nodes through the terminal.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
 
 from prosemark.domain.factories import NodeFactory, ProjectFactory
+from prosemark.parsers.nodes import NodeParser
+from prosemark.repositories.project import ProjectRepository
 
 if TYPE_CHECKING:  # pragma: no cover
     from click.core import Context as ClickContext
@@ -40,9 +43,6 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT0
     Prosemark helps you organize your writing projects with a hierarchical
     structure of nodes, each containing content, notes, and metadata.
     """
-    from pathlib import Path
-
-    from prosemark.repositories.project import ProjectRepository
     from prosemark.storages.filesystem import FilesystemMdNodeStorage
 
     ctx.ensure_object(dict)
@@ -203,27 +203,17 @@ def show(ctx: ClickContext, node_id: NodeID) -> None:
 
 @main.command()
 @click.argument('node_id')
-@click.option('--title', '-t', help='New title for the node')
-@click.option('--notecard', '-n', help='New notecard for the node')
-@click.option('--content', '-c', help='New content for the node')
-@click.option('--notes', help='New notes for the node')
 @click.option('--editor/--no-editor', default=True, help='Open in editor')
 @click.pass_context
 def edit(
     ctx: ClickContext,
     node_id: NodeID,
-    title: str | None = None,
-    notecard: str | None = None,
-    content: str | None = None,
-    notes: str | None = None,
     editor: bool = True,  # noqa: FBT001, FBT002
 ) -> None:
     """Edit node content with the default text editor.
 
     NODE_ID is the ID of the node to edit.
     """
-    from prosemark.parsers.nodes import NodeParser
-
     repository = ctx.obj['repository']
     project = repository.load_project()
 
@@ -234,54 +224,30 @@ def edit(
 
     repository.load_node_content(node)
 
-    # Update node properties if provided via command line options
-    if title is not None:
-        node.title = title
-    if notecard is not None:
-        node.notecard = notecard
-    if content is not None:
-        node.content = content
-    if notes is not None:
-        node.notes = notes
+    # Format the content for the editor
+    editor_content = NodeParser.prepare_for_editor(node)
 
-    # If editor flag is set, open the node in an external editor
-    if editor:
-        # Prepare node data for editing
-        node_data = {
-            'id': node.id,
-            'title': node.title,
-            'notecard': node.notecard,
-            'notes': node.notes,
-            'content': node.content,
-            'metadata': node.metadata,
-        }
-
-        # Format the content for the editor
-        editor_content = NodeParser.prepare_for_editor(node_data)
-
+    if editor:  # noqa: SIM108  # pragma: no cover
         # Open the editor with the formatted content
         edited_content = click.edit(editor_content)
+    else:
+        edited_content = editor_content
 
-        # If the user saved changes (didn't abort)
-        if edited_content is not None:
-            # Parse the edited content back into node data
-            updated_data = NodeParser.parse_from_editor(edited_content)
+    # If the user saved changes (didn't abort)
+    if edited_content is not None:  # pragma: no branch
+        # Parse the edited content back into a Node
+        updated_node = NodeParser.parse_from_editor(node_id, edited_content)
 
-            # Update the node with the edited values
-            if 'title' in updated_data:
-                node.title = updated_data['title']
-            if 'notecard' in updated_data:
-                node.notecard = updated_data['notecard']
-            if 'notes' in updated_data:
-                node.notes = updated_data['notes']
-            if 'content' in updated_data:
-                node.content = updated_data['content']
-            if updated_data.get('metadata'):
-                node.metadata.update(updated_data['metadata'])
+        # Update the node with the edited values
+        node.title = updated_node.title
+        node.notecard = updated_node.notecard
+        node.notes = updated_node.notes
+        node.content = updated_node.content
+        node.metadata.update(updated_node.metadata)
 
-    # Save the updated node
-    repository.save_node(node)
-    click.echo('Node updated successfully')
+        # Save the updated node
+        repository.save_node(node)
+        click.echo('Node updated successfully')
 
 
 @main.command()

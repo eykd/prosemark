@@ -150,7 +150,7 @@ def test_cli_edit(runner: CliRunner) -> None:
     node_id = structure_result.output.split('\n')[1].split()[1]
 
     # Then edit the node without opening an editor
-    result = runner.invoke(main, ['edit', node_id, '--title', 'Updated Title', '--no-editor'])
+    result = runner.invoke(main, ['edit', node_id, '--no-editor'])
     assert result.exit_code == 0
     expected = textwrap.dedent(
         """\
@@ -161,18 +161,18 @@ def test_cli_edit(runner: CliRunner) -> None:
 
 
 def test_cli_structure(
-    runner: CliRunner, node_ids: list[NodeID], project_repository: ProjectRepository, runner_path: Path
+    runner: CliRunner, node_ids: list[NodeID], fs_project_repository: ProjectRepository, runner_path: Path
 ) -> None:
     """Test the structure command."""
     runner.invoke(main, ['init', 'New Project'])
-    project = project_repository.load_project()
+    project = fs_project_repository.load_project()
 
     # Add some nodes
     child1 = project.create_node(project.root_node.id, title='Child 1')
     assert isinstance(child1, Node)
     project.create_node(project.root_node.id, title='Child 2')
     project.create_node(child1.id, title='Grandchild')
-    project_repository.save_project(project)
+    fs_project_repository.save_project(project)
 
     assert (runner_path / '_binder.md').read_text() == textwrap.dedent(
         """\
