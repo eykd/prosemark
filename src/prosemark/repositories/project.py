@@ -206,7 +206,7 @@ class ProjectRepository:
 
         """
         indent = '  ' * level
-        lines.append(f'{indent}- {node.id}: {node.title}\n')
+        lines.append(f'{indent}- [{node.title}]({node.id}.md)\n')
 
         for child in node.children:
             self.append_node_to_binder(child, lines, level + 1)
