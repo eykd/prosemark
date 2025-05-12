@@ -178,10 +178,10 @@ Test content"""
         project = ProjectFactory.build()
         doc_node = OutlineNode(type=OutlineNodeType.DOCUMENT)
         list_node = OutlineNode(type=OutlineNodeType.LIST)
-        item1 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node1: First Node')
-        item2 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node2: Second Node')
+        item1 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- [First Node](node1.md)')
+        item2 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- [Second Node](node2.md)')
         nested_list = OutlineNode(type=OutlineNodeType.LIST)
-        nested_item = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node3: Nested Node')
+        nested_item = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- [Nested Node](node3.md)')
 
         # Build structure
         doc_node.add_child(list_node)
@@ -208,8 +208,8 @@ Test content"""
         # Setup
         parent_node = Node(id='parent', title='Parent')
         list_node = OutlineNode(type=OutlineNodeType.LIST)
-        item1 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node1: First Node')
-        item2 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- node2: Second Node')
+        item1 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- [First Node](node1.md)')
+        item2 = OutlineNode(type=OutlineNodeType.LIST_ITEM, content='- [Second Node](node2.md)')
         list_node.add_child(item1)
         list_node.add_child(item2)
 
