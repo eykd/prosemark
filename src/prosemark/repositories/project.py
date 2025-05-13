@@ -115,6 +115,34 @@ class ProjectRepository:
         if node.notes:
             self.storage.write(f'{node.id} notes', node.notes)
 
+        # If this is not the root node, we need to check if the title changed
+        # and update the binder outline accordingly
+        if node.id != '_binder':
+            # Load the current binder content
+            binder_content = self.storage.get_binder()
+            if binder_content:
+                # Create a temporary project to parse the current structure
+                temp_project = Project(root_node=Node(id='_binder', title='New Project'))
+                self.parse_node_content(temp_project.root_node, binder_content)
+                outline_root = OutlineParser.parse(temp_project.root_node.content)
+                self.build_node_structure(temp_project, outline_root)
+
+                # Find the node in the project structure
+                def find_node(current: Node) -> Node | None:
+                    if current.id == node.id:
+                        return current
+                    for child in current.children:
+                        result = find_node(child)
+                        if result:
+                            return result
+                    return None
+
+                existing_node = find_node(temp_project.root_node)
+                if existing_node and existing_node.title != node.title:
+                    # Title has changed, regenerate and save the binder content
+                    new_binder_content = self.generate_binder_content(temp_project)
+                    self.storage.write('_binder', new_binder_content)
+
     def build_node_structure(self, project: Project, outline_root: OutlineNode) -> None:
         """Build the node structure from the parsed outline.
 
