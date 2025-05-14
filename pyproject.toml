@@ -180,6 +180,8 @@ mark-parentheses = false
 # The best Python test runner
 # https://docs.pytest.org/en/latest/contents.html
 
+testpaths = ["tests/"]
+
 addopts = [
     "--cov",
     "--cov-report=term:skip-covered",
