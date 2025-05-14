@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from prosemark.domain.factories import NodeFactory, ProjectFactory
-from prosemark.parsers.nodes import NodeParser
+from prosemark.adapters.cli import CliService
 from prosemark.repositories.project import ProjectRepository
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -20,7 +19,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from click.core import Context as ClickContext
 
-    from prosemark.domain.nodes import Node, NodeID
+    from prosemark.domain.nodes import NodeID
 
 
 @click.group()
@@ -60,6 +59,7 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None: 
     storage = FilesystemMdNodeStorage(Path(data_dir))
     repository = ProjectRepository(storage)
     ctx.obj['repository'] = repository
+    ctx.obj['cli_service'] = CliService(repository)
 
 
 @main.command()
@@ -71,38 +71,17 @@ def init(ctx: ClickContext, title: str, description: str | None = None) -> None:
 
     TITLE is the title of the new project to create.
     """
-    repository = ctx.obj['repository']
-
-    # Create a new project with a root node
-    project = ProjectFactory.build(root_node=NodeFactory.build(id='_binder', title=title, notecard=description or ''))
-
-    # Save the project, which will create the _binder.md file
-    repository.save_project(project)
-
-    click.echo(f"Project '{title}' initialized successfully in {ctx.obj['data_dir']}")
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.init_project(title, description)
+    click.echo(f"{result} in {ctx.obj['data_dir']}")
 
 
 @main.command()
 @click.pass_context
 def info(ctx: ClickContext) -> None:
     """Display information about the current project."""
-    repository = ctx.obj['repository']
-    project = repository.load_project()
-    # Try to read the notecard file for the root node
-    notecard_content = repository.storage.read('_binder notecard')
-    if not notecard_content:  # pragma: no cover
-        notecard_content = project.root_node.notecard
-
-    def get_info_lines() -> Generator[str, None, None]:
-        yield f'Project: {project.title}\n'
-        yield f'Description: {notecard_content}\n'
-        yield f'Nodes: {project.get_node_count()}\n'
-
-        yield '\nMetadata:\n'
-        for key, value in project.root_node.metadata.items():  # pragma: no cover
-            yield f'  {key}: {value}\n'
-
-    _echo_lines(get_info_lines(), ctx)
+    cli_service = ctx.obj['cli_service']
+    _echo_lines(cli_service.get_project_info(), ctx)
 
 
 @main.command()
@@ -127,10 +106,8 @@ def add(
     PARENT_ID is the ID of the parent node.
     TITLE is the title of the new node.
     """
-    repository = ctx.obj['repository']
-    project = repository.load_project()
-
-    node = project.create_node(
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.add_node(
         parent_id=parent_id,
         title=title,
         notecard=notecard,
@@ -138,10 +115,7 @@ def add(
         notes=notes,
         position=position,
     )
-    repository.save_project(project)
-    repository.save_node(node)
-
-    click.echo(f'Node added successfully with ID: {node.id}')
+    click.echo(result)
 
 
 @main.command()
@@ -152,15 +126,9 @@ def remove(ctx: ClickContext, node_id: NodeID) -> None:
 
     NODE_ID is the ID of the node to remove.
     """
-    repository = ctx.obj['repository']
-    project = repository.load_project()
-
-    node = project.remove_node(node_id)
-    if node:
-        repository.save_project(project)
-        click.echo(f"Node '{node.title}' removed successfully")
-    else:  # pragma: no cover
-        click.echo(f"Node with ID '{node_id}' not found")
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.remove_node(node_id)
+    click.echo(result)
 
 
 @main.command()
@@ -174,15 +142,9 @@ def move(ctx: ClickContext, node_id: NodeID, new_parent_id: NodeID, position: in
     NODE_ID is the ID of the node to move.
     NEW_PARENT_ID is the ID of the new parent node.
     """
-    repository = ctx.obj['repository']
-    project = repository.load_project()
-
-    success = project.move_node(node_id, new_parent_id, position)
-    if success:
-        repository.save_project(project)
-        click.echo('Node moved successfully')
-    else:  # pragma: no cover
-        click.echo(f"Failed to move node '{node_id}' to parent '{new_parent_id}'")
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.move_node(node_id, new_parent_id, position)
+    click.echo(result)
 
 
 @main.command()
@@ -193,32 +155,13 @@ def show(ctx: ClickContext, node_id: NodeID) -> None:
 
     NODE_ID is the ID of the node to display.
     """
-    repository = ctx.obj['repository']
-    project = repository.load_project()
-
-    node = project.get_node_by_id(node_id)
-    if not node:  # pragma: no cover
-        click.echo(f"Node with ID '{node_id}' not found")
+    cli_service = ctx.obj['cli_service']
+    success, lines = cli_service.show_node(node_id)
+    
+    if not success:
+        click.echo(lines[0])
         return
-
-    repository.load_node_content(node)
-
-    lines = [f'Title: {node.title}']
-    if node.notecard:  # pragma: no branch
-        lines.append(f'\nNotecard: {node.notecard}')
-
-    if node.content:  # pragma: no branch
-        lines.extend((
-            '\nContent:',
-            node.content,
-        ))
-
-    if node.notes:  # pragma: no branch
-        lines.extend((
-            '\nNotes:',
-            node.notes,
-        ))
-
+        
     click.echo_via_pager('\n'.join(lines))
 
 
@@ -235,40 +178,23 @@ def edit(
 
     NODE_ID is the ID of the node to edit.
     """
-    repository = ctx.obj['repository']
-    project = repository.load_project()
-
-    node = project.get_node_by_id(node_id)
-    if not node:  # pragma: no cover
-        click.echo(f"Node with ID '{node_id}' not found")
+    cli_service = ctx.obj['cli_service']
+    
+    # Prepare the node content for editing
+    success, content = cli_service.prepare_node_for_editor(node_id)
+    if not success:
+        click.echo(content)
         return
-
-    repository.load_node_content(node)
-
-    # Format the content for the editor
-    editor_content = NodeParser.prepare_for_editor(node)
 
     if editor:  # noqa: SIM108  # pragma: no cover
         # Open the editor with the formatted content
-        edited_content = click.edit(editor_content, extension='.md')
+        edited_content = click.edit(content, extension='.md')
     else:
-        edited_content = editor_content
+        edited_content = content
 
-    # If the user saved changes (didn't abort)
-    if edited_content is not None:  # pragma: no branch
-        # Parse the edited content back into a Node
-        updated_node = NodeParser.parse_from_editor(node_id, edited_content)
-
-        # Update the node with the edited values
-        node.title = updated_node.title
-        node.notecard = updated_node.notecard
-        node.notes = updated_node.notes
-        node.content = updated_node.content
-        node.metadata.update(updated_node.metadata)
-
-        # Save the updated node
-        repository.save_node(node)
-        click.echo('Node updated successfully')
+    # Update the node with edited content
+    success, message = cli_service.edit_node(node_id, edited_content)
+    click.echo(message)
 
 
 @main.command()
@@ -276,27 +202,15 @@ def edit(
 @click.pass_context
 def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
     """Display the project structure."""
-    repository = ctx.obj['repository']
-    project = repository.load_project()
-
-    if node_id:  # pragma: no cover
-        start_node = project.get_node_by_id(node_id)
-        if not start_node:
-            click.echo(f"Node with ID '{node_id}' not found")
-            return
-    else:
-        start_node = project.root_node
-
-    def get_node_lines(node: Node, level: int = 0) -> Generator[str, None, None]:
-        if level == 0:
-            yield f'{node.id} - {node.title}\n'
-        else:
-            indent = '  ' * (level - 1)
-            yield f'{indent}- {node.id} {node.title}\n'
-        for child in node.children:
-            yield from get_node_lines(child, level + 1)
-
-    _echo_lines(get_node_lines(start_node), ctx)
+    cli_service = ctx.obj['cli_service']
+    success, lines = cli_service.get_project_structure(node_id)
+    
+    if not success:
+        for line in lines:
+            click.echo(line)
+        return
+        
+    _echo_lines(lines, ctx)
 
 
 def _echo_lines(lines: Generator[str, None, None], ctx: ClickContext) -> None:
