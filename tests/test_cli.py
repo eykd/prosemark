@@ -48,6 +48,7 @@ def test_cli_info(runner: CliRunner) -> None:
         Nodes: 1
 
         Metadata:
+
         """
     )
     assert result.output == expected
@@ -202,6 +203,7 @@ def test_cli_structure(
         - {node_ids[1]} Child 1
           - {node_ids[3]} Grandchild
         - {node_ids[2]} Child 2
+
         """
     )
     assert result.output == expected

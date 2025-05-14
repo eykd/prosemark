@@ -16,6 +16,8 @@ from prosemark.parsers.nodes import NodeParser
 from prosemark.repositories.project import ProjectRepository
 
 if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Generator
+
     from click.core import Context as ClickContext
 
     from prosemark.domain.nodes import Node, NodeID
@@ -36,8 +38,13 @@ if TYPE_CHECKING:  # pragma: no cover
     default=False,
     help='Enable verbose output (print tracebacks on errors)',
 )
+@click.option(
+    '--pager/--no-pager',
+    default=True,
+    help='Use a pager to display long output',
+)
 @click.pass_context
-def main(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT001
+def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None:  # noqa: FBT001
     """Prosemark - A tool for structured document creation and management.
 
     Prosemark helps you organize your writing projects with a hierarchical
@@ -48,7 +55,7 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool) -> None:  # noqa: FBT0
     ctx.ensure_object(dict)
     ctx.obj['data_dir'] = data_dir
     ctx.obj['verbose'] = verbose
-
+    ctx.obj['pager'] = pager
     # Create storage and repository instances
     storage = FilesystemMdNodeStorage(Path(data_dir))
     repository = ProjectRepository(storage)
@@ -85,13 +92,17 @@ def info(ctx: ClickContext) -> None:
     notecard_content = repository.storage.read('_binder notecard')
     if not notecard_content:  # pragma: no cover
         notecard_content = project.root_node.notecard
-    click.echo(f'Project: {project.title}')
-    click.echo(f'Description: {notecard_content}')
-    click.echo(f'Nodes: {project.get_node_count()}')
 
-    click.echo('\nMetadata:')
-    for key, value in project.root_node.metadata.items():  # pragma: no cover
-        click.echo(f'  {key}: {value}')
+    def get_info_lines() -> Generator[str, None, None]:
+        yield f'Project: {project.title}\n'
+        yield f'Description: {notecard_content}\n'
+        yield f'Nodes: {project.get_node_count()}\n'
+
+        yield '\nMetadata:\n'
+        for key, value in project.root_node.metadata.items():  # pragma: no cover
+            yield f'  {key}: {value}\n'
+
+    _echo_lines(get_info_lines(), ctx)
 
 
 @main.command()
@@ -192,17 +203,23 @@ def show(ctx: ClickContext, node_id: NodeID) -> None:
 
     repository.load_node_content(node)
 
-    click.echo(f'Title: {node.title}')
+    lines = [f'Title: {node.title}']
     if node.notecard:  # pragma: no branch
-        click.echo(f'\nNotecard: {node.notecard}')
+        lines.append(f'\nNotecard: {node.notecard}')
 
     if node.content:  # pragma: no branch
-        click.echo('\nContent:')
-        click.echo(node.content)
+        lines.extend((
+            '\nContent:',
+            node.content,
+        ))
 
     if node.notes:  # pragma: no branch
-        click.echo('\nNotes:')
-        click.echo(node.notes)
+        lines.extend((
+            '\nNotes:',
+            node.notes,
+        ))
+
+    click.echo_via_pager('\n'.join(lines))
 
 
 @main.command()
@@ -233,7 +250,7 @@ def edit(
 
     if editor:  # noqa: SIM108  # pragma: no cover
         # Open the editor with the formatted content
-        edited_content = click.edit(editor_content)
+        edited_content = click.edit(editor_content, extension='.md')
     else:
         edited_content = editor_content
 
@@ -270,16 +287,24 @@ def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
     else:
         start_node = project.root_node
 
-    def print_node(node: Node, level: int = 0) -> None:
+    def get_node_lines(node: Node, level: int = 0) -> Generator[str, None, None]:
         if level == 0:
-            click.echo(f'{node.id} - {node.title}')
+            yield f'{node.id} - {node.title}\n'
         else:
             indent = '  ' * (level - 1)
-            click.echo(f'{indent}- {node.id} {node.title}')
+            yield f'{indent}- {node.id} {node.title}\n'
         for child in node.children:
-            print_node(child, level + 1)
+            yield from get_node_lines(child, level + 1)
 
-    print_node(start_node)
+    _echo_lines(get_node_lines(start_node), ctx)
+
+
+def _echo_lines(lines: Generator[str, None, None], ctx: ClickContext) -> None:
+    if ctx.obj['pager']:
+        click.echo_via_pager(lines)
+    else:  # pragma: no cover
+        for line in lines:
+            click.echo(line, nl=False)
 
 
 if __name__ == '__main__':  # pragma: no cover
