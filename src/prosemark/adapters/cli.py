@@ -113,6 +113,10 @@ class CliService:
             notes=notes,
             position=position,
         )
+
+        if node is None:
+            return f"Failed to create node: parent '{parent_id}' not found"
+
         self.repository.save_project(project)
         self.repository.save_node(node)
 
