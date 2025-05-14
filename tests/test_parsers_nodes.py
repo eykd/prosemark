@@ -93,19 +93,25 @@ Content after invalid header."""
         node_data = {
             'id': 'node123',
             'title': 'Test Node',
-            'notecard': '[[custom notecard]]',
-            'notes': '[[custom notes]]',
+            'notecard': '[[node123 notecard.md]]',
+            'notes': '[[node123 notes.md]]',
             'content': 'This is the content.',
             'metadata': {'custom_field': 'custom value'},
         }
         result = NodeParser.serialize(node_data)
-        assert '---' in result
-        assert 'id: node123' in result
-        assert 'title: Test Node' in result
-        assert 'custom_field: custom value' in result
-        assert '// Notecard: [[custom notecard]]' in result
-        assert '// Notes: [[custom notes]]' in result
-        assert 'This is the content.' in result
+        expected = textwrap.dedent(
+            """\
+            ---
+            id: node123
+            title: Test Node
+            custom_field: custom value
+            ---
+            // Notecard: [[node123 notecard.md]]
+            // Notes: [[node123 notes.md]]
+
+            This is the content."""
+        )
+        assert result == expected
 
     def test_round_trip(self) -> None:
         """Test round-trip parsing and serializing."""
@@ -280,3 +286,36 @@ This is the content"""
         assert result.notes == 'These are notes'
         assert result.content == 'This is the content'
         assert result.metadata == {}
+
+    def test_serialize_always_uses_wikilinks(self) -> None:
+        """Test that notecards and notes are always serialized with wikilinks."""
+        # Test with empty notecard and notes
+        node_data = {
+            'id': 'node123',
+            'title': 'Test Node',
+        }
+        result = NodeParser.serialize(node_data)
+        assert '// Notecard: [[node123 notecard.md]]' in result
+        assert '// Notes: [[node123 notes.md]]' in result
+
+        # Test with non-empty notecard and notes
+        node_data = {
+            'id': 'node123',
+            'title': 'Test Node',
+            'notecard': 'Some notecard content',
+            'notes': 'Some notes content',
+        }
+        result = NodeParser.serialize(node_data)
+        assert '// Notecard: [[node123 notecard.md]]' in result
+        assert '// Notes: [[node123 notes.md]]' in result
+
+        # Test with wikilink format notecard and notes
+        node_data = {
+            'id': 'node123',
+            'title': 'Test Node',
+            'notecard': '[[node123 notecard.md]]',
+            'notes': '[[node123 notes.md]]',
+        }
+        result = NodeParser.serialize(node_data)
+        assert '// Notecard: [[node123 notecard.md]]' in result
+        assert '// Notes: [[node123 notes.md]]' in result

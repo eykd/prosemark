@@ -139,8 +139,6 @@ class NodeParser:
         # Extract basic properties
         node_id = node_data.get('id', '')
         title = node_data.get('title', '')
-        notecard = node_data.get('notecard', '')
-        notes = node_data.get('notes', '')
         content = node_data.get('content', '')
         metadata = node_data.get('metadata', {})
 
@@ -154,16 +152,11 @@ class NodeParser:
         # Build the full content
         lines = ['---', yaml_header.rstrip(), '---']
 
-        # Add directives
-        if notecard:
-            lines.append(f'// Notecard: {notecard}')
-        else:
-            lines.append(f'// Notecard: [[{node_id} notecard.md]]')
-
-        if notes:
-            lines.append(f'// Notes: {notes}')
-        else:
-            lines.append(f'// Notes: [[{node_id} notes.md]]')
+        # Add directives - always use wikilink format
+        lines.extend([
+            f'// Notecard: [[{node_id} notecard.md]]',
+            f'// Notes: [[{node_id} notes.md]]',
+        ])
 
         # Add a blank line before content
         lines.append('')

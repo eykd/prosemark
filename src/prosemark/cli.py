@@ -81,8 +81,12 @@ def info(ctx: ClickContext) -> None:
     """Display information about the current project."""
     repository = ctx.obj['repository']
     project = repository.load_project()
+    # Try to read the notecard file for the root node
+    notecard_content = repository.storage.read('_binder notecard')
+    if not notecard_content:  # pragma: no cover
+        notecard_content = project.root_node.notecard
     click.echo(f'Project: {project.title}')
-    click.echo(f'Description: {project.notecard}')
+    click.echo(f'Description: {notecard_content}')
     click.echo(f'Nodes: {project.get_node_count()}')
 
     click.echo('\nMetadata:')

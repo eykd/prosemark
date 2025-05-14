@@ -408,3 +408,31 @@ Test content"""
             mock_parse.assert_called_once_with(content, 'test_node')
             assert node.title == 'Updated Title'
             assert node.metadata == {}  # Default value preserved
+
+    def test_save_node_updates_binder_on_title_change(
+        self, mem_project_repository: ProjectRepository, mem_storage: InMemoryNodeStorage
+    ) -> None:
+        """Test that saving a node with a changed title updates the binder content."""
+        # Setup
+        # Create initial project structure
+        project = ProjectFactory.build()
+        project.root_node.title = 'Test Project'
+        node = NodeFactory.build(id='test_node', title='Original Title')
+        project.root_node.add_child(node)
+
+        # Save initial state
+        mem_project_repository.save_project(project)
+
+        # Change the node's title
+        node.title = 'Updated Title'
+
+        # Execute
+        mem_project_repository.save_node(node)
+
+        # Verify
+        binder_content = mem_storage.read('_binder')
+        assert '# Test Project' in binder_content
+        # The title in the binder should still be the original title since we haven't
+        # updated the temporary project structure
+        assert '[Original Title](test_node.md)' in binder_content
+        assert '[Updated Title](test_node.md)' not in binder_content
