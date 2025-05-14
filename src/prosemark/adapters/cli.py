@@ -6,7 +6,7 @@ for the Prosemark application, following the hexagonal architecture pattern.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from prosemark.domain.factories import NodeFactory, ProjectFactory
 from prosemark.parsers.nodes import NodeParser
@@ -26,6 +26,7 @@ class CliService:
 
     Attributes:
         repository: The project repository used to load and save projects and nodes.
+
     """
 
     def __init__(self, repository: ProjectRepository) -> None:
@@ -33,6 +34,7 @@ class CliService:
 
         Args:
             repository: The project repository to use.
+
         """
         self.repository = repository
 
@@ -45,6 +47,7 @@ class CliService:
 
         Returns:
             A message indicating success.
+
         """
         # Create a new project with a root node
         project = ProjectFactory.build(
@@ -61,6 +64,7 @@ class CliService:
 
         Yields:
             Lines of text with project information.
+
         """
         project = self.repository.load_project()
         # Try to read the notecard file for the root node
@@ -97,6 +101,7 @@ class CliService:
 
         Returns:
             A message with the ID of the newly created node.
+
         """
         project = self.repository.load_project()
 
@@ -121,6 +126,7 @@ class CliService:
 
         Returns:
             A message indicating success or failure.
+
         """
         project = self.repository.load_project()
 
@@ -128,8 +134,7 @@ class CliService:
         if node:
             self.repository.save_project(project)
             return f"Node '{node.title}' removed successfully"
-        else:
-            return f"Node with ID '{node_id}' not found"
+        return f"Node with ID '{node_id}' not found"
 
     def move_node(self, node_id: NodeID, new_parent_id: NodeID, position: int | None = None) -> str:
         """Move a node to a new parent.
@@ -141,6 +146,7 @@ class CliService:
 
         Returns:
             A message indicating success or failure.
+
         """
         project = self.repository.load_project()
 
@@ -148,8 +154,7 @@ class CliService:
         if success:
             self.repository.save_project(project)
             return 'Node moved successfully'
-        else:
-            return f"Failed to move node '{node_id}' to parent '{new_parent_id}'"
+        return f"Failed to move node '{node_id}' to parent '{new_parent_id}'"
 
     def show_node(self, node_id: NodeID) -> tuple[bool, list[str]]:
         """Display node content.
@@ -159,6 +164,7 @@ class CliService:
 
         Returns:
             A tuple containing a success flag and a list of content lines.
+
         """
         project = self.repository.load_project()
 
@@ -195,6 +201,7 @@ class CliService:
 
         Returns:
             A tuple containing a success flag and a message.
+
         """
         project = self.repository.load_project()
 
@@ -219,7 +226,7 @@ class CliService:
             # Save the updated node
             self.repository.save_node(node)
             return True, 'Node updated successfully'
-        
+
         return False, 'Edit aborted'
 
     def prepare_node_for_editor(self, node_id: NodeID) -> tuple[bool, str]:
@@ -230,6 +237,7 @@ class CliService:
 
         Returns:
             A tuple containing a success flag and the formatted content.
+
         """
         project = self.repository.load_project()
 
@@ -251,6 +259,7 @@ class CliService:
 
         Returns:
             A tuple containing a success flag and a generator of structure lines.
+
         """
         project = self.repository.load_project()
 
