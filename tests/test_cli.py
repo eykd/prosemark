@@ -27,7 +27,7 @@ def test_cli_init(runner: CliRunner, runner_path: Path) -> None:
     assert result.exit_code == 0
     assert result.output == textwrap.dedent(
         """\
-        Project 'Test Project' initialized successfully in .
+        Project 'Test Project' initialized successfully.
         """
     )
     assert (runner_path / '_binder.md').exists()
@@ -129,13 +129,15 @@ def test_cli_show(runner: CliRunner, node_ids: list[NodeID]) -> None:
         f"""\
         Title: Node to show
 
-        Notecard: [[{node_ids[1]} notecard.md]]
+        Notecard:
+        [[{node_ids[1]} notecard.md]]
 
         Content:
         This is the content
 
         Notes:
         [[{node_ids[1]} notes.md]]
+
         """
     )
 

@@ -6,16 +6,29 @@ for the Prosemark application, following the hexagonal architecture pattern.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from prosemark.domain.factories import NodeFactory, ProjectFactory
 from prosemark.parsers.nodes import NodeParser
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Generator
+    from collections.abc import Generator, Iterable
 
     from prosemark.domain.nodes import Node, NodeID
     from prosemark.repositories.project import ProjectRepository
+
+
+class CLIResult(NamedTuple):
+    """Result of a CLI command.
+
+    Attributes:
+        success: Whether the command was successful.
+        message: A message or messages describing the result.
+
+    """
+
+    success: bool
+    message: Iterable[str]
 
 
 class CliService:
@@ -38,7 +51,7 @@ class CliService:
         """
         self.repository = repository
 
-    def init_project(self, title: str, description: str | None = None) -> str:
+    def init_project(self, title: str, description: str | None = None) -> CLIResult:
         """Create a new project.
 
         Args:
@@ -46,7 +59,7 @@ class CliService:
             description: Optional description of the project.
 
         Returns:
-            A message indicating success.
+            A CLIResult with success status and message about the operation.
 
         """
         # Create a new project with a root node
@@ -57,13 +70,13 @@ class CliService:
         # Save the project, which will create the _binder.md file
         self.repository.save_project(project)
 
-        return f"Project '{title}' initialized successfully"
+        return CLIResult(success=True, message=[f"Project '{title}' initialized successfully."])
 
-    def get_project_info(self) -> Generator[str, None, None]:
+    def get_project_info(self) -> CLIResult:
         """Get information about the current project.
 
-        Yields:
-            Lines of text with project information.
+        Returns:
+            A CLIResult with success status and lines of text with project information.
 
         """
         project = self.repository.load_project()
@@ -72,13 +85,17 @@ class CliService:
         if not notecard_content:  # pragma: no cover
             notecard_content = project.root_node.notecard
 
-        yield f'Project: {project.title}\n'
-        yield f'Description: {notecard_content}\n'
-        yield f'Nodes: {project.get_node_count()}\n'
+        lines = [
+            f'Project: {project.title}\n',
+            f'Description: {notecard_content}\n',
+            f'Nodes: {project.get_node_count()}\n',
+            '\nMetadata:\n',
+        ]
 
-        yield '\nMetadata:\n'
         for key, value in project.root_node.metadata.items():  # pragma: no cover
-            yield f'  {key}: {value}\n'
+            lines.append(f'  {key}: {value}\n')
+
+        return CLIResult(success=True, message=lines)
 
     def add_node(
         self,
@@ -88,7 +105,7 @@ class CliService:
         content: str = '',
         notes: str = '',
         position: int | None = None,
-    ) -> tuple[bool, str]:
+    ) -> CLIResult:
         """Add a new node to the project.
 
         Args:
@@ -100,7 +117,7 @@ class CliService:
             position: Position to insert the node.
 
         Returns:
-            A message with the ID of the newly created node.
+            A CLIResult with success status and message about the operation.
 
         """
         project = self.repository.load_project()
@@ -115,21 +132,21 @@ class CliService:
         )
 
         if node is None:  # pragma: no cover
-            return False, f"Failed to create node: parent '{parent_id}' not found"
+            return CLIResult(success=False, message=[f"Failed to create node: parent '{parent_id}' not found"])
 
         self.repository.save_project(project)
         self.repository.save_node(node)
 
-        return True, f'Node added successfully with ID: {node.id}'
+        return CLIResult(success=True, message=[f'Node added successfully with ID: {node.id}'])
 
-    def remove_node(self, node_id: NodeID) -> tuple[bool, str]:
+    def remove_node(self, node_id: NodeID) -> CLIResult:
         """Remove a node from the project.
 
         Args:
             node_id: The ID of the node to remove.
 
         Returns:
-            A message indicating success or failure.
+            A CLIResult with success status and message about the operation.
 
         """
         project = self.repository.load_project()
@@ -137,10 +154,10 @@ class CliService:
         node = project.remove_node(node_id)
         if node:
             self.repository.save_project(project)
-            return True, f"Node '{node.title}' removed successfully"
-        return False, f"Node with ID '{node_id}' not found"  # pragma: no cover
+            return CLIResult(success=True, message=[f"Node '{node.title}' removed successfully"])
+        return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])  # pragma: no cover
 
-    def move_node(self, node_id: NodeID, new_parent_id: NodeID, position: int | None = None) -> tuple[bool, str]:
+    def move_node(self, node_id: NodeID, new_parent_id: NodeID, position: int | None = None) -> CLIResult:
         """Move a node to a new parent.
 
         Args:
@@ -149,7 +166,7 @@ class CliService:
             position: Position to insert the node.
 
         Returns:
-            A message indicating success or failure.
+            A CLIResult with success status and message about the operation.
 
         """
         project = self.repository.load_project()
@@ -157,46 +174,54 @@ class CliService:
         success = project.move_node(node_id, new_parent_id, position)
         if success:
             self.repository.save_project(project)
-            return True, 'Node moved successfully'
-        return False, f"Failed to move node '{node_id}' to parent '{new_parent_id}'"  # pragma: no cover
+            return CLIResult(success=True, message=['Node moved successfully'])
+        return CLIResult(
+            success=False, message=[f"Failed to move node '{node_id}' to parent '{new_parent_id}'"]
+        )  # pragma: no cover
 
-    def show_node(self, node_id: NodeID) -> tuple[bool, list[str]]:
+    def show_node(self, node_id: NodeID) -> CLIResult:
         """Display node content.
 
         Args:
             node_id: The ID of the node to display.
 
         Returns:
-            A tuple containing a success flag and a list of content lines.
+            A CLIResult with success status and content lines.
 
         """
         project = self.repository.load_project()
 
         node = project.get_node_by_id(node_id)
-        if not node:
-            return False, [f"Node with ID '{node_id}' not found"]  # pragma: no cover
+        if not node:  # pragma: no cover
+            return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
 
         self.repository.load_node_content(node)
 
-        lines = [f'Title: {node.title}']
+        lines = [f'Title: {node.title}\n\n']
         if node.notecard:  # pragma: no branch
-            lines.append(f'\nNotecard: {node.notecard}')
+            lines.extend((
+                'Notecard:\n',
+                node.notecard.rstrip(),
+                '\n\n',
+            ))
 
         if node.content:  # pragma: no branch
             lines.extend((
-                '\nContent:',
-                node.content,
+                'Content:\n',
+                node.content.rstrip(),
+                '\n\n',
             ))
 
         if node.notes:  # pragma: no branch
             lines.extend((
-                '\nNotes:',
-                node.notes,
+                'Notes:\n',
+                node.notes.rstrip(),
+                '\n',
             ))
 
-        return True, lines
+        return CLIResult(success=True, message=lines)
 
-    def edit_node(self, node_id: NodeID, edited_content: str | None) -> tuple[bool, str]:
+    def edit_node(self, node_id: NodeID, edited_content: str | None) -> CLIResult:
         """Edit node content.
 
         Args:
@@ -204,14 +229,14 @@ class CliService:
             edited_content: The edited content from the editor, or None if aborted.
 
         Returns:
-            A tuple containing a success flag and a message.
+            A CLIResult with success status and message about the operation.
 
         """
         project = self.repository.load_project()
 
         node = project.get_node_by_id(node_id)
         if not node:  # pragma: no cover
-            return False, f"Node with ID '{node_id}' not found"
+            return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
 
         self.repository.load_node_content(node)
 
@@ -229,40 +254,40 @@ class CliService:
 
             # Save the updated node
             self.repository.save_node(node)
-            return True, 'Node updated successfully'
+            return CLIResult(success=True, message=['Node updated successfully'])
 
-        return False, 'Edit aborted'  # pragma: no cover
+        return CLIResult(success=False, message=['Edit aborted'])  # pragma: no cover
 
-    def prepare_node_for_editor(self, node_id: NodeID) -> tuple[bool, str]:
+    def prepare_node_for_editor(self, node_id: NodeID) -> CLIResult:
         """Prepare node content for editing.
 
         Args:
             node_id: The ID of the node to edit.
 
         Returns:
-            A tuple containing a success flag and the formatted content.
+            A CLIResult with success status and formatted content.
 
         """
         project = self.repository.load_project()
 
         node = project.get_node_by_id(node_id)
         if not node:  # pragma: no cover
-            return False, f"Node with ID '{node_id}' not found"
+            return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
 
         self.repository.load_node_content(node)
 
         # Format the content for the editor
         editor_content = NodeParser.prepare_for_editor(node)
-        return True, editor_content
+        return CLIResult(success=True, message=[editor_content])
 
-    def get_project_structure(self, node_id: NodeID | None = None) -> tuple[bool, Generator[str, None, None]]:
+    def get_project_structure(self, node_id: NodeID | None = None) -> CLIResult:
         """Get the project structure.
 
         Args:
             node_id: Optional ID of the node to start from (defaults to root).
 
         Returns:
-            A tuple containing a success flag and a generator of structure lines.
+            A CLIResult with success status and generator of structure lines.
 
         """
         project = self.repository.load_project()
@@ -270,7 +295,7 @@ class CliService:
         if node_id:  # pragma: no cover
             start_node = project.get_node_by_id(node_id)
             if not start_node:
-                return False, (line for line in [f"Node with ID '{node_id}' not found"])
+                return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
         else:
             start_node = project.root_node
 
@@ -283,4 +308,4 @@ class CliService:
             for child in node.children:
                 yield from get_node_lines(child, level + 1)
 
-        return True, get_node_lines(start_node)
+        return CLIResult(success=True, message=get_node_lines(start_node))

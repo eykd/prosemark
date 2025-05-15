@@ -11,12 +11,10 @@ from typing import TYPE_CHECKING
 
 import click
 
-from prosemark.adapters.cli import CliService
+from prosemark.adapters.cli import CLIResult, CliService
 from prosemark.repositories.project import ProjectRepository
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Generator
-
     from click.core import Context as ClickContext
 
     from prosemark.domain.nodes import NodeID
@@ -73,7 +71,7 @@ def init(ctx: ClickContext, title: str, description: str | None = None) -> None:
     """
     cli_service = ctx.obj['cli_service']
     result = cli_service.init_project(title, description)
-    click.echo(f'{result} in {ctx.obj["data_dir"]}')
+    _echo_result(ctx, result)
 
 
 @main.command()
@@ -81,7 +79,7 @@ def init(ctx: ClickContext, title: str, description: str | None = None) -> None:
 def info(ctx: ClickContext) -> None:
     """Display information about the current project."""
     cli_service = ctx.obj['cli_service']
-    _echo_lines(cli_service.get_project_info(), ctx)
+    _echo_result(ctx, cli_service.get_project_info())
 
 
 @main.command()
@@ -107,7 +105,7 @@ def add(
     TITLE is the title of the new node.
     """
     cli_service = ctx.obj['cli_service']
-    success, result = cli_service.add_node(
+    result = cli_service.add_node(
         parent_id=parent_id,
         title=title,
         notecard=notecard,
@@ -115,7 +113,7 @@ def add(
         notes=notes,
         position=position,
     )
-    click.echo(result, err=not success)
+    _echo_result(ctx, result)
 
 
 @main.command()
@@ -127,8 +125,8 @@ def remove(ctx: ClickContext, node_id: NodeID) -> None:
     NODE_ID is the ID of the node to remove.
     """
     cli_service = ctx.obj['cli_service']
-    success, result = cli_service.remove_node(node_id)
-    click.echo(result, err=not success)
+    result = cli_service.remove_node(node_id)
+    _echo_result(ctx, result)
 
 
 @main.command()
@@ -143,8 +141,8 @@ def move(ctx: ClickContext, node_id: NodeID, new_parent_id: NodeID, position: in
     NEW_PARENT_ID is the ID of the new parent node.
     """
     cli_service = ctx.obj['cli_service']
-    success, result = cli_service.move_node(node_id, new_parent_id, position)
-    click.echo(result, err=not success)
+    result = cli_service.move_node(node_id, new_parent_id, position)
+    _echo_result(ctx, result)
 
 
 @main.command()
@@ -156,13 +154,9 @@ def show(ctx: ClickContext, node_id: NodeID) -> None:
     NODE_ID is the ID of the node to display.
     """
     cli_service = ctx.obj['cli_service']
-    success, lines = cli_service.show_node(node_id)
+    result = cli_service.show_node(node_id)
 
-    if not success:  # pragma: no cover
-        click.echo(lines[0], err=True)
-        return
-
-    click.echo_via_pager('\n'.join(lines))
+    _echo_result(ctx, result)
 
 
 @main.command()
@@ -181,20 +175,19 @@ def edit(
     cli_service = ctx.obj['cli_service']
 
     # Prepare the node content for editing
-    success, content = cli_service.prepare_node_for_editor(node_id)
-    if not success:  # pragma: no cover
-        click.echo(content, err=True)
+    result = cli_service.prepare_node_for_editor(node_id)
+    if not result.success:  # pragma: no cover
+        click.echo(result.message, err=True)
         return
 
     if editor:  # noqa: SIM108  # pragma: no cover
         # Open the editor with the formatted content
-        edited_content = click.edit(content, extension='.md')
+        edited_content = click.edit(''.join(result.message), extension='.md')
     else:
-        edited_content = content
+        edited_content = ''.join(result.message)
 
     # Update the node with edited content
-    success, message = cli_service.edit_node(node_id, edited_content)
-    click.echo(message)
+    _echo_result(ctx, cli_service.edit_node(node_id, edited_content))
 
 
 @main.command()
@@ -203,21 +196,20 @@ def edit(
 def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
     """Display the project structure."""
     cli_service = ctx.obj['cli_service']
-    success, lines = cli_service.get_project_structure(node_id)
 
-    if not success:  # pragma: no cover
-        for line in lines:
-            click.echo(line, err=True)
+    _echo_result(ctx, cli_service.get_project_structure(node_id))
+
+
+def _echo_result(ctx: ClickContext, result: CLIResult) -> None:
+    if not result.success:  # pragma: no cover
+        for line in result.message:
+            click.echo(line, nl=False, err=True)
         return
 
-    _echo_lines(lines, ctx)
-
-
-def _echo_lines(lines: Generator[str, None, None], ctx: ClickContext) -> None:
     if ctx.obj['pager']:
-        click.echo_via_pager(lines)
+        click.echo_via_pager(result.message)
     else:  # pragma: no cover
-        for line in lines:
+        for line in result.message:
             click.echo(line, nl=False)
 
 
