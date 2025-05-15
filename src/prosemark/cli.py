@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from prosemark.adapters.cli import CLIResult, CliService
+from prosemark.adapters.cli import CLIResult, CLIService
 from prosemark.repositories.project import ProjectRepository
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -57,7 +57,7 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None: 
     storage = FilesystemMdNodeStorage(Path(data_dir))
     repository = ProjectRepository(storage)
     ctx.obj['repository'] = repository
-    ctx.obj['cli_service'] = CliService(repository)
+    ctx.obj['cli_service'] = CLIService(repository)
 
 
 @main.command()

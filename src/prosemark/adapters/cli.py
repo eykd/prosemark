@@ -31,7 +31,7 @@ class CLIResult(NamedTuple):
     message: Iterable[str]
 
 
-class CliService:
+class CLIService:
     """Service class implementing CLI commands for the Prosemark application.
 
     This class provides methods that implement the business logic for each CLI command,
