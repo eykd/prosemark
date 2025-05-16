@@ -11,8 +11,8 @@ def test_node_initialization() -> None:
     node1 = Node()
     assert isinstance(node1.id, str)
     assert node1.title == ''
-    assert node1.notecard == ''
-    assert node1.content == ''
+    assert node1.card == ''
+    assert node1.text == ''
     assert node1.notes == ''
     assert node1.metadata == {}
     assert node1.parent is None
@@ -27,8 +27,8 @@ def test_node_initialization() -> None:
     node2 = Node(
         id=custom_id,
         title='Test Title',
-        notecard='Test Notecard',
-        content='Test Content',
+        card='Test Notecard',
+        text='Test Content',
         notes='Test Notes',
         metadata=metadata,
         parent=parent_node,
@@ -37,8 +37,8 @@ def test_node_initialization() -> None:
 
     assert node2.id == custom_id
     assert node2.title == 'Test Title'
-    assert node2.notecard == 'Test Notecard'
-    assert node2.content == 'Test Content'
+    assert node2.card == 'Test Notecard'
+    assert node2.text == 'Test Content'
     assert node2.notes == 'Test Notes'
     assert node2.metadata == metadata
     assert node2.parent is parent_node

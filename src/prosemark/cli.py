@@ -62,15 +62,15 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None: 
 
 @main.command()
 @click.argument('title')
-@click.option('--description', '-d', help='Description of the project')
+@click.option('--card', '-c', help='Brief summary of the project')
 @click.pass_context
-def init(ctx: ClickContext, title: str, description: str | None = None) -> None:
+def init(ctx: ClickContext, title: str, card: str | None = None) -> None:
     """Create a new project.
 
     TITLE is the title of the new project to create.
     """
     cli_service = ctx.obj['cli_service']
-    result = cli_service.init_project(title, description)
+    result = cli_service.init_project(title, card)
     _echo_result(ctx, result)
 
 
@@ -85,17 +85,17 @@ def info(ctx: ClickContext) -> None:
 @main.command()
 @click.argument('parent_id')
 @click.argument('title')
-@click.option('--notecard', '-n', help='Brief summary of the node')
-@click.option('--content', '-c', help='Main content of the node')
-@click.option('--notes', help='Additional notes about the node')
+@click.option('--card', '-c', help='Brief summary of the node')
+@click.option('--text', '-t', help='Main content of the node')
+@click.option('--notes', '-n', help='Additional notes about the node')
 @click.option('--position', '-p', type=int, help='Position to insert the node')
 @click.pass_context
 def add(
     ctx: ClickContext,
     parent_id: str,
     title: str,
-    notecard: str = '',
-    content: str = '',
+    card: str = '',
+    text: str = '',
     notes: str = '',
     position: int | None = None,
 ) -> None:
@@ -108,8 +108,8 @@ def add(
     result = cli_service.add_node(
         parent_id=parent_id,
         title=title,
-        notecard=notecard,
-        content=content,
+        card=card,
+        text=text,
         notes=notes,
         position=position,
     )

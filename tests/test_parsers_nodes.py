@@ -16,8 +16,8 @@ class TestNodeParser:
         assert result == {
             'id': 'node123',
             'title': '',
-            'notecard': '',
-            'content': '',
+            'card': '',
+            'text': '',
             'notes': '',
             'metadata': {},
         }
@@ -28,7 +28,7 @@ class TestNodeParser:
         result = NodeParser.parse(content, 'test_id')
         assert result['id'] == 'test_id'
         assert result['title'] == ''
-        assert result['content'] == content
+        assert result['text'] == content
         assert result['metadata'] == {}
 
     def test_parse_with_yaml_header(self) -> None:
@@ -42,7 +42,7 @@ This is the content."""
         result = NodeParser.parse(content)
         assert result['id'] == 'node123'
         assert result['title'] == 'Test Node'
-        assert result['content'] == 'This is the content.'
+        assert result['text'] == 'This is the content.'
         assert result['metadata'] == {'custom_field': 'custom value'}
 
     def test_parse_with_directives(self) -> None:
@@ -51,7 +51,7 @@ This is the content."""
 id: node123
 title: Test Node
 ---
-// Notecard: [[node123 notecard.md]]
+// Card: [[node123 notecard.md]]
 // Notes: [[node123 notes.md]]
 // Custom: Some custom directive
 
@@ -59,10 +59,10 @@ This is the content."""
         result = NodeParser.parse(content)
         assert result['id'] == 'node123'
         assert result['title'] == 'Test Node'
-        assert result['notecard'] == '[[node123 notecard.md]]'
+        assert result['card'] == '[[node123 notecard.md]]'
         assert result['notes'] == '[[node123 notes.md]]'
         assert result['metadata'] == {'Custom': 'Some custom directive'}
-        assert result['content'] == 'This is the content.'
+        assert result['text'] == 'This is the content.'
 
     def test_parse_with_invalid_yaml(self) -> None:
         """Test parsing content with invalid YAML header."""
@@ -73,7 +73,7 @@ Content after invalid header."""
         result = NodeParser.parse(content, 'fallback_id')
         # Should treat everything as content when YAML is invalid
         assert result['id'] == 'fallback_id'
-        assert result['content'] == content
+        assert result['text'] == content
 
     def test_serialize_minimal(self) -> None:
         """Test serializing with minimal data."""
@@ -82,20 +82,26 @@ Content after invalid header."""
             'title': 'Test Node',
         }
         result = NodeParser.serialize(node_data)
-        assert '---' in result
-        assert 'id: node123' in result
-        assert 'title: Test Node' in result
-        assert '// Notecard: [[node123 notecard.md]]' in result
-        assert '// Notes: [[node123 notes.md]]' in result
+        expected = textwrap.dedent(
+            """\
+            ---
+            id: node123
+            title: Test Node
+            ---
+            // Card: [[node123 card.md]]
+            // Notes: [[node123 notes.md]]
+            """
+        )
+        assert result == expected
 
     def test_serialize_complete(self) -> None:
         """Test serializing with complete data."""
         node_data = {
             'id': 'node123',
             'title': 'Test Node',
-            'notecard': '[[node123 notecard.md]]',
+            'card': '[[node123 card.md]]',
             'notes': '[[node123 notes.md]]',
-            'content': 'This is the content.',
+            'text': 'This is the content.',
             'metadata': {'custom_field': 'custom value'},
         }
         result = NodeParser.serialize(node_data)
@@ -106,7 +112,7 @@ Content after invalid header."""
             title: Test Node
             custom_field: custom value
             ---
-            // Notecard: [[node123 notecard.md]]
+            // Card: [[node123 card.md]]
             // Notes: [[node123 notes.md]]
 
             This is the content."""
@@ -115,17 +121,20 @@ Content after invalid header."""
 
     def test_round_trip(self) -> None:
         """Test round-trip parsing and serializing."""
-        original_content = """---
-id: node123
-title: Test Node
-custom_field: custom value
----
-// Notecard: [[node123 notecard.md]]
-// Notes: [[node123 notes.md]]
+        original_content = textwrap.dedent(
+            """\
+            ---
+            id: node123
+            title: Test Node
+            custom_field: custom value
+            ---
+            // Card: [[node123 card.md]]
+            // Notes: [[node123 notes.md]]
 
-# Test Node
+            # Test Node
 
-This is the content."""
+            This is the content."""
+        )
 
         # Parse the content
         parsed = NodeParser.parse(original_content)
@@ -139,9 +148,9 @@ This is the content."""
         # Check that the important fields match
         assert reparsed['id'] == parsed['id']
         assert reparsed['title'] == parsed['title']
-        assert reparsed['notecard'] == parsed['notecard']
+        assert reparsed['card'] == parsed['card']
         assert reparsed['notes'] == parsed['notes']
-        assert reparsed['content'] == parsed['content']
+        assert reparsed['text'] == parsed['text']
         assert reparsed['metadata'] == parsed['metadata']
 
     def test_process_directives(self) -> None:
@@ -181,11 +190,11 @@ More text"""
             id: node123
             title: Test Node
 
-            // Notecard
+            // Card
 
             // Notes
 
-            // Content"""
+            // Text"""
         )
         assert result == expected
 
@@ -196,9 +205,9 @@ More text"""
         node = Node(
             id='node123',
             title='Test Node',
-            notecard='This is a notecard',
+            card='This is a notecard',
             notes='These are notes',
-            content='This is the content',
+            text='This is the content',
             metadata={'custom_field': 'custom value'},
         )
         result = NodeParser.prepare_for_editor(node)
@@ -208,13 +217,13 @@ More text"""
             title: Test Node
             custom_field: custom value
 
-            // Notecard
+            // Card
             This is a notecard
 
             // Notes
             These are notes
 
-            // Content
+            // Text
             This is the content"""
         )
         assert result == expected
@@ -224,17 +233,17 @@ More text"""
         content = """id: node123
 title: Test Node
 
-// Notecard
+// Card
 
 // Notes
 
-// Content"""
+// Text"""
         result = NodeParser.parse_from_editor('node123', content)
         assert result.id == 'node123'
         assert result.title == 'Test Node'
-        assert result.notecard == ''
+        assert result.card == ''
         assert result.notes == ''
-        assert result.content == ''
+        assert result.text == ''
         assert result.metadata == {}
 
     def test_parse_from_editor_complete(self) -> None:
@@ -243,20 +252,20 @@ title: Test Node
 title: Test Node
 custom_field: custom value
 
-// Notecard
+// Card
 This is a notecard
 
 // Notes
 These are notes
 
-// Content
+// Text
 This is the content"""
         result = NodeParser.parse_from_editor('node123', content)
         assert result.id == 'node123'
         assert result.title == 'Test Node'
-        assert result.notecard == 'This is a notecard'
+        assert result.card == 'This is a notecard'
         assert result.notes == 'These are notes'
-        assert result.content == 'This is the content'
+        assert result.text == 'This is the content'
         assert result.metadata == {'custom_field': 'custom value'}
 
     def test_parse_from_editor_empty(self) -> None:
@@ -264,27 +273,30 @@ This is the content"""
         result = NodeParser.parse_from_editor('node123', '')
         assert result.id == 'node123'
         assert result.title == ''
-        assert result.notecard == ''
+        assert result.card == ''
         assert result.notes == ''
-        assert result.content == ''
+        assert result.text == ''
         assert result.metadata == {}
 
     def test_parse_from_editor_malformed(self) -> None:
         """Test parsing malformed editor content."""
-        content = """id: node123
-title: Test Node
-// Notecard
-This is a notecard
-// Notes
-These are notes
-// Content
-This is the content"""
+        content = textwrap.dedent(
+            """\
+            id: node123
+            title: Test Node
+            // Card
+            This is a notecard
+            // Notes
+            These are notes
+            // Text
+            This is the content"""
+        )
         result = NodeParser.parse_from_editor('node123', content)
         assert result.id == 'node123'
         assert result.title == 'Test Node'
-        assert result.notecard == 'This is a notecard'
+        assert result.card == 'This is a notecard'
         assert result.notes == 'These are notes'
-        assert result.content == 'This is the content'
+        assert result.text == 'This is the content'
         assert result.metadata == {}
 
     def test_serialize_always_uses_wikilinks(self) -> None:
@@ -295,27 +307,54 @@ This is the content"""
             'title': 'Test Node',
         }
         result = NodeParser.serialize(node_data)
-        assert '// Notecard: [[node123 notecard.md]]' in result
-        assert '// Notes: [[node123 notes.md]]' in result
+        expected = textwrap.dedent(
+            """\
+            ---
+            id: node123
+            title: Test Node
+            ---
+            // Card: [[node123 card.md]]
+            // Notes: [[node123 notes.md]]
+            """
+        )
+        assert result == expected
 
         # Test with non-empty notecard and notes
         node_data = {
             'id': 'node123',
             'title': 'Test Node',
-            'notecard': 'Some notecard content',
+            'card': 'Some notecard content',
             'notes': 'Some notes content',
         }
         result = NodeParser.serialize(node_data)
-        assert '// Notecard: [[node123 notecard.md]]' in result
-        assert '// Notes: [[node123 notes.md]]' in result
+        expected = textwrap.dedent(
+            """\
+            ---
+            id: node123
+            title: Test Node
+            ---
+            // Card: [[node123 card.md]]
+            // Notes: [[node123 notes.md]]
+            """
+        )
+        assert result == expected
 
         # Test with wikilink format notecard and notes
         node_data = {
             'id': 'node123',
             'title': 'Test Node',
-            'notecard': '[[node123 notecard.md]]',
+            'card': '[[node123 card.md]]',
             'notes': '[[node123 notes.md]]',
         }
         result = NodeParser.serialize(node_data)
-        assert '// Notecard: [[node123 notecard.md]]' in result
-        assert '// Notes: [[node123 notes.md]]' in result
+        expected = textwrap.dedent(
+            """\
+            ---
+            id: node123
+            title: Test Node
+            ---
+            // Card: [[node123 card.md]]
+            // Notes: [[node123 notes.md]]
+            """
+        )
+        assert result == expected

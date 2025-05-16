@@ -21,8 +21,8 @@ class Node:
     """
 
     title: str = ''
-    notecard: str = ''
-    content: str = ''
+    card: str = ''
+    text: str = ''
     notes: str = ''
     metadata: dict[str, Any] = field(default_factory=dict)
     parent: Node | None = None

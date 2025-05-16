@@ -269,9 +269,9 @@ Usage: pmk add [OPTIONS] PARENT_ID TITLE
   PARENT_ID is the ID of the parent node. TITLE is the title of the new node.
 
 Options:
-  -n, --notecard TEXT     Brief summary of the node
-  -c, --content TEXT      Main content of the node
-  --notes TEXT            Additional notes about the node
+  -c, --card TEXT     Brief summary of the node
+  -t, --text TEXT     Main text of the node
+  -n, --notes TEXT    Additional notes about the node
   -p, --position INTEGER  Position to insert the node
   --help                  Show this message and exit.
 ```
@@ -354,7 +354,7 @@ Options:
   -o, --output PATH                      Output file path
   --include-comments / --no-comments     Include or exclude comments (default: exclude)
   --include-notes / --no-notes           Include or exclude research notes (default: exclude)
-  --include-notecards / --no-notecards   Include or exclude notecards (default: exclude)
+  --include-cards / --no-cards           Include or exclude cards (default: exclude)
   --toc / --no-toc                       Include table of contents (default: include)
   --template PATH                        Use custom template file
   --css PATH                             Use custom CSS file (for HTML/EPUB)

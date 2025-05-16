@@ -14,8 +14,8 @@ class NodeFactory(DataclassFactory[Node]):
 
     id = Use(Node.generate_id)
     title = ''
-    notecard = ''
-    content = ''
+    card = ''
+    text = ''
     notes = ''
     metadata: dict[str, str] = Use(dict)  # type: ignore[assignment]
     parent = None

@@ -23,7 +23,7 @@ def test_cli_main(runner: CliRunner) -> None:
 
 def test_cli_init(runner: CliRunner, runner_path: Path) -> None:
     """Test the init command."""
-    result = runner.invoke(main, ['init', 'Test Project', '--description', 'A test project'])
+    result = runner.invoke(main, ['init', 'Test Project', '--card', 'A test project'])
     assert result.exit_code == 0
     assert result.output == textwrap.dedent(
         """\
@@ -36,7 +36,7 @@ def test_cli_init(runner: CliRunner, runner_path: Path) -> None:
 def test_cli_info(runner: CliRunner) -> None:
     """Test the info command."""
     # First create a project
-    runner.invoke(main, ['init', 'Test Project', '--description', 'A test project'])
+    runner.invoke(main, ['init', 'Test Project', '--card', 'A test project'])
 
     # Then get info about it
     result = runner.invoke(main, ['info'])
@@ -60,9 +60,7 @@ def test_cli_add(runner: CliRunner, node_ids: list[NodeID]) -> None:
     runner.invoke(main, ['init', 'Test Project'])
 
     # Then add a node
-    result = runner.invoke(
-        main, ['add', '_binder', 'New Node', '--notecard', 'A brief summary', '--content', 'Some content']
-    )
+    result = runner.invoke(main, ['add', '_binder', 'New Node', '--card', 'A brief summary', '--text', 'Some content'])
     assert result.exit_code == 0
     expected = textwrap.dedent(
         f"""\
@@ -116,7 +114,7 @@ def test_cli_show(runner: CliRunner, node_ids: list[NodeID]) -> None:
     """Test the show command."""
     # First create a project with a node
     runner.invoke(main, ['init', 'Test Project'])
-    runner.invoke(main, ['add', '_binder', 'Node to show', '--content', 'This is the content'])
+    runner.invoke(main, ['add', '_binder', 'Node to show', '--text', 'This is the text'])
 
     # Get the node ID from the structure
     structure_result = runner.invoke(main, ['structure'])
@@ -129,11 +127,11 @@ def test_cli_show(runner: CliRunner, node_ids: list[NodeID]) -> None:
         f"""\
         Title: Node to show
 
-        Notecard:
-        [[{node_ids[1]} notecard.md]]
+        Card:
+        [[{node_ids[1]} card.md]]
 
-        Content:
-        This is the content
+        Text:
+        This is the text
 
         Notes:
         [[{node_ids[1]} notes.md]]
@@ -183,12 +181,12 @@ def test_cli_structure(
         id: _binder
         title: New Project
         ---
-        // Notecard: [[_binder notecard.md]]
+        // Card: [[_binder card.md]]
         // Notes: [[_binder notes.md]]
 
         # New Project
 
-        [[_binder notecard.md]]
+        [[_binder card.md]]
 
         - [Child 1](202501020304050601.md)
           - [Grandchild](202501020304050603.md)

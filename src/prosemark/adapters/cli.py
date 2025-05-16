@@ -51,21 +51,19 @@ class CLIService:
         """
         self.repository = repository
 
-    def init_project(self, title: str, description: str | None = None) -> CLIResult:
+    def init_project(self, title: str, card: str | None = None) -> CLIResult:
         """Create a new project.
 
         Args:
             title: The title of the new project.
-            description: Optional description of the project.
+            card: Optional brief summary of the project.
 
         Returns:
             A CLIResult with success status and message about the operation.
 
         """
         # Create a new project with a root node
-        project = ProjectFactory.build(
-            root_node=NodeFactory.build(id='_binder', title=title, notecard=description or '')
-        )
+        project = ProjectFactory.build(root_node=NodeFactory.build(id='_binder', title=title, card=card or ''))
 
         # Save the project, which will create the _binder.md file
         self.repository.save_project(project)
@@ -80,14 +78,14 @@ class CLIService:
 
         """
         project = self.repository.load_project()
-        # Try to read the notecard file for the root node
-        notecard_content = self.repository.storage.read('_binder notecard')
-        if not notecard_content:  # pragma: no cover
-            notecard_content = project.root_node.notecard
+        # Try to read the card file for the root node
+        card_content = self.repository.storage.read('_binder card')
+        if not card_content:  # pragma: no cover
+            card_content = project.root_node.card
 
         lines = [
             f'Project: {project.title}\n',
-            f'Description: {notecard_content}\n',
+            f'Description: {card_content}\n',
             f'Nodes: {project.get_node_count()}\n',
             '\nMetadata:\n',
         ]
@@ -101,8 +99,8 @@ class CLIService:
         self,
         parent_id: str,
         title: str,
-        notecard: str = '',
-        content: str = '',
+        card: str = '',
+        text: str = '',
         notes: str = '',
         position: int | None = None,
     ) -> CLIResult:
@@ -111,8 +109,8 @@ class CLIService:
         Args:
             parent_id: The ID of the parent node.
             title: The title of the new node.
-            notecard: Brief summary of the node.
-            content: Main content of the node.
+            card: Brief summary of the node.
+            text: Main content of the node.
             notes: Additional notes about the node.
             position: Position to insert the node.
 
@@ -125,8 +123,8 @@ class CLIService:
         node = project.create_node(
             parent_id=parent_id,
             title=title,
-            notecard=notecard,
-            content=content,
+            card=card,
+            text=text,
             notes=notes,
             position=position,
         )
@@ -198,17 +196,17 @@ class CLIService:
         self.repository.load_node_content(node)
 
         lines = [f'Title: {node.title}\n\n']
-        if node.notecard:  # pragma: no branch
+        if node.card:  # pragma: no branch
             lines.extend((
-                'Notecard:\n',
-                node.notecard.rstrip(),
+                'Card:\n',
+                node.card.rstrip(),
                 '\n\n',
             ))
 
-        if node.content:  # pragma: no branch
+        if node.text:  # pragma: no branch
             lines.extend((
-                'Content:\n',
-                node.content.rstrip(),
+                'Text:\n',
+                node.text.rstrip(),
                 '\n\n',
             ))
 
@@ -247,9 +245,9 @@ class CLIService:
 
             # Update the node with the edited values
             node.title = updated_node.title
-            node.notecard = updated_node.notecard
+            node.card = updated_node.card
             node.notes = updated_node.notes
-            node.content = updated_node.content
+            node.text = updated_node.text
             node.metadata.update(updated_node.metadata)
 
             # Save the updated node

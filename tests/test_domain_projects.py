@@ -10,16 +10,16 @@ def test_project_initialization() -> None:
     # Test with default values
     project1 = ProjectFactory.build()
     assert project1.title == 'New Project'
-    assert project1.notecard == ''
+    assert project1.card == ''
     assert project1.root_node is not None
     assert project1.root_node.title == 'New Project'
 
     # Test with custom values
-    root_node = NodeFactory.build(title='Custom Root', notecard='Custom notecard')
+    root_node = NodeFactory.build(title='Custom Root', card='Custom notecard')
     project2 = ProjectFactory.build(root_node=root_node)
 
     assert project2.title == 'Custom Root'
-    assert project2.notecard == 'Custom notecard'
+    assert project2.card == 'Custom notecard'
     assert project2.root_node is root_node
 
 
@@ -67,8 +67,8 @@ def test_create_node() -> None:
     node2 = project.create_node(
         root_id,
         title='Node 2',
-        notecard='Test notecard',
-        content='Test content',
+        card='Test notecard',
+        text='Test content',
         notes='Test notes',
         metadata=metadata,
         position=0,
@@ -76,8 +76,8 @@ def test_create_node() -> None:
 
     assert node2 is not None
     assert node2.title == 'Node 2'
-    assert node2.notecard == 'Test notecard'
-    assert node2.content == 'Test content'
+    assert node2.card == 'Test notecard'
+    assert node2.text == 'Test content'
     assert node2.notes == 'Test notes'
     assert node2.metadata == metadata
     assert node2.parent is project.root_node

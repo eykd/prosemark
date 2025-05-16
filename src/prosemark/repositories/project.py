@@ -59,7 +59,7 @@ class ProjectRepository:
         self.parse_node_content(binder_node, binder_content)
 
         # Second stage: Parse the outline structure from the binder node's content
-        outline_root = OutlineParser.parse(binder_node.content)
+        outline_root = OutlineParser.parse(binder_node.text)
 
         # Create project with the binder node as root
         project = Project(root_node=binder_node)
@@ -78,7 +78,7 @@ class ProjectRepository:
         """
         # Update the binder to reflect the current structure
         binder_content = self.generate_binder_content(project)
-        project.root_node.content = binder_content  # Ensure content is updated for persistence
+        project.root_node.text = binder_content  # Ensure content is updated for persistence
         self.storage.write('_binder', binder_content)
 
         # Save any modified nodes to storage
@@ -108,9 +108,9 @@ class ProjectRepository:
         node_content = self.serialize_node_content(node)
         self.storage.write(node.id, node_content)
 
-        # Save notecard and notes to separate files if they exist
-        if node.notecard:
-            self.storage.write(f'{node.id} notecard', node.notecard)
+        # Save card and notes to separate files if they exist
+        if node.card:
+            self.storage.write(f'{node.id} card', node.card)
 
         if node.notes:
             self.storage.write(f'{node.id} notes', node.notes)
@@ -124,7 +124,7 @@ class ProjectRepository:
                 # Create a temporary project to parse the current structure
                 temp_project = Project(root_node=Node(id='_binder', title='New Project'))
                 self.parse_node_content(temp_project.root_node, binder_content)
-                outline_root = OutlineParser.parse(temp_project.root_node.content)
+                outline_root = OutlineParser.parse(temp_project.root_node.text)
                 self.build_node_structure(temp_project, outline_root)
 
                 # Find the node in the project structure
@@ -227,8 +227,8 @@ class ProjectRepository:
         lines = [f'# {project.title}\n\n']
 
         # Add project description if available
-        if project.notecard:
-            lines.append(f'{project.notecard}\n\n')
+        if project.card:
+            lines.append(f'{project.card}\n\n')
 
         # Generate the structure as a nested list - skip the root node itself
         for child in project.root_node.children:
@@ -277,8 +277,8 @@ class ProjectRepository:
         node_data = {
             'id': node.id,
             'title': node.title,
-            'notecard': node.notecard,
-            'content': node.content,
+            'card': node.card,
+            'text': node.text,
             'notes': node.notes,
             'metadata': node.metadata,
         }
@@ -300,8 +300,8 @@ class ProjectRepository:
 
             # Update node properties
             node.title = node_data.get('title') or node.title
-            node.notecard = node_data.get('notecard') or node.notecard
-            node.content = node_data.get('content') or node.content
+            node.card = node_data.get('card') or node.card
+            node.text = node_data.get('text') or node.text
             node.notes = node_data.get('notes') or node.notes
 
             # Update metadata
@@ -311,5 +311,5 @@ class ProjectRepository:
 
         except (ValueError, yaml.YAMLError):  # pragma: no cover
             # If parsing fails, treat as raw content but preserve original properties
-            node.content = content
+            node.text = content
             # Note: We don't modify title, notecard, notes, or metadata when parsing fails

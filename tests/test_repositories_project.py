@@ -88,10 +88,10 @@ id: test_node
 title: Updated Title
 key: value
 ---
-// Notecard: Test notecard
-// Notes: Test notes
+// card: Test card
+// notes: Test notes
 
-Test content"""
+Test text"""
         mem_storage.write('test_node', node_content)
 
         # Execute
@@ -99,8 +99,8 @@ Test content"""
 
         # Verify
         assert node.title == 'Updated Title'
-        assert node.notecard == 'Test notecard'
-        assert node.content == 'Test content'
+        assert node.card == 'Test card'
+        assert node.text == 'Test text'
         assert node.notes == 'Test notes'
         assert node.metadata == {'key': 'value'}
 
@@ -132,19 +132,19 @@ Test content"""
 
         # Verify
         assert node.title == 'Test Node'  # Unchanged
-        assert node.content == 'Not valid format'  # Raw content used
+        assert node.text == 'Not valid format'  # Raw content used
 
     def test_save_node(self, mem_project_repository: ProjectRepository, mem_storage: InMemoryNodeStorage) -> None:
         """Test saving a node."""
         # Setup
         project = ProjectFactory.build()
         project.root_node.title = 'Test Project'
-        project.root_node.notecard = 'Project description'
+        project.root_node.card = 'Project description'
         node = NodeFactory.build(
             id='test_node',
             title='Test Node',
-            notecard='Test notecard',
-            content='Test content',
+            card='Test card',
+            text='Test text',
             notes='Test notes',
             metadata={'key': 'value'},
         )
@@ -158,8 +158,8 @@ Test content"""
             mock_serialize.assert_called_once_with({
                 'id': 'test_node',
                 'title': 'Test Node',
-                'notecard': 'Test notecard',
-                'content': 'Test content',
+                'card': 'Test card',
+                'text': 'Test text',
                 'notes': 'Test notes',
                 'metadata': {'key': 'value'},
             })
@@ -240,7 +240,7 @@ Test content"""
         project = ProjectFactory.build(
             root_node=RootNodeFactory.build(
                 title='Test Project',
-                notecard='Project description',
+                card='Project description',
             )
         )
         node1 = NodeFactory.build(id='node1', title='First Node')
@@ -263,7 +263,7 @@ Test content"""
         project = ProjectFactory.build(
             root_node=RootNodeFactory.build(
                 title='New Project',
-                notecard='Test description',
+                card='Test description',
             )
         )
         node1 = NodeFactory.build(id='node1', title='First Node')
@@ -312,8 +312,8 @@ Test content"""
         node = Node(
             id='test_node',
             title='Test Node',
-            notecard='Test notecard',
-            content='Test content',
+            card='Test card',
+            text='Test text',
             notes='Test notes',
             metadata={'key': 'value'},
         )
@@ -327,8 +327,8 @@ Test content"""
             mock_serialize.assert_called_once_with({
                 'id': 'test_node',
                 'title': 'Test Node',
-                'notecard': 'Test notecard',
-                'content': 'Test content',
+                'card': 'Test card',
+                'text': 'Test text',
                 'notes': 'Test notes',
                 'metadata': {'key': 'value'},
             })
@@ -344,8 +344,8 @@ Test content"""
         parsed_data = {
             'id': 'test_node',
             'title': 'Updated Title',
-            'notecard': 'Test notecard',
-            'content': 'Test content',
+            'card': 'Test card',
+            'text': 'Test text',
             'notes': 'Test notes',
             'metadata': {'key': 'value'},
         }
@@ -357,8 +357,8 @@ Test content"""
             # Verify
             mock_parse.assert_called_once_with(content, 'test_node')
             assert node.title == 'Updated Title'
-            assert node.notecard == 'Test notecard'
-            assert node.content == 'Test content'
+            assert node.card == 'Test card'
+            assert node.text == 'Test text'
             assert node.notes == 'Test notes'
             assert node.metadata == {'key': 'value'}
 
@@ -382,8 +382,8 @@ Test content"""
             # Verify
             mock_parse.assert_called_once_with(content, 'test_node')
             assert node.title == 'Updated Title'
-            assert node.notecard == ''  # Default value preserved
-            assert node.content == ''  # Default value preserved
+            assert node.card == ''  # Default value preserved
+            assert node.text == ''  # Default value preserved
             assert node.notes == ''  # Default value preserved
             assert node.metadata == {}  # Default value preserved
 

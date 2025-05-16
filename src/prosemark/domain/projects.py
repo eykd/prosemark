@@ -26,9 +26,9 @@ class Project:
         return self.root_node.title
 
     @property
-    def notecard(self) -> str:
-        """Get the notecard of the project."""
-        return self.root_node.notecard
+    def card(self) -> str:
+        """Get the binder notecard of the project."""
+        return self.root_node.card
 
     def get_node_by_id(self, node_id: str) -> Node | None:
         """Retrieve a node from anywhere in the project tree by its ID.
@@ -55,8 +55,8 @@ class Project:
         self,
         parent_id: str,
         title: str = '',
-        notecard: str = '',
-        content: str = '',
+        card: str = '',
+        text: str = '',
         notes: str = '',
         metadata: dict[str, Any] | None = None,
         position: int | None = None,
@@ -66,8 +66,8 @@ class Project:
         Args:
             parent_id: The ID of the parent node.
             title: Short descriptive title for the node.
-            notecard: Brief summary of the node's content.
-            content: Main content of the node.
+            card: Brief summary of the node's content.
+            text: Main content of the node.
             notes: Additional notes about the node.
             metadata: Key-value pairs for additional information.
             position: Optional position to insert the node. If None, appends to the end.
@@ -82,8 +82,8 @@ class Project:
 
         new_node = Node(
             title=title,
-            notecard=notecard,
-            content=content,
+            card=card,
+            text=text,
             notes=notes,
             metadata=metadata if metadata is not None else {},
         )

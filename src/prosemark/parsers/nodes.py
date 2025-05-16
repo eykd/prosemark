@@ -42,8 +42,8 @@ class NodeParser:
         node_data: dict[str, Any] = {
             'id': node_id,
             'title': '',
-            'notecard': '',
-            'content': '',
+            'card': '',
+            'text': '',
             'notes': '',
             'metadata': {},
         }
@@ -82,16 +82,16 @@ class NodeParser:
 
         # Update node data with directives
         for key, value in directives.items():
-            if key.lower() == 'notecard':
-                node_data['notecard'] = value
+            if key.lower() == 'card':
+                node_data['card'] = value
             elif key.lower() == 'notes':
                 node_data['notes'] = value
             else:
                 # Store other directives in metadata
                 node_data['metadata'][key] = value
 
-        # Set the content
-        node_data['content'] = '\n'.join(content_lines).strip()
+        # Set the text
+        node_data['text'] = '\n'.join(content_lines).strip()
 
         return node_data
 
@@ -139,7 +139,7 @@ class NodeParser:
         # Extract basic properties
         node_id = node_data.get('id', '')
         title = node_data.get('title', '')
-        content = node_data.get('content', '')
+        text = node_data.get('text', '')
         metadata = node_data.get('metadata', {})
 
         # Create YAML header
@@ -154,16 +154,16 @@ class NodeParser:
 
         # Add directives - always use wikilink format
         lines.extend([
-            f'// Notecard: [[{node_id} notecard.md]]',
+            f'// Card: [[{node_id} card.md]]',
             f'// Notes: [[{node_id} notes.md]]',
         ])
 
-        # Add a blank line before content
+        # Add a blank line before text
         lines.append('')
 
-        # Add content if present
-        if content:
-            lines.append(content)
+        # Add text if present
+        if text:
+            lines.append(text)
 
         return '\n'.join(lines)
 
@@ -190,20 +190,20 @@ class NodeParser:
         # Build the full content for editing
         lines = [header]
 
-        # Add notecard section
-        lines.append('// Notecard')
-        if node.notecard:  # pragma: no branch
-            lines.append(node.notecard)
+        # Add card section
+        lines.append('// Card')
+        if node.card:  # pragma: no branch
+            lines.append(node.card)
 
         # Add notes section
         lines.append('\n// Notes')
         if node.notes:  # pragma: no branch
             lines.append(node.notes)
 
-        # Add content section
-        lines.append('\n// Content')
-        if node.content:
-            lines.append(node.content)
+        # Add text section
+        lines.append('\n// Text')
+        if node.text:
+            lines.append(node.text)
 
         return '\n'.join(lines)
 
@@ -228,8 +228,8 @@ class NodeParser:
 
         # Initialize with default values
         title = ''
-        notecard = ''
-        content_text = ''
+        card = ''
+        text = ''
         notes = ''
         metadata: dict[str, Any] = {}
 
@@ -263,35 +263,35 @@ class NodeParser:
             line = lines[i]
 
             # Check for section markers
-            if line.startswith('// Notecard'):
+            if line.startswith('// Card'):
                 if current_section:  # pragma: no cover
-                    if current_section == 'notecard':
-                        notecard = '\n'.join(section_content).strip()
+                    if current_section == 'card':
+                        card = '\n'.join(section_content).strip()
                     elif current_section == 'notes':
                         notes = '\n'.join(section_content).strip()
-                    elif current_section == 'content':
-                        content_text = '\n'.join(section_content).strip()
-                current_section = 'notecard'
+                    elif current_section == 'text':
+                        text = '\n'.join(section_content).strip()
+                current_section = 'card'
                 section_content = []
             elif line.startswith('// Notes'):
                 if current_section:  # pragma: no branch
-                    if current_section == 'notecard':
-                        notecard = '\n'.join(section_content).strip()
+                    if current_section == 'card':
+                        card = '\n'.join(section_content).strip()
                     elif current_section == 'notes':  # pragma: no cover
                         notes = '\n'.join(section_content).strip()
-                    elif current_section == 'content':  # pragma: no cover
-                        content_text = '\n'.join(section_content).strip()
+                    elif current_section == 'text':  # pragma: no cover
+                        text = '\n'.join(section_content).strip()
                 current_section = 'notes'
                 section_content = []
-            elif line.startswith('// Content'):
+            elif line.startswith('// Text'):
                 if current_section:  # pragma: no branch
-                    if current_section == 'notecard':  # pragma: no cover
-                        notecard = '\n'.join(section_content).strip()
+                    if current_section == 'card':  # pragma: no cover
+                        card = '\n'.join(section_content).strip()
                     elif current_section == 'notes':  # pragma: no cover
                         notes = '\n'.join(section_content).strip()
-                    elif current_section == 'content':  # pragma: no cover
-                        content_text = '\n'.join(section_content).strip()
-                current_section = 'content'
+                    elif current_section == 'text':  # pragma: no cover
+                        text = '\n'.join(section_content).strip()
+                current_section = 'text'
                 section_content = []
             else:
                 section_content.append(line)
@@ -300,19 +300,19 @@ class NodeParser:
 
         # Add the last section
         if current_section:  # pragma: no branch
-            if current_section == 'notecard':  # pragma: no cover
-                notecard = '\n'.join(section_content).strip()
+            if current_section == 'card':  # pragma: no cover
+                card = '\n'.join(section_content).strip()
             elif current_section == 'notes':  # pragma: no cover
                 notes = '\n'.join(section_content).strip()
-            elif current_section == 'content':  # pragma: no branch
-                content_text = '\n'.join(section_content).strip()
+            elif current_section == 'text':  # pragma: no branch
+                text = '\n'.join(section_content).strip()
 
         # Create and return the Node
         return Node(
             id=node_id,
             title=title,
-            notecard=notecard,
-            content=content_text,
+            card=card,
+            text=text,
             notes=notes,
             metadata=metadata,
         )
