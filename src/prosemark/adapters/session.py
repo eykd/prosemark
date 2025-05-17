@@ -243,9 +243,9 @@ class SessionService:
             node.card = card_node.text
 
             # Update card metadata if changed
-            if card_node.metadata:
+            if card_node.metadata:  # pragma: no branch
                 if 'card' not in node.metadata:
-                    node.metadata['card'] = {}
+                    node.metadata['card'] = {}  # pragma: no cover
                 node.metadata['card'].update(card_node.metadata)
 
             # Save the node

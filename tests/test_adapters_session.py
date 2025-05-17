@@ -280,6 +280,99 @@ class TestSessionService:
         mock_session.assert_called_once()
         mock_session_instance.run.assert_called_once()
 
+    @patch('prosemark.adapters.session.WritingSession')
+    def test_start_card_session_node_not_found(
+        self, mock_session: MagicMock, service: SessionService, repository: ProjectRepository
+    ) -> None:
+        """Test starting a card session with a non-existent node."""
+        mock_project = MagicMock()
+        mock_project.get_node_by_id.return_value = None
+        repository.load_project = MagicMock()  # type: ignore[method-assign]
+        repository.load_project.return_value = mock_project
+
+        success, message = service.start_card_session('nonexistent')
+
+        assert not success
+        assert 'not found' in message[0]
+        mock_session.assert_not_called()
+
+    @patch('prosemark.adapters.session.WritingSession')
+    def test_start_card_session_success(
+        self, mock_session: MagicMock, service: SessionService, repository: ProjectRepository
+    ) -> None:
+        """Test starting a card session successfully."""
+        # Mock the project and node
+        mock_node = MagicMock(spec=Node)
+        mock_node.id = 'node123'
+        mock_node.title = 'Node Title'
+        mock_node.card = 'Card content'
+        mock_node.metadata = {'card': {'foo': 'bar'}}
+        mock_project = MagicMock()
+        mock_project.get_node_by_id.return_value = mock_node
+        repository.load_project = MagicMock()  # type: ignore[method-assign]
+        repository.load_project.return_value = mock_project
+        repository.save_node = MagicMock()  # type: ignore[method-assign]
+
+        # Mock the session instance
+        mock_session_instance = MagicMock()
+        mock_session.return_value = mock_session_instance
+
+        # Simulate card_node.text and card_node.metadata after session
+        def run_side_effect() -> None:
+            mock_session.call_args[1]['node'].text = 'Edited card content'
+            mock_session.call_args[1]['node'].metadata = {'baz': 'qux'}
+
+        mock_session_instance.run.side_effect = run_side_effect
+
+        mock_node.metadata = {'card': {'foo': 'bar'}}
+        mock_node.card = 'Card content'
+        mock_node.text = ''
+        mock_node.notes = ''
+
+        success, message = service.start_card_session(
+            'node123',
+            word_goal=50,
+            time_limit=10,
+            timer_mode='alert',
+            stats_mode='detailed',
+            no_prompt=True,
+        )
+
+        assert success
+        assert 'completed successfully' in message[0]
+        mock_session.assert_called_once()
+        mock_session_instance.run.assert_called_once()
+        # Card and metadata should be updated
+        assert mock_node.card == 'Edited card content'
+        assert 'baz' in mock_node.metadata['card']
+        repository.save_node.assert_called_once_with(mock_node)
+
+    @patch('prosemark.adapters.session.WritingSession')
+    def test_start_card_session_exception(
+        self, mock_session: MagicMock, service: SessionService, repository: ProjectRepository
+    ) -> None:
+        """Test handling exceptions during card session."""
+        mock_node = MagicMock(spec=Node)
+        mock_node.id = 'node123'
+        mock_node.title = 'Node Title'
+        mock_node.card = 'Card content'
+        mock_node.metadata = {'card': {}}
+        mock_project = MagicMock()
+        mock_project.get_node_by_id.return_value = mock_node
+        repository.load_project = MagicMock()  # type: ignore[method-assign]
+        repository.load_project.return_value = mock_project
+
+        mock_session_instance = MagicMock()
+        mock_session_instance.run.side_effect = RuntimeError('Card error')
+        mock_session.return_value = mock_session_instance
+
+        success, message = service.start_card_session('node123')
+
+        assert not success
+        assert 'error' in message[0]
+        mock_session.assert_called_once()
+        mock_session_instance.run.assert_called_once()
+
 
 # Note: We can't easily test WritingSession directly because it uses prompt_toolkit's
 # interactive features. We would need to mock the Application and other components.
