@@ -180,6 +180,84 @@ class SessionService:
         else:
             return True, ['Session completed successfully']
 
+    def start_card_session(
+        self,
+        node_id: str,
+        word_goal: int | None = None,
+        time_limit: int | None = None,
+        timer_mode: str = 'visible',
+        stats_mode: str = 'minimal',
+        *,
+        no_prompt: bool = False,
+    ) -> tuple[bool, list[str]]:
+        """Start a focused writing session for a node's card.
+
+        Args:
+            node_id: ID of the node whose card will be edited.
+            word_goal: Target word count for the session.
+            time_limit: Time limit in minutes.
+            timer_mode: How to display the timer ('none', 'visible', 'alert').
+            stats_mode: How to display statistics ('none', 'minimal', 'detailed').
+            no_prompt: Skip goal/time prompts when not specified.
+
+        Returns:
+            A tuple with success status and message lines.
+
+        """
+        # Load the project and find the node
+        project = self.repository.load_project()
+        node = project.get_node_by_id(node_id)
+
+        if not node:
+            return False, [f"Node with ID '{node_id}' not found"]
+
+        # Load the node content
+        self.repository.load_node_content(node)
+
+        # Create a temporary node with the card content as the main text
+        # This allows us to reuse the existing WritingSession class
+        from prosemark.domain.nodes import Node
+
+        card_node = Node(
+            id=f'{node.id}_card',
+            title=f'Card for: {node.title}',
+            text=node.card or '',
+            metadata=node.metadata.get('card', {}) if node.metadata else {},
+        )
+
+        # Create and run the session
+        session = WritingSession(
+            node=card_node,
+            repository=self.repository,
+            word_goal=word_goal,
+            time_limit=time_limit,
+            timer_mode=timer_mode,
+            stats_mode=stats_mode,
+            no_prompt=no_prompt,
+        )
+
+        try:
+            session.run()
+
+            # Update the original node's card with the edited content
+            node.card = card_node.text
+
+            # Update card metadata if changed
+            if card_node.metadata:
+                if 'card' not in node.metadata:
+                    node.metadata['card'] = {}
+                node.metadata['card'].update(card_node.metadata)
+
+            # Save the node
+            self.repository.save_node(node)
+
+        except (KeyboardInterrupt, EOFError):  # pragma: no cover
+            return True, ['Card session ended by user']
+        except RuntimeError as e:
+            return False, [f'Card session error: {e!s}']
+        else:
+            return True, ['Card session completed successfully']
+
 
 class WritingSession:  # pragma: no cover
     """Manages a focused writing session for a specific node.

@@ -24,11 +24,13 @@ class CLIResult(NamedTuple):
     Attributes:
         success: Whether the command was successful.
         message: A message or messages describing the result.
+        data: Optional data returned by the command.
 
     """
 
     success: bool
-    message: Iterable[str]
+    message: Iterable[str] | str
+    data: Any = None
 
 
 class CLIService:
@@ -307,3 +309,328 @@ class CLIService:
                 yield from get_node_lines(child, level + 1)
 
         return CLIResult(success=True, message=get_node_lines(start_node))
+
+    def create_card(self, node_id: NodeID, text: str | None = None,
+                   color: str | None = None, status: str | None = None) -> CLIResult:
+        """Create a card for a node.
+        
+        Args:
+            node_id: ID of the node to create a card for.
+            text: Initial text for the card.
+            color: Color code for the card.
+            status: Status label for the card.
+            
+        Returns:
+            A CLIResult with success status and message.
+
+        """
+        try:
+            project = self.repository.load_project()
+            node = project.get_node_by_id(node_id)
+
+            if not node:
+                return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
+
+            if node.card:
+                return CLIResult(
+                    success=False,
+                    message=[f"Node '{node_id}' already has a card. Use 'pmk card edit' to modify it."]
+                )
+
+            # Create the card with provided options
+            node.card = text or ''
+
+            # Store color and status in metadata if provided
+            if color or status:
+                if 'card' not in node.metadata:
+                    node.metadata['card'] = {}
+
+                if color:
+                    node.metadata['card']['color'] = color
+                if status:
+                    node.metadata['card']['status'] = status
+
+            # Save the project
+            self.repository.save_node(node)
+
+            return CLIResult(
+                success=True,
+                message=[f"Created card for node '{node_id}' ({node.title})."]
+            )
+
+        except Exception as e:
+            return CLIResult(success=False, message=[f'Error creating card: {e!s}'])
+
+    def prepare_card_for_editor(self, node_id: NodeID) -> CLIResult:
+        """Prepare a node's card for editing in an external editor.
+        
+        Args:
+            node_id: ID of the node whose card will be edited.
+            
+        Returns:
+            A CLIResult with success status and the card content.
+
+        """
+        try:
+            project = self.repository.load_project()
+            node = project.get_node_by_id(node_id)
+
+            if not node:
+                return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
+
+            if not node.card:
+                # Initialize with empty card
+                card_content = ''
+
+                # Add metadata header if available
+                if 'card' in node.metadata:
+                    card_metadata = node.metadata['card']
+                    card_content = '---\n'
+                    for key, value in card_metadata.items():
+                        card_content += f'{key}: {value}\n'
+                    card_content += '---\n\n'
+            else:
+                # Start with existing card content
+                card_content = node.card
+
+                # Add metadata header if available and not already present
+                if 'card' in node.metadata and not card_content.startswith('---'):
+                    card_metadata = node.metadata['card']
+                    header = '---\n'
+                    for key, value in card_metadata.items():
+                        header += f'{key}: {value}\n'
+                    header += '---\n\n'
+                    card_content = header + card_content
+
+            return CLIResult(
+                success=True,
+                message=[f"Editing card for node '{node_id}' ({node.title})."],
+                data=card_content
+            )
+
+        except Exception as e:
+            return CLIResult(success=False, message=[f'Error preparing card for editor: {e!s}'])
+
+    def edit_card(self, node_id: NodeID, edited_content: str) -> CLIResult:
+        """Save edited card content for a node.
+        
+        Args:
+            node_id: ID of the node whose card was edited.
+            edited_content: The edited card content.
+            
+        Returns:
+            A CLIResult with success status and message.
+
+        """
+        try:
+            project = self.repository.load_project()
+            node = project.get_node_by_id(node_id)
+
+            if not node:
+                return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
+
+            # Check for YAML frontmatter
+            import re
+
+            import yaml
+
+            frontmatter_match = re.match(r'^---\n(.*?)\n---\n(.*)', edited_content, re.DOTALL)
+            if frontmatter_match:
+                # Extract frontmatter and content
+                frontmatter_text = frontmatter_match.group(1)
+                card_content = frontmatter_match.group(2).strip()
+
+                try:
+                    # Parse frontmatter as YAML
+                    frontmatter = yaml.safe_load(frontmatter_text)
+                    if frontmatter and isinstance(frontmatter, dict):
+                        if 'card' not in node.metadata:
+                            node.metadata['card'] = {}
+                        node.metadata['card'].update(frontmatter)
+                except yaml.YAMLError:
+                    # If YAML parsing fails, treat it as part of the content
+                    card_content = edited_content
+            else:
+                # No frontmatter, use entire content
+                card_content = edited_content
+
+            # Update the card content
+            node.card = card_content
+
+            # Save the node
+            self.repository.save_node(node)
+
+            return CLIResult(
+                success=True,
+                message=[f"Updated card for node '{node_id}' ({node.title})."]
+            )
+
+        except Exception as e:
+            return CLIResult(success=False, message=[f'Error saving card: {e!s}'])
+
+    def show_card(self, node_id: NodeID) -> CLIResult:
+        """Display a node's card content.
+        
+        Args:
+            node_id: ID of the node whose card will be displayed.
+            
+        Returns:
+            A CLIResult with success status and the card content.
+
+        """
+        try:
+            project = self.repository.load_project()
+            node = project.get_node_by_id(node_id)
+
+            if not node:
+                return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
+
+            if not node.card:
+                return CLIResult(
+                    success=False,
+                    message=[f"Node '{node_id}' ({node.title}) does not have a card."]
+                )
+
+            # Format the card display
+            output = [f'Card for: {node.title} ({node_id})\n']
+
+            # Add metadata if available
+            if 'card' in node.metadata:
+                card_metadata = node.metadata['card']
+                if card_metadata:
+                    output.append('Metadata:')
+                    for key, value in card_metadata.items():
+                        output.append(f'  {key}: {value}')
+                    output.append('')
+
+            # Add the card content
+            output.append('Content:')
+            output.append(node.card)
+
+            return CLIResult(
+                success=True,
+                message=output
+            )
+
+        except Exception as e:
+            return CLIResult(success=False, message=[f'Error showing card: {e!s}'])
+
+    def list_cards(self, format_type: str = 'text') -> CLIResult:
+        """List all nodes with cards.
+        
+        Args:
+            format_type: Output format ('text' or 'json').
+            
+        Returns:
+            A CLIResult with success status and the list of cards.
+
+        """
+        try:
+            project = self.repository.load_project()
+            nodes_with_cards = []
+
+            def collect_nodes_with_cards(node: Node) -> None:
+                if node.card:
+                    nodes_with_cards.append(node)
+                for child in node.children:
+                    collect_nodes_with_cards(child)
+
+            # Collect all nodes with cards
+            collect_nodes_with_cards(project.root_node)
+
+            if not nodes_with_cards:
+                return CLIResult(
+                    success=True,
+                    message=['No cards found in the project.']
+                )
+
+            if format_type == 'json':
+                import json
+
+                # Create a JSON-serializable list of card data
+                card_data = []
+                for node in nodes_with_cards:
+                    card_info = {
+                        'id': node.id,
+                        'title': node.title,
+                        'content': node.card
+                    }
+
+                    # Add metadata if available
+                    if 'card' in node.metadata:
+                        card_info['metadata'] = node.metadata['card']
+
+                    card_data.append(card_info)
+
+                return CLIResult(
+                    success=True,
+                    message=[json.dumps(card_data, indent=2)]
+                )
+            # text format
+            output = [f'Found {len(nodes_with_cards)} cards:\n']
+
+            for node in nodes_with_cards:
+                # Basic node info
+                node_line = f'- {node.title} ({node.id})'
+
+                # Add status if available
+                if 'card' in node.metadata and 'status' in node.metadata['card']:
+                    node_line += f" [Status: {node.metadata['card']['status']}]"
+
+                output.append(node_line)
+
+                # Add a preview of the card content (first line or truncated)
+                if node.card:
+                    preview = node.card.split('\n')[0]
+                    if len(preview) > 60:
+                        preview = preview[:57] + '...'
+                    output.append(f'  {preview}')
+
+            return CLIResult(
+                success=True,
+                message=output
+            )
+
+        except Exception as e:
+            return CLIResult(success=False, message=[f'Error listing cards: {e!s}'])
+
+    def remove_card(self, node_id: NodeID) -> CLIResult:
+        """Remove a node's card.
+        
+        Args:
+            node_id: ID of the node whose card will be removed.
+            
+        Returns:
+            A CLIResult with success status and message.
+
+        """
+        try:
+            project = self.repository.load_project()
+            node = project.get_node_by_id(node_id)
+
+            if not node:
+                return CLIResult(success=False, message=[f"Node with ID '{node_id}' not found"])
+
+            if not node.card and ('card' not in node.metadata or not node.metadata['card']):
+                return CLIResult(
+                    success=False,
+                    message=[f"Node '{node_id}' ({node.title}) does not have a card."]
+                )
+
+            # Remove the card content
+            node.card = ''
+
+            # Remove card metadata if present
+            if 'card' in node.metadata:
+                del node.metadata['card']
+
+            # Save the node
+            self.repository.save_node(node)
+
+            return CLIResult(
+                success=True,
+                message=[f"Removed card from node '{node_id}' ({node.title})."]
+            )
+
+        except Exception as e:
+            return CLIResult(success=False, message=[f'Error removing card: {e!s}'])

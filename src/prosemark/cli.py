@@ -59,6 +59,7 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None: 
     repository = ProjectRepository(storage)
     ctx.obj['repository'] = repository
     ctx.obj['cli_service'] = CLIService(repository)
+    ctx.obj['session_service'] = SessionService(repository)
 
 
 @main.command()
@@ -201,6 +202,132 @@ def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
     _echo_result(ctx, cli_service.get_project_structure(node_id))
 
 
+@main.group()
+@click.pass_context
+def card(ctx: ClickContext) -> None:
+    """Manage cards associated with project nodes."""
+
+
+@card.command()
+@click.argument('node_id')
+@click.option('-t', '--text', help='Initial text for the card')
+@click.option('--color', help='Color code for the card')
+@click.option('--status', help='Status label for the card')
+@click.pass_context
+def create(ctx: ClickContext, node_id: NodeID, text: str | None = None,
+           color: str | None = None, status: str | None = None) -> None:
+    """Create a card for a node (if none exists).
+    
+    NODE_ID is the ID of the node to create a card for.
+    """
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.create_card(node_id, text, color, status)
+    _echo_result(ctx, result)
+
+
+@card.command()
+@click.argument('node_id')
+@click.option('--editor/--no-editor', default=True, help='Open in editor')
+@click.pass_context
+def edit(ctx: ClickContext, node_id: NodeID, editor: bool = True) -> None:
+    """Edit a node's card in the default text editor.
+    
+    NODE_ID is the ID of the node whose card will be edited.
+    """
+    cli_service = ctx.obj['cli_service']
+
+    if editor:
+        # Prepare the card content for editing
+        result = cli_service.prepare_card_for_editor(node_id)
+        if not result.success:
+            _echo_result(ctx, result)
+            return
+
+        # Open the editor with the formatted content
+        edited_content = click.edit(result.data)
+
+        # Update the card with edited content if not aborted
+        if edited_content is not None:
+            result = cli_service.edit_card(node_id, edited_content)
+        else:
+            result = CLIResult(success=True, message=['Edit aborted, no changes made.'])
+    else:
+        # Interactive mode not implemented yet
+        result = CLIResult(success=False, message=['Non-editor mode not implemented yet.'])
+
+    _echo_result(ctx, result)
+
+
+@card.command()
+@click.argument('node_id')
+@click.pass_context
+def show(ctx: ClickContext, node_id: NodeID) -> None:
+    """Display a node's card content.
+    
+    NODE_ID is the ID of the node whose card will be displayed.
+    """
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.show_card(node_id)
+    _echo_result(ctx, result)
+
+
+@card.command()
+@click.option('--format', type=click.Choice(['text', 'json']), default='text',
+              help='Output format (default: text)')
+@click.pass_context
+def list(ctx: ClickContext, format: str = 'text') -> None:
+    """List all nodes with cards."""
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.list_cards(format)
+    _echo_result(ctx, result)
+
+
+@card.command()
+@click.argument('node_id')
+@click.pass_context
+def remove(ctx: ClickContext, node_id: NodeID) -> None:
+    """Remove a node's card.
+    
+    NODE_ID is the ID of the node whose card will be removed.
+    """
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.remove_card(node_id)
+    _echo_result(ctx, result)
+
+
+@card.command()
+@click.argument('node_id')
+@click.option('-w', '--words', type=int, help='Word count goal for this session')
+@click.option('-t', '--time', type=int, help='Session time limit in minutes')
+@click.option('--timer', type=click.Choice(['none', 'visible', 'alert']),
+              default='visible', help='Timer display mode (default: visible)')
+@click.option('--stats', type=click.Choice(['none', 'minimal', 'detailed']),
+              default='minimal', help='Stats display mode (default: minimal)')
+@click.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
+@click.pass_context
+def session(ctx: ClickContext, node_id: NodeID, words: int | None = None,
+            time: int | None = None, timer: str = 'visible',
+            stats: str = 'minimal', no_prompt: bool = False) -> None:
+    """Start a focused card writing session.
+    
+    NODE_ID is the ID of the node whose card will be edited.
+    """
+    repository = ctx.obj['repository']
+    session_service = SessionService(repository)
+
+    success, message = session_service.start_card_session(
+        node_id=node_id,
+        word_goal=words,
+        time_limit=time,
+        timer_mode=timer,
+        stats_mode=stats,
+        no_prompt=no_prompt,
+    )
+
+    if not success:
+        click.echo('\n'.join(message), err=True)
+
+
 @main.command()
 @click.argument('node_id', required=False)
 @click.option('-w', '--words', type=int, help='Word count goal for this session')
@@ -294,15 +421,24 @@ def session(
 
 def _echo_result(ctx: ClickContext, result: CLIResult) -> None:
     if not result.success:  # pragma: no cover
-        for line in result.message:
-            click.echo(line, nl=False, err=True)
+        if isinstance(result.message, str):
+            click.echo(result.message, err=True)
+        else:
+            for line in result.message:
+                click.echo(line, nl=False, err=True)
         return
 
-    if ctx.obj['pager']:
-        click.echo_via_pager(result.message)
-    else:  # pragma: no cover
-        for line in result.message:
-            click.echo(line, nl=False)
+    if isinstance(result.message, str):
+        if ctx.obj['pager']:
+            click.echo_via_pager(result.message)
+        else:  # pragma: no cover
+            click.echo(result.message)
+    else:
+        if ctx.obj['pager']:
+            click.echo_via_pager(result.message)
+        else:  # pragma: no cover
+            for line in result.message:
+                click.echo(line, nl=False)
 
 
 if __name__ == '__main__':  # pragma: no cover
