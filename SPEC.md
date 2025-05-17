@@ -41,7 +41,7 @@ Prosemark is a command-line interface (CLI) tool designed to manage writing proj
 - **Editing**: Opening documents in the default text editor
 - **Moving**: Relocating documents within the binder structure
 - **Removing**: Removing documents from the binder or project
-- **Displaying**: Showing document content in the terminal
+- **Displaying**: Showing document text in the terminal
 - **Visualizing**: Viewing the project structure as a tree
 
 ## 3. Content Creation and Management
@@ -52,7 +52,7 @@ Prosemark is a command-line interface (CLI) tool designed to manage writing proj
 - **Templates**: Built-in and custom templates for new documents
 - **Editor Integration**: Configurable integration with text editors
 
-### 3.2 Note Cards System
+### 3.2 Cards System
 - Lightweight units for planning and organizing content
 - Represent scenes, chapters, arguments, or key points
 - Include title, synopsis, and status information
@@ -133,9 +133,10 @@ Prosemark is a command-line interface (CLI) tool designed to manage writing proj
 
 ### 6.3 Support Commands
 - `pmk ai` - Access AI assistance features
-- `pmk sync` - Synchronize with version control
-- `pmk card` - Manage note cards
+- `pmk snapshot` - Create a snapshot with Git
+- `pmk card` - Manage cards
 - `pmk notes` - Manage research notes
+- `pmk set` - Set content for nodes, cards, and notes
 
 ### 6.4 Command Structure
 - All commands operate on the current directory by default
@@ -245,6 +246,29 @@ Prosemark is a command-line interface (CLI) tool designed to manage writing proj
 - Initial release in English only
 - Architecture to support additional languages in the future
 
+## 12. Implementation Roadmap
+
+### 12.1 Development Priorities
+1. Core organization and binder functionality
+2. Document management operations
+3. Metadata and statistics tracking
+4. Compilation capabilities
+5. Interactive writing mode
+6. Cards and research system
+7. AI integration
+8. Advanced templating features
+9. Plugin system and extensibility
+10. Documentation system
+
+### 12.2 Future Considerations
+- Enhanced collaboration features
+- Additional output formats
+- Expanded AI capabilities
+- Mobile-friendly interface options
+- Integration with additional writing tools
+- Cloud-based compilation services
+- Community template sharing
+
 ## 13. Command Reference
 
 ### 13.1 Project Management Commands
@@ -269,11 +293,11 @@ Usage: pmk add [OPTIONS] PARENT_ID TITLE
   PARENT_ID is the ID of the parent node. TITLE is the title of the new node.
 
 Options:
-  -c, --card TEXT     Brief summary of the node
-  -t, --text TEXT     Main text of the node
-  -n, --notes TEXT    Additional notes about the node
-  -p, --position INTEGER  Position to insert the node
-  --help                  Show this message and exit.
+  -c, --card TEXT        Brief summary of the node
+  -t, --text TEXT        Main content of the node
+  -n, --notes TEXT       Additional notes about the node
+  -p, --position INTEGER Position to insert the node
+  --help                 Show this message and exit.
 ```
 
 #### `pmk edit`
@@ -434,6 +458,65 @@ Options:
   --help                  Show this message and exit.
 ```
 
+#### `pmk set`
+```
+Usage: pmk set [OPTIONS] COMMAND [ARGS]...
+
+  Set content for nodes, cards, and notes.
+
+  Content can be provided as a command-line argument or via stdin.
+
+Commands:
+  text        Set the main text content of a node
+  card        Set the card content of a node
+  notes       Set the research notes content of a node
+
+Options:
+  --help      Show this message and exit.
+```
+
+#### `pmk set text`
+```
+Usage: pmk set text [OPTIONS] NODE_ID [CONTENT]
+
+  Set the main text content of a node.
+
+  NODE_ID is the ID of the node whose content will be set.
+  CONTENT is the text to set. If not provided, reads from stdin.
+
+Options:
+  --append               Append to existing content instead of replacing
+  --help                 Show this message and exit.
+```
+
+#### `pmk set card`
+```
+Usage: pmk set card [OPTIONS] NODE_ID [CONTENT]
+
+  Set the card content of a node.
+
+  NODE_ID is the ID of the node whose card content will be set.
+  CONTENT is the text to set. If not provided, reads from stdin.
+
+Options:
+  --append               Append to existing content instead of replacing
+  --help                 Show this message and exit.
+```
+
+#### `pmk set notes`
+```
+Usage: pmk set notes [OPTIONS] NODE_ID [CONTENT]
+
+  Set the research notes content of a node.
+
+  NODE_ID is the ID of the node whose research notes content will be set.
+  CONTENT is the text to set. If not provided, reads from stdin.
+
+Options:
+  --append               Append to existing content instead of replacing
+  --help                 Show this message and exit.
+```
+
 #### `pmk ai`
 ```
 Usage: pmk ai [OPTIONS] COMMAND [ARGS]...
@@ -465,24 +548,39 @@ Options:
   --help          Show this message and exit.
 ```
 
-### 13.4 Note Card and Research Commands
+### 13.4 Card and Research Commands
 
 #### `pmk card`
 ```
 Usage: pmk card [OPTIONS] COMMAND [ARGS]...
 
-  Manage note cards associated with project nodes.
+  Manage cards associated with project nodes.
 
 Commands:
-  create      Create a note card for a node (if none exists)
-  edit        Edit a node's note card in the default text editor
-  show        Display a node's note card content
-  list        List all nodes with note cards
-  remove      Remove a node's note card
-  session     Start a focused note card writing session
+  create      Create a card for a node (if none exists)
+  edit        Edit a node's card in the default text editor
+  show        Display a node's card content
+  list        List all nodes with cards
+  remove      Remove a node's card
+  session     Start a focused card writing session
 
 Options:
   --help      Show this message and exit.
+```
+
+#### `pmk card create`
+```
+Usage: pmk card create [OPTIONS] NODE_ID
+
+  Create a card for a node (if none exists).
+
+  NODE_ID is the ID of the node to create a card for.
+
+Options:
+  -t, --text TEXT       Initial text for the card
+  --color TEXT          Color code for the card
+  --status TEXT         Status label for the card
+  --help                Show this message and exit.
 ```
 
 #### `pmk notes`
@@ -501,4 +599,148 @@ Commands:
 
 Options:
   --help      Show this message and exit.
+```
+
+#### `pmk card edit`
+```
+Usage: pmk card edit [OPTIONS] NODE_ID
+
+  Edit a node's card in the default text editor.
+
+  NODE_ID is the ID of the node whose card will be edited.
+
+Options:
+  --editor / --no-editor  Open in editor
+  --help                  Show this message and exit.
+```
+
+#### `pmk card show`
+```
+Usage: pmk card show [OPTIONS] NODE_ID
+
+  Display a node's card content.
+
+  NODE_ID is the ID of the node whose card will be displayed.
+
+Options:
+  --help  Show this message and exit.
+```
+
+#### `pmk card list`
+```
+Usage: pmk card list [OPTIONS]
+
+  List all nodes with cards.
+
+Options:
+  --format [text|json]  Output format (default: text)
+  --help                Show this message and exit.
+```
+
+#### `pmk card remove`
+```
+Usage: pmk card remove [OPTIONS] NODE_ID
+
+  Remove a node's card.
+
+  NODE_ID is the ID of the node whose card will be removed.
+
+Options:
+  --help  Show this message and exit.
+```
+
+#### `pmk card session`
+```
+Usage: pmk card session [OPTIONS] NODE_ID
+
+  Start a focused card writing session.
+
+  NODE_ID is the ID of the node whose card will be edited.
+
+Options:
+  -w, --words INTEGER      Word count goal for this session
+  -t, --time INTEGER       Session time limit in minutes
+  --timer [none|visible|alert]  Timer display mode (default: visible)
+  --stats [none|minimal|detailed]  Stats display mode (default: minimal)
+  --no-prompt              Skip goal/time prompts when not specified
+  --help                   Show this message and exit.
+```
+
+#### `pmk notes create`
+```
+Usage: pmk notes create [OPTIONS] NODE_ID
+
+  Create research notes for a node (if none exist).
+
+  NODE_ID is the ID of the node to create research notes for.
+
+Options:
+  -t, --text TEXT       Initial text for the research notes
+  --template TEXT       Template to use for research notes
+  --help                Show this message and exit.
+```
+
+#### `pmk notes edit`
+```
+Usage: pmk notes edit [OPTIONS] NODE_ID
+
+  Edit a node's research notes in the default text editor.
+
+  NODE_ID is the ID of the node whose research notes will be edited.
+
+Options:
+  --editor / --no-editor  Open in editor
+  --help                  Show this message and exit.
+```
+
+#### `pmk notes show`
+```
+Usage: pmk notes show [OPTIONS] NODE_ID
+
+  Display a node's research notes content.
+
+  NODE_ID is the ID of the node whose research notes will be displayed.
+
+Options:
+  --help  Show this message and exit.
+```
+
+#### `pmk notes list`
+```
+Usage: pmk notes list [OPTIONS]
+
+  List all nodes with research notes.
+
+Options:
+  --format [text|json]  Output format (default: text)
+  --help                Show this message and exit.
+```
+
+#### `pmk notes remove`
+```
+Usage: pmk notes remove [OPTIONS] NODE_ID
+
+  Remove a node's research notes.
+
+  NODE_ID is the ID of the node whose research notes will be removed.
+
+Options:
+  --help  Show this message and exit.
+```
+
+#### `pmk notes session`
+```
+Usage: pmk notes session [OPTIONS] NODE_ID
+
+  Start a focused research notes writing session.
+
+  NODE_ID is the ID of the node whose research notes will be edited.
+
+Options:
+  -w, --words INTEGER      Word count goal for this session
+  -t, --time INTEGER       Session time limit in minutes
+  --timer [none|visible|alert]  Timer display mode (default: visible)
+  --stats [none|minimal|detailed]  Stats display mode (default: minimal)
+  --no-prompt              Skip goal/time prompts when not specified
+  --help                   Show this message and exit.
 ```
