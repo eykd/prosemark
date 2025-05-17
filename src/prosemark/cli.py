@@ -226,6 +226,7 @@ def session(
     time: int | None,
     timer: str,
     stats: str,
+    *,
     no_prompt: bool,
 ) -> None:
     """Start a focused writing session on a specific node.
@@ -274,7 +275,10 @@ def session(
             return
 
     # Start the session
-    assert node_id is not None, 'Node ID should be set at this point'
+    if node_id is None:
+        click.echo('Error: Node ID not selected', err=True)
+        return
+
     success, message = session_service.start_session(
         node_id=node_id,
         word_goal=words,

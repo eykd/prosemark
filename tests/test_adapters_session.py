@@ -1,6 +1,6 @@
 """Tests for the session adapter."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -16,7 +16,7 @@ class TestSessionStats:
 
     def test_elapsed_seconds(self) -> None:
         """Test calculating elapsed seconds."""
-        start_time = datetime.now() - timedelta(seconds=30)
+        start_time = datetime.now(UTC) - timedelta(seconds=30)
         stats = SessionStats(
             start_time=start_time,
             end_time=None,
@@ -207,7 +207,7 @@ class TestSessionService:
         # Mock the project to return None for get_node_by_id
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = None
-        repository.load_project = MagicMock()  # type: ignore
+        repository.load_project = MagicMock()  # type: ignore[assignment]
         repository.load_project.return_value = mock_project
 
         success, message = service.start_session('nonexistent')

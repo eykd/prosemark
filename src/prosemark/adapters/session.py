@@ -7,7 +7,7 @@ allowing users to track statistics and focus on forward progress.
 from __future__ import annotations
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 from prompt_toolkit import Application
@@ -29,12 +29,11 @@ from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.dimension import D
 from prompt_toolkit.styles import Style
 
-from prosemark.domain.nodes import Node
-
 if TYPE_CHECKING:  # pragma: no cover
-
     from prompt_toolkit.formatted_text import AnyFormattedText
+    from prompt_toolkit.key_binding.key_bindings import KeyPressEvent
 
+    from prosemark.domain.nodes import Node
     from prosemark.repositories.project import ProjectRepository
 
 
@@ -61,7 +60,7 @@ class SessionStats(NamedTuple):
     @property
     def elapsed_seconds(self) -> float:
         """Calculate the elapsed time in seconds."""
-        end = self.end_time or datetime.now()
+        end = self.end_time or datetime.now(UTC)
         return (end - self.start_time).total_seconds()
 
     @property
@@ -131,6 +130,7 @@ class SessionService:
         time_limit: int | None = None,
         timer_mode: str = 'visible',
         stats_mode: str = 'minimal',
+        *,
         no_prompt: bool = False,
     ) -> tuple[bool, list[str]]:
         """Start a writing session for the specified node.
@@ -170,9 +170,12 @@ class SessionService:
 
         try:
             session.run()
-            return True, ['Session completed successfully']
-        except Exception as e:
+        except (KeyboardInterrupt, EOFError):
+            return True, ['Session ended by user']
+        except RuntimeError as e:
             return False, [f'Session error: {e!s}']
+        else:
+            return True, ['Session completed successfully']
 
 
 class WritingSession:
@@ -200,6 +203,7 @@ class WritingSession:
         time_limit: int | None = None,
         timer_mode: str = 'visible',
         stats_mode: str = 'minimal',
+        *,
         no_prompt: bool = False,
     ) -> None:
         """Initialize the writing session.
@@ -223,7 +227,7 @@ class WritingSession:
         self.no_prompt = no_prompt
 
         # Session state
-        self.start_time = datetime.now()
+        self.start_time = datetime.now(UTC)
         self.end_time: datetime | None = None
         self.initial_content = node.text
         self.current_content = node.text
@@ -264,7 +268,8 @@ class WritingSession:
                 if word_goal_input.strip():
                     self.word_goal = int(word_goal_input)
             except ValueError:
-                print('Invalid input. No word goal set.')
+                # Skip setting word goal on invalid input
+                pass
 
         if self.time_limit is None:
             try:
@@ -272,7 +277,8 @@ class WritingSession:
                 if time_limit_input.strip():
                     self.time_limit = int(time_limit_input)
             except ValueError:
-                print('Invalid input. No time limit set.')
+                # Skip setting time limit on invalid input
+                pass
 
     def _create_application(self) -> Application[Any]:
         """Create the prompt-toolkit application for the session."""
@@ -281,12 +287,12 @@ class WritingSession:
 
         @kb.add('c-c')
         @kb.add('c-d')
-        def _(event: Any) -> None:
+        def exit_app(event: KeyPressEvent) -> None:
             """Exit the application on Ctrl-C or Ctrl-D."""
             event.app.exit()
 
         @kb.add('enter')
-        def _(event: Any) -> None:
+        def commit_line(_: KeyPressEvent) -> None:
             """Process the current line when Enter is pressed."""
             text = self.input_buffer.text
             self.committed_lines.append(text)
@@ -295,7 +301,7 @@ class WritingSession:
             self.input_buffer.reset()
 
         @kb.add('f1')
-        def _(event: Any) -> None:
+        def toggle_help(_: KeyPressEvent) -> None:
             """Toggle help screen."""
             self.show_help = not self.show_help
 
@@ -389,10 +395,8 @@ class WritingSession:
 
     def _get_committed_text(self) -> AnyFormattedText:
         """Get the formatted text for the committed content area."""
-        result: list[tuple[str, str]] = []
-        for line in self.committed_lines:
-            result.append(('', line + '\n'))
-        return result  # type: ignore
+        result: list[tuple[str, str]] = [('', line + '\n') for line in self.committed_lines]
+        return result  # type: ignore[return-value]
 
     def _get_stats_text(self) -> AnyFormattedText:
         """Get the formatted text for the stats bar."""
@@ -418,7 +422,7 @@ class WritingSession:
             if stats.time_limit_minutes:
                 parts.append(('class:stats', f' Remaining: {self._format_time(stats.time_remaining_minutes * 60 if stats.time_remaining_minutes else 0)} '))
 
-            return parts  # type: ignore
+            return parts  # type: ignore[return-value]
 
         return []
 
@@ -483,7 +487,7 @@ class WritingSession:
 
     def _save_session(self) -> None:
         """Save the final session state and update metadata."""
-        self.end_time = datetime.now()
+        self.end_time = datetime.now(UTC)
 
         # Save the final content
         self._save_current_content()
