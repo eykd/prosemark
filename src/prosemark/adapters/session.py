@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 from prompt_toolkit import Application
 from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.filters import Filter
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import (
     ConditionalContainer,
@@ -32,9 +33,7 @@ from prosemark.domain.nodes import Node
 
 if TYPE_CHECKING:  # pragma: no cover
 
-    from prompt_toolkit.application import Application as PTApplication
-    from prompt_toolkit.formatted_text import FormattedText
-    from prompt_toolkit.key_binding.key_bindings import KeyPressEvent
+    from prompt_toolkit.formatted_text import AnyFormattedText
 
     from prosemark.repositories.project import ProjectRepository
 
@@ -233,7 +232,7 @@ class WritingSession:
 
         # UI components
         self.input_buffer = Buffer()
-        self.app: PTApplication | None = None
+        self.app: Application[Any] | None = None
         self.show_help = False
 
         # Setup refresh timer
@@ -275,19 +274,19 @@ class WritingSession:
             except ValueError:
                 print('Invalid input. No time limit set.')
 
-    def _create_application(self) -> PTApplication:
+    def _create_application(self) -> Application[Any]:
         """Create the prompt-toolkit application for the session."""
         # Create key bindings
         kb = KeyBindings()
 
         @kb.add('c-c')
         @kb.add('c-d')
-        def _(event: KeyPressEvent) -> None:
+        def _(event: Any) -> None:
             """Exit the application on Ctrl-C or Ctrl-D."""
             event.app.exit()
 
         @kb.add('enter')
-        def _(event: KeyPressEvent) -> None:
+        def _(event: Any) -> None:
             """Process the current line when Enter is pressed."""
             text = self.input_buffer.text
             self.committed_lines.append(text)
@@ -296,7 +295,7 @@ class WritingSession:
             self.input_buffer.reset()
 
         @kb.add('f1')
-        def _(event: KeyPressEvent) -> None:
+        def _(event: Any) -> None:
             """Toggle help screen."""
             self.show_help = not self.show_help
 
@@ -326,7 +325,7 @@ class WritingSession:
                             content=FormattedTextControl(self._get_stats_text),
                             style='class:stats',
                         ),
-                        filter=lambda: self.stats_mode != 'none',
+                        filter=Filter(lambda: self.stats_mode != 'none'),
                     ),
                     # Input area
                     Window(
@@ -351,10 +350,10 @@ class WritingSession:
                                 height=10,
                                 style='class:help',
                             ),
-                            filter=lambda: self.show_help,
+                            filter=Filter(lambda: self.show_help),
                         ),
-                        xcenter=True,
-                        ycenter=True,
+                        top=5,
+                        left=10,
                     ),
                 ],
             )
@@ -370,7 +369,7 @@ class WritingSession:
         })
 
         # Create and return the application
-        app = Application(
+        app: Application[Any] = Application(
             layout=layout,
             key_bindings=kb,
             style=style,
@@ -380,22 +379,22 @@ class WritingSession:
         )
 
         # Add a pre-run callback to refresh stats
-        app.pre_run_callables.append(self._refresh_stats)
+        app.pre_run_callables.append(lambda: self._refresh_stats(app))
 
         return app
 
-    def _get_title_text(self) -> FormattedText:
+    def _get_title_text(self) -> AnyFormattedText:
         """Get the formatted text for the title bar."""
         return [('class:title', f' Writing Session: {self.node.title} ')]
 
-    def _get_committed_text(self) -> FormattedText:
+    def _get_committed_text(self) -> AnyFormattedText:
         """Get the formatted text for the committed content area."""
-        result = []
+        result: list[tuple[str, str]] = []
         for line in self.committed_lines:
             result.append(('', line + '\n'))
         return result
 
-    def _get_stats_text(self) -> FormattedText:
+    def _get_stats_text(self) -> AnyFormattedText:
         """Get the formatted text for the stats bar."""
         stats = self._get_current_stats()
 
@@ -406,7 +405,7 @@ class WritingSession:
                 ('class:stats', f' Time: {self._format_time(stats.elapsed_seconds)} '),
             ]
         if self.stats_mode == 'detailed':
-            parts = [
+            parts: list[tuple[str, str]] = [
                 ('class:stats', f' Words: {stats.final_word_count} '),
                 ('class:stats', f' Written: +{stats.words_written} '),
                 ('class:stats', f' WPM: {stats.words_per_minute:.1f} '),
@@ -423,11 +422,11 @@ class WritingSession:
 
         return []
 
-    def _get_status_text(self) -> FormattedText:
+    def _get_status_text(self) -> AnyFormattedText:
         """Get the formatted text for the status bar."""
         return [('class:status', ' F1: Help | Enter: Commit line | Ctrl+C: Exit ')]
 
-    def _get_help_text(self) -> FormattedText:
+    def _get_help_text(self) -> AnyFormattedText:
         """Get the formatted text for the help screen."""
         return [
             ('class:help', ' Writing Session Help\n\n'),
@@ -438,7 +437,7 @@ class WritingSession:
             ('class:help', ' committed lines read-only. Edit your work later!\n'),
         ]
 
-    def _refresh_stats(self, app: PTApplication) -> None:
+    def _refresh_stats(self, app: Application[Any]) -> None:
         """Refresh the statistics display."""
         current_time = time.time()
         if current_time - self.last_update_time >= self.update_interval:
@@ -505,7 +504,7 @@ class WritingSession:
         if 'session_history' not in self.node.metadata:
             self.node.metadata['session_history'] = []
 
-        sessions = cast('list', self.node.metadata['session_history'])
+        sessions = cast('list[dict[str, Any]]', self.node.metadata['session_history'])
         sessions.append(session_data)
 
         # Save the updated node with metadata

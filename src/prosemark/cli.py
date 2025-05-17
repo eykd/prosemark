@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import click
 
 from prosemark.adapters.cli import CLIResult, CLIService
+from prosemark.adapters.session import SessionService
 from prosemark.repositories.project import ProjectRepository
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -198,6 +199,92 @@ def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
     cli_service = ctx.obj['cli_service']
 
     _echo_result(ctx, cli_service.get_project_structure(node_id))
+
+
+@main.command()
+@click.argument('node_id', required=False)
+@click.option('-w', '--words', type=int, help='Word count goal for this session')
+@click.option('-t', '--time', type=int, help='Session time limit in minutes')
+@click.option(
+    '--timer',
+    type=click.Choice(['none', 'visible', 'alert']),
+    default='visible',
+    help='Timer display mode',
+)
+@click.option(
+    '--stats',
+    type=click.Choice(['none', 'minimal', 'detailed']),
+    default='minimal',
+    help='Stats display mode',
+)
+@click.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
+@click.pass_context
+def session(
+    ctx: ClickContext,
+    node_id: NodeID | None,
+    words: int | None,
+    time: int | None,
+    timer: str,
+    stats: str,
+    no_prompt: bool,
+) -> None:
+    """Start a focused writing session on a specific node.
+
+    If NODE_ID is provided, starts editing that node. Otherwise prompts for
+    node selection. Provides real-time statistics and focused line-by-line editing.
+
+    Once a line is committed (by pressing Enter), it cannot be edited within
+    the session, encouraging forward progress rather than revision.
+    """
+    repository = ctx.obj['repository']
+    session_service = SessionService(repository)
+
+    # If no node_id is provided, prompt for selection
+    if not node_id:
+        # Get the project structure
+        cli_service = ctx.obj['cli_service']
+        structure_result = cli_service.get_project_structure()
+
+        if not structure_result.success:  # pragma: no cover
+            click.echo(structure_result.message, err=True)
+            return
+
+        # Display the structure
+        click.echo('Select a node to edit:')
+        for i, line in enumerate(structure_result.message):
+            click.echo(f'{i}: {line}', nl=False)
+
+        # Get user selection
+        try:
+            selection = click.prompt('Enter node number', type=int)
+            lines = list(structure_result.message)
+            if 0 <= selection < len(lines):
+                # Extract node_id from the selected line
+                parts = lines[selection].split(' ', 1)
+                if parts:
+                    node_id = parts[0].strip()
+                else:  # pragma: no cover
+                    click.echo('Invalid selection', err=True)
+                    return
+            else:  # pragma: no cover
+                click.echo('Selection out of range', err=True)
+                return
+        except click.Abort:  # pragma: no cover
+            click.echo('\nAborted', err=True)
+            return
+
+    # Start the session
+    success, message = session_service.start_session(
+        node_id=node_id,
+        word_goal=words,
+        time_limit=time,
+        timer_mode=timer,
+        stats_mode=stats,
+        no_prompt=no_prompt,
+    )
+
+    if not success:  # pragma: no cover
+        click.echo('\n'.join(message), err=True)
 
 
 def _echo_result(ctx: ClickContext, result: CLIResult) -> None:
