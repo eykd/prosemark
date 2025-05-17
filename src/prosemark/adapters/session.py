@@ -31,7 +31,7 @@ from prompt_toolkit.styles import Style
 
 if TYPE_CHECKING:  # pragma: no cover
     from prompt_toolkit.formatted_text import AnyFormattedText
-    from prompt_toolkit.key_binding.key_bindings import KeyPressEvent
+    from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 
     from prosemark.domain.nodes import Node
     from prosemark.repositories.project import ProjectRepository

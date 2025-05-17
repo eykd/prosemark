@@ -207,7 +207,7 @@ class TestSessionService:
         # Mock the project to return None for get_node_by_id
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = None
-        repository.load_project = MagicMock()  # type: ignore[assignment]
+        repository.load_project = MagicMock()  # type: ignore[method-assign]
         repository.load_project.return_value = mock_project
 
         success, message = service.start_session('nonexistent')
@@ -225,7 +225,7 @@ class TestSessionService:
         mock_node = MagicMock(spec=Node)
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = mock_node
-        repository.load_project = MagicMock()  # type: ignore
+        repository.load_project = MagicMock()  # type: ignore[method-assign]
         repository.load_project.return_value = mock_project
 
         # Mock the session instance
@@ -263,7 +263,7 @@ class TestSessionService:
         mock_node = MagicMock(spec=Node)
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = mock_node
-        repository.load_project = MagicMock()  # type: ignore
+        repository.load_project = MagicMock()  # type: ignore[method-assign]
         repository.load_project.return_value = mock_project
 
         # Mock the session instance to raise an exception
