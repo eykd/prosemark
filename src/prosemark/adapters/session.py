@@ -375,6 +375,7 @@ class WritingSession:  # pragma: no cover
             'status': 'bg:#440000 #ffffff',
             'help': 'bg:#222222 #ffffff',
             'input': 'bg:#000000 #ffffff',
+            'cursor': 'bg:#000000 #00ff00',  # Add a green cursor indicator
         })
 
         # Create and return the application
@@ -397,8 +398,10 @@ class WritingSession:  # pragma: no cover
         return [('class:title', f' Writing Session: {self.node.title} ')]
 
     def _get_committed_text(self) -> AnyFormattedText:
-        """Get the formatted text for the committed content area."""
+        """Get the formatted text for the committed content area, with a cursor indicator for the next line."""
         result: list[tuple[str, str]] = [('', line + '\n') for line in self.committed_lines]
+        # Add a cursor indicator as the next line
+        result.append(('class:cursor', '▏\n'))
         return result  # type: ignore[return-value]
 
     def _get_stats_text(self) -> AnyFormattedText:
