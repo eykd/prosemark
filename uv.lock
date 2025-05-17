@@ -497,6 +497,7 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "polyfactory" },
+    { name = "prompt-toolkit" },
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
@@ -528,6 +529,7 @@ test = [
 requires-dist = [
     { name = "click", specifier = ">=8.1.8" },
     { name = "polyfactory", specifier = ">=2.21.0" },
+    { name = "prompt-toolkit", specifier = ">=3.0.51" },
     { name = "pydantic", specifier = ">=2.11.4" },
     { name = "pyyaml", specifier = ">=6.0.2" },
 ]
