@@ -21,6 +21,7 @@ from prompt_toolkit.layout import (
     FormattedTextControl,
     HSplit,
     Layout,
+    VSplit,
     Window,
     WindowAlign,
 )
@@ -313,12 +314,40 @@ class WritingSession:  # pragma: no cover
             """Toggle help screen."""
             self.show_help = not self.show_help
 
-        # Create the layout
+        # Create the committed text window (left pane)
         self.committed_window = Window(
             content=BufferControl(buffer=self.committed_buffer, focusable=False),
             wrap_lines=True,
             height=D(weight=1),
+            style='class:committed',
         )
+
+        # Create the card and notes windows (right pane)
+        card_window = Window(
+            content=FormattedTextControl(self._get_card_text),
+            wrap_lines=True,
+            height=3,
+            style='class:card',
+        )
+        notes_window = Window(
+            content=FormattedTextControl(self._get_notes_text),
+            wrap_lines=True,
+            style='class:notes',
+        )
+        right_pane = HSplit([
+            card_window,
+            notes_window,
+        ])
+
+        # Main split: committed (left) | card+notes (right)
+        main_split = VSplit(
+            [
+                self.committed_window,
+                right_pane,
+            ],
+            width=D(weight=1),
+        )
+
         layout = Layout(
             FloatContainer(
                 content=HSplit([
@@ -329,8 +358,8 @@ class WritingSession:  # pragma: no cover
                         align=WindowAlign.CENTER,
                         style='class:title',
                     ),
-                    # Committed content area
-                    self.committed_window,
+                    # Main split area
+                    main_split,
                     # Stats bar
                     ConditionalContainer(
                         Window(
@@ -379,6 +408,9 @@ class WritingSession:  # pragma: no cover
             'status': 'bg:#440000 #ffffff',
             'help': 'bg:#222222 #ffffff',
             'input': 'bg:#000000 #ffffff',
+            'committed': 'bg:#000000 #ffffff',
+            'card': 'bg:#222244 #ffffaa',
+            'notes': 'bg:#222222 #aaaaff',
             'cursor': 'bg:#000000 #00ff00',  # Add a green cursor indicator
         })
 
@@ -534,3 +566,13 @@ class WritingSession:  # pragma: no cover
     def _get_committed_text(self) -> str:
         """Get the committed text."""
         return '\n'.join(self.committed_lines) + '\n▏'
+
+    def _get_card_text(self) -> AnyFormattedText:
+        """Get the formatted text for the card display."""
+        card = self.node.card if hasattr(self.node, 'card') else ''
+        return [('class:card', f'Card: {card}')]
+
+    def _get_notes_text(self) -> AnyFormattedText:
+        """Get the formatted text for the notes display."""
+        notes = self.node.notes if hasattr(self.node, 'notes') else ''
+        return [('class:notes', f'Notes: {notes}')]
