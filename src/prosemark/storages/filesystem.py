@@ -63,6 +63,12 @@ class FilesystemMdNodeStorage(NodeStoragePort):
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(content, encoding='utf-8')
 
+    def delete(self, node_id: str) -> None:
+        """Delete the file for a node by ID if it exists."""
+        file_path = self._get_file_path(node_id)
+        if file_path.exists():
+            file_path.unlink()
+
     def _get_file_path(self, node_id: str) -> Path:
         """Get the file path for a node ID.
 

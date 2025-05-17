@@ -41,3 +41,12 @@ class NodeStoragePort(ABC):
             The content of the _binder node as a string, or empty string if not found.
 
         """
+
+    @abstractmethod
+    def delete(self, node_id: str) -> None:
+        """Delete the content of a node by ID (remove the file or entry).
+
+        Args:
+            node_id: The unique identifier for the node.
+
+        """

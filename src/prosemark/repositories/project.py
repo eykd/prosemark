@@ -67,6 +67,20 @@ class ProjectRepository:
         # Build the rest of the node structure
         self.build_node_structure(project, outline_root)
 
+        # Load card and notes content for all nodes (except root)
+        def load_cards_and_notes(node: Node) -> None:
+            if node.id != '_binder':
+                card_content = self.storage.read(f'{node.id} card')
+                if card_content:
+                    node.card = card_content
+                notes_content = self.storage.read(f'{node.id} notes')
+                if notes_content:
+                    node.notes = notes_content
+            for child in node.children:
+                load_cards_and_notes(child)
+
+        load_cards_and_notes(project.root_node)
+
         return project
 
     def save_project(self, project: Project) -> None:
@@ -156,7 +170,20 @@ class ProjectRepository:
             if child.type == OutlineNodeType.LIST:
                 # Process the list items
                 self.process_list_items(project.root_node, child)
-            # Ignore TEXT nodes in the binder
+
+        # After building the structure, load card/notes for all non-root nodes
+        def load_cards_and_notes(node: Node) -> None:
+            if node.id != '_binder':
+                card_content = self.storage.read(f'{node.id} card')
+                if card_content:
+                    node.card = card_content
+                notes_content = self.storage.read(f'{node.id} notes')
+                if notes_content:
+                    node.notes = notes_content
+            for child in node.children:
+                load_cards_and_notes(child)
+
+        load_cards_and_notes(project.root_node)
 
     def process_list_items(self, parent_node: Node, list_node: OutlineNode) -> None:
         """Process list items from the outline and create corresponding nodes.

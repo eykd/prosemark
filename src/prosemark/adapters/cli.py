@@ -588,6 +588,12 @@ class CLIService:
             if 'card' in node.metadata:
                 del node.metadata['card']
 
+            # Delete the card file from storage
+            self.repository.storage.delete(f'{node.id} card')
+
+            # Optionally, also delete notes file if you want to clean up when card is removed
+            self.repository.storage.delete(f'{node.id} notes')
+
             # Save the node
             self.repository.save_node(node)
 

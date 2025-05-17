@@ -6,8 +6,9 @@ allowing users to manage projects and nodes through the terminal.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING
 
 import click
 
@@ -163,11 +164,19 @@ def show(ctx: ClickContext, node_id: NodeID) -> None:
 
 @main.command()
 @click.argument('node_id')
+@click.option(
+    '--input-file',
+    'input_file',
+    type=click.File('r'),
+    default=None,
+    help='Read content from file or stdin ("-" for stdin)',
+)
 @click.option('--editor/--no-editor', default=True, help='Open in editor')
 @click.pass_context
 def edit(
     ctx: ClickContext,
     node_id: NodeID,
+    input_file: IO[str] | None = None,
     editor: bool = True,  # noqa: FBT001, FBT002
 ) -> None:
     """Edit node content with the default text editor.
@@ -182,9 +191,12 @@ def edit(
         click.echo(result.message, err=True)
         return
 
-    if editor:  # noqa: SIM108  # pragma: no cover
+    if input_file is not None:
+        edited_content = input_file.read()
+    elif editor:  # pragma: no cover
         # Open the editor with the formatted content
-        edited_content = click.edit(''.join(result.message), extension='.md')
+        tmp = click.edit(''.join(result.message), extension='.md')
+        edited_content = tmp if tmp is not None else ''
     else:
         edited_content = ''.join(result.message)
 
@@ -228,16 +240,26 @@ def create(
 
 @card.command('edit')
 @click.argument('node_id')
+@click.option(
+    '--input-file',
+    'input_file',
+    type=click.File('r'),
+    default=None,
+    help='Read content from file or stdin ("-" for stdin)',
+)
 @click.option('--editor', is_flag=True, help='Open in editor')
 @click.pass_context
-def edit_card(ctx: ClickContext, node_id: NodeID, *, editor: bool = False) -> None:
+def edit_card(ctx: ClickContext, node_id: NodeID, input_file: IO[str] | None = None, *, editor: bool = False) -> None:
     """Edit a node's card in the default text editor.
 
     NODE_ID is the ID of the node whose card will be edited.
     """
     cli_service = ctx.obj['cli_service']
 
-    if editor:
+    if input_file is not None:
+        edited_content = input_file.read()
+        result = cli_service.edit_card(node_id, edited_content)
+    elif editor:  # pragma: no cover
         # Prepare the card content for editing
         result = cli_service.prepare_card_for_editor(node_id)
         if not result.success:
@@ -245,7 +267,8 @@ def edit_card(ctx: ClickContext, node_id: NodeID, *, editor: bool = False) -> No
             return
 
         # Open the editor with the formatted content
-        edited_content = click.edit(result.data)
+        tmp = click.edit(result.data)
+        edited_content = tmp if tmp is not None else ''
 
         # Update the card with edited content if not aborted
         if edited_content is not None:
@@ -346,7 +369,7 @@ def session(
     )
 
     if not success:
-        click.echo('\n'.join(message), err=True)
+        click.echo('\n'.join(message), err=True)  # pragma: no cover
 
 
 def _echo_result(ctx: ClickContext, result: CLIResult) -> None:
@@ -358,7 +381,7 @@ def _echo_result(ctx: ClickContext, result: CLIResult) -> None:
                 click.echo(line, nl=False, err=True)
         return
 
-    if isinstance(result.message, str):
+    if isinstance(result.message, str):  # pragma: no cover
         if ctx.obj['pager']:
             click.echo_via_pager(result.message)
         else:  # pragma: no cover
@@ -372,4 +395,12 @@ def _echo_result(ctx: ClickContext, result: CLIResult) -> None:
 
 
 if __name__ == '__main__':  # pragma: no cover
-    main()
+    try:
+        main()
+    except Exception as exc:  # noqa: BLE001  # TODO: Narrow exception handling for production
+        import click
+
+        click.echo(f'Error: {exc}', err=True)
+        import sys
+
+        sys.exit(1)

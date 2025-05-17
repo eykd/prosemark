@@ -54,3 +54,8 @@ class InMemoryNodeStorage(NodeStoragePort):
 
         """
         return self.read('_binder')
+
+    def delete(self, node_id: str) -> None:
+        """Delete the entry for a node by ID if it exists."""
+        if node_id in self._nodes:
+            del self._nodes[node_id]
