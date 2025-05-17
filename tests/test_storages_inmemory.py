@@ -60,3 +60,17 @@ class TestInMemoryNodeStorage:
 
         result = storage.get_binder()
         assert result == binder_content
+
+    def test_delete_removes_node(self, storage: InMemoryNodeStorage) -> None:
+        """Test that delete removes a node if it exists, and does nothing if it does not exist."""
+        node_id = 'node_to_delete'
+        content = 'Some content'
+        # Write and confirm exists
+        storage.write(node_id, content)
+        assert storage.read(node_id) == content
+        # Delete and confirm removed
+        storage.delete(node_id)
+        assert storage.read(node_id) == ''
+        # Delete again (should not raise)
+        storage.delete(node_id)
+        assert storage.read(node_id) == ''
