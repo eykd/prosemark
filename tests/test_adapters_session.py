@@ -31,7 +31,7 @@ class TestSessionStats:
 
     def test_elapsed_minutes(self) -> None:
         """Test calculating elapsed minutes."""
-        start_time = datetime.now() - timedelta(minutes=2)
+        start_time = datetime.now(UTC) - timedelta(minutes=2)
         stats = SessionStats(
             start_time=start_time,
             end_time=None,
@@ -47,7 +47,7 @@ class TestSessionStats:
     def test_words_written(self) -> None:
         """Test calculating words written."""
         stats = SessionStats(
-            start_time=datetime.now(),
+            start_time=datetime.now(UTC),
             end_time=None,
             initial_word_count=100,
             final_word_count=150,
@@ -59,7 +59,7 @@ class TestSessionStats:
 
     def test_words_per_minute(self) -> None:
         """Test calculating words per minute."""
-        start_time = datetime.now() - timedelta(minutes=2)
+        start_time = datetime.now(UTC) - timedelta(minutes=2)
         stats = SessionStats(
             start_time=start_time,
             end_time=None,
@@ -74,21 +74,21 @@ class TestSessionStats:
 
     def test_words_per_minute_zero_elapsed(self) -> None:
         """Test words per minute with zero elapsed time."""
+        now = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         stats = SessionStats(
-            start_time=datetime.now(),
-            end_time=datetime.now(),
+            start_time=now,
+            end_time=now,
             initial_word_count=100,
             final_word_count=150,
             word_goal=200,
             time_limit_minutes=10,
         )
-
         assert stats.words_per_minute == 0.0
 
     def test_goal_progress(self) -> None:
         """Test calculating goal progress."""
         stats = SessionStats(
-            start_time=datetime.now(),
+            start_time=datetime.now(UTC),
             end_time=None,
             initial_word_count=100,
             final_word_count=150,
@@ -102,7 +102,7 @@ class TestSessionStats:
     def test_goal_progress_no_goal(self) -> None:
         """Test goal progress with no goal set."""
         stats = SessionStats(
-            start_time=datetime.now(),
+            start_time=datetime.now(UTC),
             end_time=None,
             initial_word_count=100,
             final_word_count=150,
@@ -114,7 +114,7 @@ class TestSessionStats:
 
     def test_time_progress(self) -> None:
         """Test calculating time progress."""
-        start_time = datetime.now() - timedelta(minutes=5)
+        start_time = datetime.now(UTC) - timedelta(minutes=5)
         stats = SessionStats(
             start_time=start_time,
             end_time=None,
@@ -130,7 +130,7 @@ class TestSessionStats:
     def test_time_progress_no_limit(self) -> None:
         """Test time progress with no time limit."""
         stats = SessionStats(
-            start_time=datetime.now(),
+            start_time=datetime.now(UTC),
             end_time=None,
             initial_word_count=100,
             final_word_count=150,
@@ -142,7 +142,7 @@ class TestSessionStats:
 
     def test_time_remaining_minutes(self) -> None:
         """Test calculating remaining time."""
-        start_time = datetime.now() - timedelta(minutes=3)
+        start_time = datetime.now(UTC) - timedelta(minutes=3)
         stats = SessionStats(
             start_time=start_time,
             end_time=None,
@@ -159,7 +159,7 @@ class TestSessionStats:
     def test_time_remaining_minutes_no_limit(self) -> None:
         """Test remaining time with no time limit."""
         stats = SessionStats(
-            start_time=datetime.now(),
+            start_time=datetime.now(UTC),
             end_time=None,
             initial_word_count=100,
             final_word_count=150,
@@ -171,7 +171,7 @@ class TestSessionStats:
 
     def test_time_remaining_minutes_exceeded(self) -> None:
         """Test remaining time when time limit is exceeded."""
-        start_time = datetime.now() - timedelta(minutes=15)
+        start_time = datetime.now(UTC) - timedelta(minutes=15)
         stats = SessionStats(
             start_time=start_time,
             end_time=None,
@@ -223,6 +223,7 @@ class TestSessionService:
         """Test starting a session successfully."""
         # Mock the project and node
         mock_node = MagicMock(spec=Node)
+        mock_node.id = 'node123'  # Ensure mock_node has an 'id' attribute
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = mock_node
         repository.load_project = MagicMock()  # type: ignore[method-assign]
@@ -261,6 +262,7 @@ class TestSessionService:
         """Test handling exceptions during session."""
         # Mock the project and node
         mock_node = MagicMock(spec=Node)
+        mock_node.id = 'node123'  # Ensure mock_node has an 'id' attribute
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = mock_node
         repository.load_project = MagicMock()  # type: ignore[method-assign]
@@ -268,7 +270,7 @@ class TestSessionService:
 
         # Mock the session instance to raise an exception
         mock_session_instance = MagicMock()
-        mock_session_instance.run.side_effect = Exception('Test error')
+        mock_session_instance.run.side_effect = RuntimeError('Test error')
         mock_session.return_value = mock_session_instance
 
         success, message = service.start_session('node123')

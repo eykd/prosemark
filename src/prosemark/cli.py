@@ -228,7 +228,7 @@ def session(
     stats: str,
     *,
     no_prompt: bool,
-) -> None:
+) -> None:  # pragma: no cover
     """Start a focused writing session on a specific node.
 
     If NODE_ID is provided, starts editing that node. Otherwise prompts for

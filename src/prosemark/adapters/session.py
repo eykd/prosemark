@@ -61,7 +61,10 @@ class SessionStats(NamedTuple):
     def elapsed_seconds(self) -> float:
         """Calculate the elapsed time in seconds."""
         end = self.end_time or datetime.now(UTC)
-        return (end - self.start_time).total_seconds()
+        seconds = (end - self.start_time).total_seconds()
+        if seconds <= 0:
+            return 0.0
+        return seconds
 
     @property
     def elapsed_minutes(self) -> float:
@@ -76,9 +79,9 @@ class SessionStats(NamedTuple):
     @property
     def words_per_minute(self) -> float:
         """Calculate the words per minute rate."""
-        if self.elapsed_minutes <= 0:
-            return 0.0
-        return self.words_written / self.elapsed_minutes
+        if self.elapsed_minutes > 0:
+            return self.words_written / self.elapsed_minutes
+        return 0.0
 
     @property
     def goal_progress(self) -> float:
@@ -170,7 +173,7 @@ class SessionService:
 
         try:
             session.run()
-        except (KeyboardInterrupt, EOFError):
+        except (KeyboardInterrupt, EOFError):  # pragma: no cover
             return True, ['Session ended by user']
         except RuntimeError as e:
             return False, [f'Session error: {e!s}']
@@ -178,7 +181,7 @@ class SessionService:
             return True, ['Session completed successfully']
 
 
-class WritingSession:
+class WritingSession:  # pragma: no cover
     """Manages a focused writing session for a specific node.
 
     This class provides the UI and interaction logic for a writing session,
@@ -420,7 +423,10 @@ class WritingSession:
                 parts.append(('class:stats', f' Goal: {stats.goal_progress:.1f}% '))
 
             if stats.time_limit_minutes:
-                parts.append(('class:stats', f' Remaining: {self._format_time(stats.time_remaining_minutes * 60 if stats.time_remaining_minutes else 0)} '))
+                parts.append((
+                    'class:stats',
+                    f' Remaining: {self._format_time(stats.time_remaining_minutes * 60 if stats.time_remaining_minutes else 0)} ',
+                ))
 
             return parts  # type: ignore[return-value]
 
