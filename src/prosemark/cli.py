@@ -214,10 +214,11 @@ def card(ctx: ClickContext) -> None:
 @click.option('--color', help='Color code for the card')
 @click.option('--status', help='Status label for the card')
 @click.pass_context
-def create(ctx: ClickContext, node_id: NodeID, text: str | None = None,
-           color: str | None = None, status: str | None = None) -> None:
+def create(
+    ctx: ClickContext, node_id: NodeID, text: str | None = None, color: str | None = None, status: str | None = None
+) -> None:
     """Create a card for a node (if none exists).
-    
+
     NODE_ID is the ID of the node to create a card for.
     """
     cli_service = ctx.obj['cli_service']
@@ -225,13 +226,13 @@ def create(ctx: ClickContext, node_id: NodeID, text: str | None = None,
     _echo_result(ctx, result)
 
 
-@card.command()
+@card.command('edit')
 @click.argument('node_id')
-@click.option('--editor/--no-editor', default=True, help='Open in editor')
+@click.option('--editor', is_flag=True, help='Open in editor')
 @click.pass_context
-def edit(ctx: ClickContext, node_id: NodeID, editor: bool = True) -> None:
+def edit_card(ctx: ClickContext, node_id: NodeID, *, editor: bool = False) -> None:
     """Edit a node's card in the default text editor.
-    
+
     NODE_ID is the ID of the node whose card will be edited.
     """
     cli_service = ctx.obj['cli_service']
@@ -258,12 +259,12 @@ def edit(ctx: ClickContext, node_id: NodeID, editor: bool = True) -> None:
     _echo_result(ctx, result)
 
 
-@card.command()
+@card.command('show')
 @click.argument('node_id')
 @click.pass_context
-def show(ctx: ClickContext, node_id: NodeID) -> None:
+def show_card(ctx: ClickContext, node_id: NodeID) -> None:
     """Display a node's card content.
-    
+
     NODE_ID is the ID of the node whose card will be displayed.
     """
     cli_service = ctx.obj['cli_service']
@@ -271,23 +272,12 @@ def show(ctx: ClickContext, node_id: NodeID) -> None:
     _echo_result(ctx, result)
 
 
-@card.command()
-@click.option('--format', type=click.Choice(['text', 'json']), default='text',
-              help='Output format (default: text)')
-@click.pass_context
-def list(ctx: ClickContext, format: str = 'text') -> None:
-    """List all nodes with cards."""
-    cli_service = ctx.obj['cli_service']
-    result = cli_service.list_cards(format)
-    _echo_result(ctx, result)
-
-
-@card.command()
+@card.command('remove')
 @click.argument('node_id')
 @click.pass_context
-def remove(ctx: ClickContext, node_id: NodeID) -> None:
+def remove_card(ctx: ClickContext, node_id: NodeID) -> None:
     """Remove a node's card.
-    
+
     NODE_ID is the ID of the node whose card will be removed.
     """
     cli_service = ctx.obj['cli_service']
@@ -295,21 +285,52 @@ def remove(ctx: ClickContext, node_id: NodeID) -> None:
     _echo_result(ctx, result)
 
 
+@card.command('list')
+@click.option(
+    '--output-format',
+    'output_format',
+    type=click.Choice(['text', 'json']),
+    default='text',
+    help='Output format (default: text)',
+)
+@click.pass_context
+def list_cards(ctx: ClickContext, output_format: str = 'text') -> None:
+    """List all nodes with cards."""
+    cli_service = ctx.obj['cli_service']
+    result = cli_service.list_cards(output_format)
+    _echo_result(ctx, result)
+
+
 @card.command()
 @click.argument('node_id')
 @click.option('-w', '--words', type=int, help='Word count goal for this session')
 @click.option('-t', '--time', type=int, help='Session time limit in minutes')
-@click.option('--timer', type=click.Choice(['none', 'visible', 'alert']),
-              default='visible', help='Timer display mode (default: visible)')
-@click.option('--stats', type=click.Choice(['none', 'minimal', 'detailed']),
-              default='minimal', help='Stats display mode (default: minimal)')
+@click.option(
+    '--timer',
+    type=click.Choice(['none', 'visible', 'alert']),
+    default='visible',
+    help='Timer display mode (default: visible)',
+)
+@click.option(
+    '--stats',
+    type=click.Choice(['none', 'minimal', 'detailed']),
+    default='minimal',
+    help='Stats display mode (default: minimal)',
+)
 @click.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
 @click.pass_context
-def session(ctx: ClickContext, node_id: NodeID, words: int | None = None,
-            time: int | None = None, timer: str = 'visible',
-            stats: str = 'minimal', no_prompt: bool = False) -> None:
+def session(
+    ctx: ClickContext,
+    node_id: NodeID,
+    *,
+    words: int | None = None,
+    time: int | None = None,
+    timer: str = 'visible',
+    stats: str = 'minimal',
+    no_prompt: bool = False,
+) -> None:
     """Start a focused card writing session.
-    
+
     NODE_ID is the ID of the node whose card will be edited.
     """
     repository = ctx.obj['repository']
@@ -325,97 +346,6 @@ def session(ctx: ClickContext, node_id: NodeID, words: int | None = None,
     )
 
     if not success:
-        click.echo('\n'.join(message), err=True)
-
-
-@main.command()
-@click.argument('node_id', required=False)
-@click.option('-w', '--words', type=int, help='Word count goal for this session')
-@click.option('-t', '--time', type=int, help='Session time limit in minutes')
-@click.option(
-    '--timer',
-    type=click.Choice(['none', 'visible', 'alert']),
-    default='visible',
-    help='Timer display mode',
-)
-@click.option(
-    '--stats',
-    type=click.Choice(['none', 'minimal', 'detailed']),
-    default='minimal',
-    help='Stats display mode',
-)
-@click.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
-@click.pass_context
-def session(
-    ctx: ClickContext,
-    node_id: NodeID | None,
-    words: int | None,
-    time: int | None,
-    timer: str,
-    stats: str,
-    *,
-    no_prompt: bool,
-) -> None:  # pragma: no cover
-    """Start a focused writing session on a specific node.
-
-    If NODE_ID is provided, starts editing that node. Otherwise prompts for
-    node selection. Provides real-time statistics and focused line-by-line editing.
-
-    Once a line is committed (by pressing Enter), it cannot be edited within
-    the session, encouraging forward progress rather than revision.
-    """
-    repository = ctx.obj['repository']
-    session_service = SessionService(repository)
-
-    # If no node_id is provided, prompt for selection
-    if not node_id:
-        # Get the project structure
-        cli_service = ctx.obj['cli_service']
-        structure_result = cli_service.get_project_structure()
-
-        if not structure_result.success:  # pragma: no cover
-            click.echo(structure_result.message, err=True)
-            return
-
-        # Display the structure
-        click.echo('Select a node to edit:')
-        for i, line in enumerate(structure_result.message):
-            click.echo(f'{i}: {line}', nl=False)
-
-        # Get user selection
-        try:
-            selection = click.prompt('Enter node number', type=int)
-            lines = list(structure_result.message)
-            if 0 <= selection < len(lines):
-                # Extract node_id from the selected line
-                parts = lines[selection].split(' ', 1)
-                if parts:
-                    node_id = parts[0].strip()
-                else:  # pragma: no cover
-                    click.echo('Invalid selection', err=True)
-                    return
-            else:  # pragma: no cover
-                click.echo('Selection out of range', err=True)
-                return
-        except click.Abort:  # pragma: no cover
-            click.echo('\nAborted', err=True)
-            return
-
-    # Start the session
-    if node_id is None:
-        click.echo('Error: Node ID not selected', err=True)
-        return
-
-    success, message = session_service.start_session(
-        node_id=node_id,
-        word_goal=words,
-        time_limit=time,
-        timer_mode=timer,
-        stats_mode=stats,
-        no_prompt=no_prompt,
-    )
-
-    if not success:  # pragma: no cover
         click.echo('\n'.join(message), err=True)
 
 
