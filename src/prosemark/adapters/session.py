@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 from prompt_toolkit import Application
 from prompt_toolkit.buffer import Buffer
-from prompt_toolkit.filters import Filter
+from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import (
     ConditionalContainer,
@@ -325,7 +325,7 @@ class WritingSession:
                             content=FormattedTextControl(self._get_stats_text),
                             style='class:stats',
                         ),
-                        filter=Filter(lambda: self.stats_mode != 'none'),
+                        filter=Condition(lambda: self.stats_mode != 'none'),
                     ),
                     # Input area
                     Window(
@@ -350,7 +350,7 @@ class WritingSession:
                                 height=10,
                                 style='class:help',
                             ),
-                            filter=Filter(lambda: self.show_help),
+                            filter=Condition(lambda: self.show_help),
                         ),
                         top=5,
                         left=10,
@@ -392,7 +392,7 @@ class WritingSession:
         result: list[tuple[str, str]] = []
         for line in self.committed_lines:
             result.append(('', line + '\n'))
-        return result
+        return result  # type: ignore
 
     def _get_stats_text(self) -> AnyFormattedText:
         """Get the formatted text for the stats bar."""
@@ -418,7 +418,7 @@ class WritingSession:
             if stats.time_limit_minutes:
                 parts.append(('class:stats', f' Remaining: {self._format_time(stats.time_remaining_minutes * 60 if stats.time_remaining_minutes else 0)} '))
 
-            return parts
+            return parts  # type: ignore
 
         return []
 

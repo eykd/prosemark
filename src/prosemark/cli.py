@@ -274,6 +274,7 @@ def session(
             return
 
     # Start the session
+    assert node_id is not None, 'Node ID should be set at this point'
     success, message = session_service.start_session(
         node_id=node_id,
         word_goal=words,

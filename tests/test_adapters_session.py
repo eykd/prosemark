@@ -153,6 +153,7 @@ class TestSessionStats:
         )
 
         # 10 minute limit - 3 minutes elapsed = 7 minutes remaining
+        assert stats.time_remaining_minutes is not None
         assert 6.9 <= stats.time_remaining_minutes <= 7.1
 
     def test_time_remaining_minutes_no_limit(self) -> None:
@@ -206,7 +207,8 @@ class TestSessionService:
         # Mock the project to return None for get_node_by_id
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = None
-        repository.load_project = MagicMock(return_value=mock_project)
+        repository.load_project = MagicMock()  # type: ignore
+        repository.load_project.return_value = mock_project
 
         success, message = service.start_session('nonexistent')
 
@@ -223,7 +225,8 @@ class TestSessionService:
         mock_node = MagicMock(spec=Node)
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = mock_node
-        repository.load_project = MagicMock(return_value=mock_project)
+        repository.load_project = MagicMock()  # type: ignore
+        repository.load_project.return_value = mock_project
 
         # Mock the session instance
         mock_session_instance = MagicMock()
@@ -260,7 +263,8 @@ class TestSessionService:
         mock_node = MagicMock(spec=Node)
         mock_project = MagicMock()
         mock_project.get_node_by_id.return_value = mock_node
-        repository.load_project = MagicMock(return_value=mock_project)
+        repository.load_project = MagicMock()  # type: ignore
+        repository.load_project.return_value = mock_project
 
         # Mock the session instance to raise an exception
         mock_session_instance = MagicMock()
