@@ -21,7 +21,7 @@ When writing or editing Python code (`*.py`), follow these quality standards:
 - Add Google Style docstrings to all packages, modules, functions, classes, and methods.
 - Run code quality tools:
   - Format: `uv run ruff format`
-  - Lint: `uv run ruff --fix check`
+  - Lint: `uv run ruff check --fix`
   - Type check: `uv run mypy`
 
 ## Hexagonal Architecture
