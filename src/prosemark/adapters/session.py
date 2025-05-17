@@ -325,7 +325,7 @@ class WritingSession:  # pragma: no cover
                             content=FormattedTextControl(self._get_committed_text),
                             wrap_lines=True,
                         ),
-                        height=D(preferred=15, max=15),
+                        height=D(weight=1),
                     ),
                     # Stats bar
                     ConditionalContainer(
@@ -338,7 +338,7 @@ class WritingSession:  # pragma: no cover
                     ),
                     # Input area
                     Window(
-                        height=1,
+                        height=5,
                         content=BufferControl(buffer=self.input_buffer),
                         style='class:input',
                         wrap_lines=True,
