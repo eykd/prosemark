@@ -21,7 +21,6 @@ from prompt_toolkit.layout import (
     FormattedTextControl,
     HSplit,
     Layout,
-    ScrollablePane,
     Window,
     WindowAlign,
 )
@@ -241,10 +240,15 @@ class WritingSession:  # pragma: no cover
         self.input_buffer = Buffer()
         self.app: Application[Any] | None = None
         self.show_help = False
+        self.committed_buffer = Buffer()
+        self.committed_window: Window | None = None  # Reference to the committed text window
 
         # Setup refresh timer
         self.last_update_time = time.time()
         self.update_interval = 1.0  # seconds
+
+        # Initialize the committed buffer with current content
+        self._update_committed_buffer()
 
     def run(self) -> None:
         """Run the writing session."""
@@ -295,13 +299,14 @@ class WritingSession:  # pragma: no cover
             event.app.exit()
 
         @kb.add('enter')
-        def commit_line(_: KeyPressEvent) -> None:
+        def commit_line(event: KeyPressEvent) -> None:  # noqa: ARG001
             """Process the current line when Enter is pressed."""
             text = self.input_buffer.text
             self.committed_lines.append(text)
             self.current_content = '\n'.join(self.committed_lines)
             self._save_current_content()
             self.input_buffer.reset()
+            self._update_committed_buffer()
 
         @kb.add('f1')
         def toggle_help(_: KeyPressEvent) -> None:
@@ -309,6 +314,11 @@ class WritingSession:  # pragma: no cover
             self.show_help = not self.show_help
 
         # Create the layout
+        self.committed_window = Window(
+            content=BufferControl(buffer=self.committed_buffer, focusable=False),
+            wrap_lines=True,
+            height=D(weight=1),
+        )
         layout = Layout(
             FloatContainer(
                 content=HSplit([
@@ -320,13 +330,7 @@ class WritingSession:  # pragma: no cover
                         style='class:title',
                     ),
                     # Committed content area
-                    ScrollablePane(
-                        Window(
-                            content=FormattedTextControl(self._get_committed_text),
-                            wrap_lines=True,
-                        ),
-                        height=D(weight=1),
-                    ),
+                    self.committed_window,
                     # Stats bar
                     ConditionalContainer(
                         Window(
@@ -396,13 +400,6 @@ class WritingSession:  # pragma: no cover
     def _get_title_text(self) -> AnyFormattedText:
         """Get the formatted text for the title bar."""
         return [('class:title', f' Writing Session: {self.node.title} ')]
-
-    def _get_committed_text(self) -> AnyFormattedText:
-        """Get the formatted text for the committed content area, with a cursor indicator for the next line."""
-        result: list[tuple[str, str]] = [('', line + '\n') for line in self.committed_lines]
-        # Add a cursor indicator as the next line
-        result.append(('class:cursor', '▏\n'))
-        return result  # type: ignore[return-value]
 
     def _get_stats_text(self) -> AnyFormattedText:
         """Get the formatted text for the stats bar."""
@@ -522,3 +519,18 @@ class WritingSession:  # pragma: no cover
 
         # Save the updated node with metadata
         self.repository.save_node(self.node)
+
+    def _scroll_committed_pane_to_bottom(self) -> None:
+        """Invalidate the app to ensure the committed window scrolls to the bottom."""
+        if self.app is not None:
+            self.app.invalidate()
+
+    def _update_committed_buffer(self) -> None:
+        """Update the committed buffer and set cursor to the end to ensure the last line is visible."""
+        committed_text = self._get_committed_text()
+        self.committed_buffer.text = committed_text
+        self.committed_buffer.cursor_position = len(committed_text)
+
+    def _get_committed_text(self) -> str:
+        """Get the committed text."""
+        return '\n'.join(self.committed_lines) + '\n▏'
