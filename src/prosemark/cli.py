@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import IO, TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, no_type_check
 
 import click
+import click_extra
+import click_extra.colorize
+from click_extra import Color, Style
 
 from prosemark.adapters.cli import CLIResult, CLIService
 from prosemark.adapters.session import SessionService
@@ -21,27 +24,37 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from prosemark.domain.nodes import NodeID
 
+# Adjust the default theme to improve readability of the help text:
+click_extra.colorize.default_theme = click_extra.colorize.default_theme.with_(
+    # click-extra type annotations appear to be incorrect...
+    default=Style(fg=Color.bright_green),  # type: ignore[arg-type]
+    metavar=Style(fg=Color.bright_cyan),  # type: ignore[arg-type]
+    bracket=Style(fg=Color.bright_white),  # type: ignore[arg-type]
+)
 
-@click.group()
-@click.version_option()
-@click.option(
+
+@no_type_check
+@click_extra.extra_group()
+@click_extra.extra_version_option()
+@click_extra.option(
     '--data-dir',
     default='.',
     help='Directory where project data is stored',
     type=click.Path(),
 )
-@click.option(
+@click_extra.option(
     '--verbose',
     '-v',
     is_flag=True,
     default=False,
     help='Enable verbose output (print tracebacks on errors)',
 )
-@click.option(
+@click_extra.option(
     '--pager/--no-pager',
     default=True,
     help='Use a pager to display long output',
 )
+@click_extra.config_option
 @click.pass_context
 def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None:  # noqa: FBT001
     """Prosemark - A tool for structured document creation and management.
@@ -63,9 +76,10 @@ def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None: 
     ctx.obj['session_service'] = SessionService(repository)
 
 
+@no_type_check
 @main.command()
 @click.argument('title')
-@click.option('--card', '-c', help='Brief summary of the project')
+@click_extra.option('--card', '-c', help='Brief summary of the project')
 @click.pass_context
 def init(ctx: ClickContext, title: str, card: str | None = None) -> None:
     """Create a new project.
@@ -77,6 +91,7 @@ def init(ctx: ClickContext, title: str, card: str | None = None) -> None:
     _echo_result(ctx, result)
 
 
+@no_type_check
 @main.command()
 @click.pass_context
 def info(ctx: ClickContext) -> None:
@@ -85,13 +100,14 @@ def info(ctx: ClickContext) -> None:
     _echo_result(ctx, cli_service.get_project_info())
 
 
+@no_type_check
 @main.command()
 @click.argument('parent_id')
 @click.argument('title')
-@click.option('--card', '-c', help='Brief summary of the node')
-@click.option('--text', '-t', help='Main content of the node')
-@click.option('--notes', '-n', help='Additional notes about the node')
-@click.option('--position', '-p', type=int, help='Position to insert the node')
+@click_extra.option('--card', '-c', help='Brief summary of the node')
+@click_extra.option('--text', '-t', help='Main content of the node')
+@click_extra.option('--notes', '-n', help='Additional notes about the node')
+@click_extra.option('--position', '-p', type=int, help='Position to insert the node')
 @click.pass_context
 def add(
     ctx: ClickContext,
@@ -119,6 +135,7 @@ def add(
     _echo_result(ctx, result)
 
 
+@no_type_check
 @main.command()
 @click.argument('node_id')
 @click.pass_context
@@ -132,10 +149,11 @@ def remove(ctx: ClickContext, node_id: NodeID) -> None:
     _echo_result(ctx, result)
 
 
+@no_type_check
 @main.command()
 @click.argument('node_id')
 @click.argument('new_parent_id')
-@click.option('--position', '-p', type=int, help='Position to insert the node')
+@click_extra.option('--position', '-p', type=int, help='Position to insert the node')
 @click.pass_context
 def move(ctx: ClickContext, node_id: NodeID, new_parent_id: NodeID, position: int | None = None) -> None:
     """Move a node to a new parent.
@@ -148,6 +166,7 @@ def move(ctx: ClickContext, node_id: NodeID, new_parent_id: NodeID, position: in
     _echo_result(ctx, result)
 
 
+@no_type_check
 @main.command()
 @click.argument('node_id')
 @click.pass_context
@@ -162,16 +181,17 @@ def show(ctx: ClickContext, node_id: NodeID) -> None:
     _echo_result(ctx, result)
 
 
+@no_type_check
 @main.command()
 @click.argument('node_id')
-@click.option(
+@click_extra.option(
     '--input-file',
     'input_file',
     type=click.File('r'),
     default=None,
     help='Read content from file or stdin ("-" for stdin)',
 )
-@click.option('--editor/--no-editor', default=True, help='Open in editor')
+@click_extra.option('--editor/--no-editor', default=True, help='Open in editor')
 @click.pass_context
 def edit(
     ctx: ClickContext,
@@ -204,8 +224,9 @@ def edit(
     _echo_result(ctx, cli_service.edit_node(node_id, edited_content))
 
 
+@no_type_check
 @main.command()
-@click.option('--node-id', '-n', help='ID of the node to start from (defaults to root)')
+@click_extra.option('--node-id', '-n', help='ID of the node to start from (defaults to root)')
 @click.pass_context
 def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
     """Display the project structure."""
@@ -214,17 +235,19 @@ def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
     _echo_result(ctx, cli_service.get_project_structure(node_id))
 
 
+@no_type_check
 @main.group()
 @click.pass_context
 def card(ctx: ClickContext) -> None:
     """Manage cards associated with project nodes."""
 
 
+@no_type_check
 @card.command()
 @click.argument('node_id')
-@click.option('-t', '--text', help='Initial text for the card')
-@click.option('--color', help='Color code for the card')
-@click.option('--status', help='Status label for the card')
+@click_extra.option('-t', '--text', help='Initial text for the card')
+@click_extra.option('--color', help='Color code for the card')
+@click_extra.option('--status', help='Status label for the card')
 @click.pass_context
 def create(
     ctx: ClickContext, node_id: NodeID, text: str | None = None, color: str | None = None, status: str | None = None
@@ -238,16 +261,17 @@ def create(
     _echo_result(ctx, result)
 
 
+@no_type_check
 @card.command('edit')
 @click.argument('node_id')
-@click.option(
+@click_extra.option(
     '--input-file',
     'input_file',
     type=click.File('r'),
     default=None,
     help='Read content from file or stdin ("-" for stdin)',
 )
-@click.option('--editor', is_flag=True, help='Open in editor')
+@click_extra.option('--editor', is_flag=True, help='Open in editor')
 @click.pass_context
 def edit_card(ctx: ClickContext, node_id: NodeID, input_file: IO[str] | None = None, *, editor: bool = False) -> None:
     """Edit a node's card in the default text editor.
@@ -282,6 +306,7 @@ def edit_card(ctx: ClickContext, node_id: NodeID, input_file: IO[str] | None = N
     _echo_result(ctx, result)
 
 
+@no_type_check
 @card.command('show')
 @click.argument('node_id')
 @click.pass_context
@@ -295,6 +320,7 @@ def show_card(ctx: ClickContext, node_id: NodeID) -> None:
     _echo_result(ctx, result)
 
 
+@no_type_check
 @card.command('remove')
 @click.argument('node_id')
 @click.pass_context
@@ -308,8 +334,9 @@ def remove_card(ctx: ClickContext, node_id: NodeID) -> None:
     _echo_result(ctx, result)
 
 
+@no_type_check
 @card.command('list')
-@click.option(
+@click_extra.option(
     '--output-format',
     'output_format',
     type=click.Choice(['text', 'json']),
@@ -324,23 +351,24 @@ def list_cards(ctx: ClickContext, output_format: str = 'text') -> None:
     _echo_result(ctx, result)
 
 
+@no_type_check
 @card.command()
 @click.argument('node_id')
-@click.option('-w', '--words', type=int, help='Word count goal for this session')
-@click.option('-t', '--time', type=int, help='Session time limit in minutes')
-@click.option(
+@click_extra.option('-w', '--words', type=int, help='Word count goal for this session')
+@click_extra.option('-t', '--time', type=int, help='Session time limit in minutes')
+@click_extra.option(
     '--timer',
     type=click.Choice(['none', 'visible', 'alert']),
     default='visible',
     help='Timer display mode (default: visible)',
 )
-@click.option(
+@click_extra.option(
     '--stats',
     type=click.Choice(['none', 'minimal', 'detailed']),
     default='minimal',
     help='Stats display mode (default: minimal)',
 )
-@click.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
+@click_extra.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
 @click.pass_context
 def session(
     ctx: ClickContext,
