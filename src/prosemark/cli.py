@@ -54,7 +54,6 @@ click_extra.colorize.default_theme = click_extra.colorize.default_theme.with_(
     default=True,
     help='Use a pager to display long output',
 )
-@click_extra.config_option
 @click.pass_context
 def main(ctx: ClickContext, data_dir: str, verbose: bool, pager: bool) -> None:  # noqa: FBT001
     """Prosemark - A tool for structured document creation and management.
