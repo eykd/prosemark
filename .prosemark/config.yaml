@@ -1,0 +1,36 @@
+# Prosemark configuration file
+
+# Common options inherited by all commands with matching options
+common:
+  verbose: false
+  color: auto
+  stats: minimal
+
+# Command-specific configurations
+session:
+  words: 500
+  time: 25
+  timer: visible
+  # Inherits stats from common
+
+compile:
+  format: html
+  output: ./output
+  include_comments: false
+
+# Nested subcommands
+card:
+  # Options for 'pmk card' command
+  color: blue
+
+  session:
+    # Options for 'pmk card session' command
+    # Inherits from: common -> session -> card.session
+    words: 200
+    timer: alert  # Overrides common.timer
+
+notes:
+  session:
+    # Options for 'pmk notes session' command
+    # Inherits from: common -> session -> notes.session
+    words: 300
