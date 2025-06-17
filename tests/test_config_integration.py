@@ -130,7 +130,7 @@ def test_app_with_config(config_file: Path, monkeypatch: pytest.MonkeyPatch) -> 
         ctx.ensure_object(dict)
         config_manager = ctx.obj['config_manager']
         if output_format == 'text':  # Default value
-            output_format = config_manager.get_config_value(('output',), 'format', default=output_format)
+            output_format = config_manager.get_config_value(('output',), 'output_format', default=output_format)
         ctx.obj['format'] = output_format
 
     @output.command('list')

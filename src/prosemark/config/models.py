@@ -5,7 +5,7 @@ from Click option definitions for configuration validation.
 """
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 from pydantic import BaseModel, Field, create_model
@@ -85,7 +85,7 @@ def click_type_to_pydantic_field(click_option: click.Option) -> tuple[Any, Any]:
 
     # Create the field with default value
     if not required:
-        field_type = Optional[field_type]  # noqa: UP045
+        field_type = field_type | None
 
     field = Field(
         default=default,
