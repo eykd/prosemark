@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import click
@@ -204,19 +204,19 @@ def test_click_type_to_pydantic_field() -> None:
     # Test string type
     string_option = click.Option(['--name'], type=click.STRING, default='test')
     field_type, field = click_type_to_pydantic_field(string_option)
-    assert field_type is Optional[str]  # noqa: UP045
+    assert field_type is str | None
     assert field.default == 'test'
 
     # Test int type
     int_option = click.Option(['--count'], type=click.INT, default=1)
     field_type, field = click_type_to_pydantic_field(int_option)
-    assert field_type is Optional[int]  # noqa: UP045
+    assert field_type is int | None
     assert field.default == 1
 
     # Test choice type
     choice_option = click.Option(['--color'], type=click.Choice(['red', 'green', 'blue']), default='blue')
     field_type, _ = click_type_to_pydantic_field(choice_option)
-    assert field_type is Optional[str]  # Implementation uses str for click.Choice
+    assert field_type is str | None  # Implementation uses str for click.Choice
 
 
 def test_generate_pydantic_model(sample_cli_group: click.Group) -> None:
