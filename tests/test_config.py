@@ -15,6 +15,7 @@ from prosemark.config.discovery import (
     discover_commands,
     extract_click_options,
     get_command_option_names,
+    get_shared_options,
     walk_commands,
 )
 from prosemark.config.inheritance import (
@@ -535,3 +536,106 @@ def test_integration_with_click(sample_cli_group: click.Group, tmp_path: Path) -
         result = runner.invoke(hello_cmd, ['--count', '3'])
         assert result.exit_code == 0
         assert 'Hello 3 times!' in result.output
+
+
+def test_get_shared_options() -> None:
+    """Test finding shared options across commands."""
+    # Test case with shared options
+    command_options: dict[tuple[str, ...], set[str]] = {
+        (): {'verbose', 'help'},
+        ('hello',): {'verbose', 'count'},
+        ('nested',): {'verbose', 'color'},
+        ('nested', 'greet'): {'name'},
+    }
+
+    shared_options = get_shared_options(command_options)
+    assert shared_options == {'verbose'}
+
+    # Test case with no shared options
+    command_options_no_shared: dict[tuple[str, ...], set[str]] = {
+        ('hello',): {'count'},
+        ('nested',): {'color'},
+        ('nested', 'greet'): {'name'},
+    }
+
+    shared_options_empty = get_shared_options(command_options_no_shared)
+    assert shared_options_empty == set()
+
+    # Test case with multiple shared options
+    command_options_multiple: dict[tuple[str, ...], set[str]] = {
+        ('cmd1',): {'verbose', 'debug', 'output'},
+        ('cmd2',): {'verbose', 'debug', 'format'},
+        ('cmd3',): {'verbose', 'quiet'},
+    }
+
+    shared_options_multiple = get_shared_options(command_options_multiple)
+    assert shared_options_multiple == {'verbose', 'debug'}
+
+
+def test_click_type_to_pydantic_field_path() -> None:
+    """Test Click Path type conversion."""
+    from prosemark.config.models import click_type_to_pydantic_field
+
+    # Create a Click Path option
+    param = click.Option(['-p', '--path'], type=click.Path())
+    field_type, field = click_type_to_pydantic_field(param)
+
+    assert field_type == Path | None
+    assert field.default is None
+
+
+def test_click_type_to_pydantic_field_int_range() -> None:
+    """Test Click IntRange type conversion."""
+    from prosemark.config.models import click_type_to_pydantic_field
+
+    # Create a Click IntRange option with bounds
+    param = click.Option(['-r', '--range'], type=click.IntRange(1, 10))
+    field_type, field = click_type_to_pydantic_field(param)
+
+    assert field_type is int
+    # The field should have ge=1 and le=10 constraints in metadata
+    assert hasattr(field, 'metadata')
+    assert len(field.metadata) == 2  # Should have Ge and Le constraints
+
+    # Test IntRange without bounds
+    param_no_bounds = click.Option(['-r', '--range'], type=click.IntRange())
+    field_type_no_bounds, _field_no_bounds = click_type_to_pydantic_field(param_no_bounds)
+
+    assert field_type_no_bounds is int
+
+
+def test_click_type_to_pydantic_field_float() -> None:
+    """Test Click Float type conversion."""
+    from prosemark.config.models import click_type_to_pydantic_field
+
+    param = click.Option(['-f', '--float'], type=click.FLOAT)
+    field_type, field = click_type_to_pydantic_field(param)
+
+    assert field_type == float | None
+    assert field.default is None
+
+
+def test_click_type_to_pydantic_field_unknown() -> None:
+    """Test Click unknown type conversion defaults to str."""
+    from prosemark.config.models import click_type_to_pydantic_field
+
+    # Create a custom type that's not recognized
+    class CustomType(click.ParamType):
+        name = 'custom'
+
+    param = click.Option(['-c', '--custom'], type=CustomType())
+    field_type, field = click_type_to_pydantic_field(param)
+
+    assert field_type == str | None
+    assert field.default is None
+
+
+def test_click_type_to_pydantic_field_multiple() -> None:
+    """Test Click multiple option conversion."""
+    from prosemark.config.models import click_type_to_pydantic_field
+
+    param = click.Option(['-m', '--multiple'], type=click.STRING, multiple=True)
+    field_type, field = click_type_to_pydantic_field(param)
+
+    assert field_type == list | None
+    assert field.default is None

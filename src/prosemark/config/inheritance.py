@@ -27,9 +27,8 @@ def resolve_inheritance(
 
     # Start with common section (only for options this command actually has)
     if 'common' in merged_config and isinstance(merged_config['common'], dict):
-        for key, value in merged_config['common'].items():
-            if key in command_options:
-                resolved_config[key] = value
+        common_section = {k: v for k, v in merged_config['common'].items() if k in command_options}
+        resolved_config.update(common_section)
 
     # Apply parent command configurations in order
     for i in range(1, len(command_path)):
@@ -37,16 +36,14 @@ def resolve_inheritance(
         parent_section = get_nested_config(merged_config, parent_path)
 
         if parent_section:
-            for key, value in parent_section.items():
-                if key in command_options:
-                    resolved_config[key] = value
+            parent_filtered = {k: v for k, v in parent_section.items() if k in command_options}
+            resolved_config.update(parent_filtered)
 
     # Apply command-specific configuration last
     command_section = get_nested_config(merged_config, command_path)
     if command_section:
-        for key, value in command_section.items():
-            if key in command_options:
-                resolved_config[key] = value
+        command_filtered = {k: v for k, v in command_section.items() if k in command_options}
+        resolved_config.update(command_filtered)
 
     return resolved_config
 
@@ -90,7 +87,4 @@ def build_inheritance_cache(
         A mapping of command paths to their resolved configurations.
 
     """
-    return {
-        path: resolve_inheritance(merged_config, path, options)
-        for path, options in commands.items()
-    }
+    return {path: resolve_inheritance(merged_config, path, options) for path, options in commands.items()}

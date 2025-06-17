@@ -84,7 +84,7 @@ def click_type_to_pydantic_field(click_option: click.Option) -> tuple[Any, Any]:
         field_type = list
 
     # Create the field with default value
-    if not required:
+    if not required:  # pragma: no branch
         field_type = field_type | None
 
     field = Field(

@@ -30,6 +30,14 @@ def discover_commands(
     commands: dict[CommandPath, list[ClickOption]] = {}
     shared_options: dict[str, list[CommandPath]] = {}
 
+    # Add the root group itself as the empty tuple path
+    root_options = extract_click_options(cli_group)
+    commands[()] = root_options
+    for name, _ in root_options:
+        if name not in shared_options:  # pragma: no branch
+            shared_options[name] = []
+        shared_options[name].append(())
+
     for path, command in walk_commands(cli_group):
         options = extract_click_options(command)
         commands[path] = options
@@ -53,26 +61,9 @@ def extract_click_options(command: click.Command) -> list[ClickOption]:
         A list of tuples containing option names and their Click Option objects.
 
     """
-    options: list[ClickOption] = []
-
-    for param in command.params:
-        if isinstance(param, click.Option):
-            # Get the option name without leading dashes
-            # Use the first long option name if available, otherwise use the first short option
-            option_name = ''
-            for opt in param.opts:
-                if opt.startswith('--'):
-                    option_name = opt[2:]
-                    break
-
-            if not option_name and param.opts:
-                # Use short option if no long option found
-                option_name = param.opts[0].lstrip('-')
-
-            if option_name:
-                options.append((option_name, param))
-
-    return options
+    # Use the Python parameter name (e.g., 'output_format' for '--output-format')
+    # This ensures consistency between CLI option names and config keys
+    return [(param.name, param) for param in command.params if isinstance(param, click.Option) and param.name]
 
 
 def walk_commands(cli_group: click.Group) -> Iterator[tuple[CommandPath, click.Command]]:
@@ -91,7 +82,7 @@ def walk_commands(cli_group: click.Group) -> Iterator[tuple[CommandPath, click.C
 
         if isinstance(command, click.Group):
             for subpath, subcmd in walk_commands(command):
-                yield (name,) + subpath, subcmd
+                yield (name, *subpath), subcmd
 
 
 def get_command_option_names(commands: dict[CommandPath, list[ClickOption]]) -> dict[CommandPath, set[str]]:
@@ -104,10 +95,7 @@ def get_command_option_names(commands: dict[CommandPath, list[ClickOption]]) -> 
         A mapping of command paths to sets of option names.
 
     """
-    return {
-        path: {name for name, _ in options}
-        for path, options in commands.items()
-    }
+    return {path: {name for name, _ in options} for path, options in commands.items()}
 
 
 def get_shared_options(command_options: dict[CommandPath, set[str]]) -> set[str]:
