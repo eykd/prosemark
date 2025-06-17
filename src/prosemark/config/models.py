@@ -5,7 +5,7 @@ from Click option definitions for configuration validation.
 """
 
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 import click
 from pydantic import BaseModel, Field, create_model
@@ -13,9 +13,7 @@ from pydantic import BaseModel, Field, create_model
 from prosemark.config.discovery import ClickOption, CommandPath
 
 
-def generate_pydantic_model(
-    command_path: CommandPath, options: list[ClickOption]
-) -> type[BaseModel]:
+def generate_pydantic_model(command_path: CommandPath, options: list[ClickOption]) -> type[BaseModel]:
     """Generate a Pydantic model for a command's options.
 
     Args:
@@ -26,7 +24,7 @@ def generate_pydantic_model(
         A dynamically generated Pydantic model class for the command's options.
 
     """
-    fields: dict[str, tuple[type, Any]] = {}
+    fields: dict[str, tuple[Any, Any]] = {}
 
     for name, option in options:
         field_type, field = click_type_to_pydantic_field(option)
@@ -35,10 +33,11 @@ def generate_pydantic_model(
     # Create a dynamic model name based on the command path
     model_name = ''.join(part.capitalize() for part in command_path) + 'Config'
 
-    return create_model(model_name, **fields)
+    result: type[BaseModel] = create_model(model_name, **fields)  # type: ignore[call-overload]
+    return result
 
 
-def click_type_to_pydantic_field(click_option: click.Option) -> tuple[type, Any]:
+def click_type_to_pydantic_field(click_option: click.Option) -> tuple[Any, Any]:  # noqa: C901
     """Convert a Click option to a Pydantic field type and constraints.
 
     Args:
@@ -55,24 +54,19 @@ def click_type_to_pydantic_field(click_option: click.Option) -> tuple[type, Any]
 
     # Handle different Click types
     if isinstance(param_type, click.Choice):
-        # For Choice, create a Literal type with the choices
-        choices = param_type.choices
-        field_type = Literal[tuple(choices)]  # type: ignore
+        # For Choice, use str as the type (Literal with dynamic values is not supported by mypy)
+        field_type: Any = str
     elif isinstance(param_type, click.Path):
-        # For Path, use pathlib.Path with existence/type validation
         field_type = Path
     elif isinstance(param_type, click.IntRange):
-        # For IntRange, use int with min/max constraints
         field_type = int
         min_val = getattr(param_type, 'min', None)
         max_val = getattr(param_type, 'max', None)
-
         field_kwargs = {}
         if min_val is not None:
             field_kwargs['ge'] = min_val
         if max_val is not None:
             field_kwargs['le'] = max_val
-
         return field_type, Field(default=default, **field_kwargs)
     elif param_type is click.STRING:
         field_type = str
@@ -83,19 +77,16 @@ def click_type_to_pydantic_field(click_option: click.Option) -> tuple[type, Any]
     elif param_type is click.BOOL:
         field_type = bool
     else:
-        # Default to string for unknown types
         field_type = str
 
     # Handle multiple values (list types)
     if click_option.multiple:
-        field_type = list[field_type]  # type: ignore
+        field_type = list
 
     # Create the field with default value
     if not required:
-        # Use Optional for non-required fields
-        field_type = Optional[field_type]  # type: ignore
+        field_type = Optional[field_type]  # noqa: UP045
 
-    # Add help text and other metadata
     field = Field(
         default=default,
         description=click_option.help or None,
@@ -104,9 +95,7 @@ def click_type_to_pydantic_field(click_option: click.Option) -> tuple[type, Any]
     return field_type, field
 
 
-def create_model_cache(
-    commands: dict[CommandPath, list[ClickOption]]
-) -> dict[CommandPath, type[BaseModel]]:
+def create_model_cache(commands: dict[CommandPath, list[ClickOption]]) -> dict[CommandPath, type[BaseModel]]:
     """Generate and cache Pydantic models for all commands.
 
     Args:
@@ -116,7 +105,4 @@ def create_model_cache(
         A mapping of command paths to their Pydantic models.
 
     """
-    return {
-        path: generate_pydantic_model(path, options)
-        for path, options in commands.items()
-    }
+    return {path: generate_pydantic_model(path, options) for path, options in commands.items()}
