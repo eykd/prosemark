@@ -43,11 +43,14 @@ When writing Python code (`*.py`), follow these testing practices:
 - Write tests first for each change using pytest.
 - Organize tests in a dedicated `tests/` folder in the project root.
 - Name test files by package and module, omitting the root `prosemark` package name.
+  - Example test file name: `tests/test_config_discovery.py` tests code in `src/prosemark/config/discovery.py`
 - Use descriptive names for test functions and methods.
 - Group related tests in test classes.
 - Use fixtures for complex setup.
 - Aim for 100% test coverage for code under `src/`.
 - When writing tests, move common fixtures to `tests/conftest.py`.
+- Run tests with `./scripts/runtests.sh` (which accepts normal `pytest` arguments and flags).
+  - Example: `./scripts/runtests.sh tests/test_config_discovery.py`
 
 ## Variable naming
 
