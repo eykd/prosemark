@@ -72,7 +72,7 @@ def config_file(tmp_path: Path) -> Path:
             'name': 'configured',
         },
         'output': {
-            'format': 'json',
+            'output_format': 'json',
             'list': {
                 'limit': 20,
             },
