@@ -41,7 +41,7 @@ class Node:
     @classmethod
     def generate_id(cls) -> NodeID:
         """Generate a unique ID for a node."""
-        return datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')
+        return datetime.now(UTC).strftime('%Y%m%d%H%M%S')
 
     def add_child(self, child: Node, position: int | None = None) -> None:
         """Add a child node to this node.

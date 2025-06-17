@@ -204,9 +204,9 @@ def test_cli_structure(
 
         [[_binder card.md]]
 
-        - [Child 1](202501020304050601.md)
-          - [Grandchild](202501020304050603.md)
-        - [Child 2](202501020304050602.md)
+        - [Child 1](20250102030406.md)
+          - [Grandchild](20250102030408.md)
+        - [Child 2](20250102030407.md)
         """
     )
 

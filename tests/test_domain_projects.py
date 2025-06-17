@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from prosemark.domain.factories import NodeFactory, ProjectFactory
+
+if TYPE_CHECKING:  # pragma: no cover
+    from prosemark.domain.nodes import NodeID
 
 
 def test_project_initialization() -> None:
@@ -23,7 +28,7 @@ def test_project_initialization() -> None:
     assert project2.root_node is root_node
 
 
-def test_get_node_by_id() -> None:
+def test_get_node_by_id(node_ids: list[NodeID]) -> None:
     """Test retrieving a node by ID."""
     project = ProjectFactory.build()
     project.root_node.title = 'Test Project'
@@ -49,7 +54,7 @@ def test_get_node_by_id() -> None:
     assert project.get_node_by_id('non-existent-id') is None
 
 
-def test_create_node() -> None:
+def test_create_node(node_ids: list[NodeID]) -> None:
     """Test creating a new node."""
     project = ProjectFactory.build()
     project.root_node.title = 'Test Project'
@@ -88,7 +93,7 @@ def test_create_node() -> None:
     assert node3 is None
 
 
-def test_move_node() -> None:
+def test_move_node(node_ids: list[NodeID]) -> None:
     """Test moving a node to a new parent."""
     project = ProjectFactory.build()
     project.root_node.title = 'Test Project'
@@ -136,7 +141,7 @@ def test_move_node() -> None:
     assert result is False
 
 
-def test_remove_node() -> None:
+def test_remove_node(node_ids: list[NodeID]) -> None:
     """Test removing a node from the project."""
     project = ProjectFactory.build()
     project.root_node.title = 'Test Project'
@@ -165,7 +170,7 @@ def test_remove_node() -> None:
     assert removed is None
 
 
-def test_get_node_count() -> None:
+def test_get_node_count(node_ids: list[NodeID]) -> None:
     """Test counting the nodes in a project."""
     project = ProjectFactory.build()
     project.root_node.title = 'Test Project'
@@ -187,7 +192,7 @@ def test_get_node_count() -> None:
     assert project.get_node_count() == 2
 
 
-def test_get_structure() -> None:
+def test_get_structure(node_ids: list[NodeID]) -> None:
     """Test getting the structure representation of a project."""
     project = ProjectFactory.build()
     project.root_node.title = 'Test Project'
@@ -220,7 +225,7 @@ def test_get_structure() -> None:
     assert len(chapter2['children']) == 1  # One scene
 
 
-def test_move_node_with_circular_reference() -> None:
+def test_move_node_with_circular_reference(node_ids: list[NodeID]) -> None:
     """Test that moving a node to its own descendant fails."""
     project = ProjectFactory.build()
     root_id = project.root_node.id
@@ -240,7 +245,7 @@ def test_move_node_with_circular_reference() -> None:
     assert subfolder1.parent is folder1
 
 
-def test_build_structure_with_empty_node() -> None:
+def test_build_structure_with_empty_node(node_ids: list[NodeID]) -> None:
     """Test building structure with a node that has no children."""
     project = ProjectFactory.build()
 

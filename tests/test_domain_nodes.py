@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from prosemark.domain.nodes import Node
+
+if TYPE_CHECKING:  # pragma: no cover
+    from prosemark.domain.nodes import NodeID
 
 
 def test_node_initialization() -> None:
@@ -161,7 +165,7 @@ def test_get_ancestors() -> None:
     assert len(root_ancestors) == 0
 
 
-def test_move_child() -> None:
+def test_move_child(node_ids: list[NodeID]) -> None:
     """Test moving a child node to a new position."""
     parent = Node(title='Parent')
     child1 = Node(title='Child 1')

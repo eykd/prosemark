@@ -35,7 +35,7 @@ def runner_path(runner: CliRunner) -> Path:
 @pytest.fixture
 def node_ids() -> Generator[list[NodeID], None, None]:
     """Fixture to generate unique node IDs."""
-    start_id = 202501020304050600
+    start_id = 20250102030405
     node_ids = [str(n) for n in range(start_id, start_id + 1000)]
     with patch.object(Node, 'generate_id', side_effect=node_ids):
         yield node_ids
