@@ -235,6 +235,57 @@ def structure(ctx: ClickContext, node_id: NodeID | None = None) -> None:
 
 
 @no_type_check
+@main.command(name='session')
+@click.argument('node_id')
+@click_extra.option('-w', '--words', type=int, help='Word count goal for this session')
+@click_extra.option('-t', '--time', type=int, help='Session time limit in minutes')
+@click_extra.option(
+    '--timer',
+    type=click.Choice(['none', 'visible', 'alert']),
+    default='visible',
+    help='Timer display mode (default: visible)',
+)
+@click_extra.option(
+    '--stats',
+    type=click.Choice(['none', 'minimal', 'detailed']),
+    default='minimal',
+    help='Stats display mode (default: minimal)',
+)
+@click_extra.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
+@click.pass_context
+def node_session(
+    ctx: ClickContext,
+    node_id: NodeID,
+    *,
+    words: int | None = None,
+    time: int | None = None,
+    timer: str = 'visible',
+    stats: str = 'minimal',
+    no_prompt: bool = False,
+) -> None:
+    """Start a focused writing session for a node.
+
+    NODE_ID is the ID of the node to be edited.
+    """
+    repository = ctx.obj['repository']
+    session_service = SessionService(repository)
+
+    success, message = session_service.start_session(
+        node_id=node_id,
+        word_goal=words,
+        time_limit=time,
+        timer_mode=timer,
+        stats_mode=stats,
+        no_prompt=no_prompt,
+    )
+
+    if not success:  # pragma: no cover
+        click.echo('\n'.join(message), err=True)
+    else:  # pragma: no cover
+        click.echo('\n'.join(message))
+
+
+@no_type_check
 @main.group()
 @click.pass_context
 def card(ctx: ClickContext) -> None:

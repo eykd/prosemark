@@ -339,6 +339,40 @@ def test_card_session_failure(runner: CliRunner) -> None:
     assert 'not found' in result.output or 'error' in result.output.lower()
 
 
+def test_session_failure(runner: CliRunner) -> None:
+    """Test the session command with a likely failure (invalid node id)."""
+    runner.invoke(main, ['init', 'Test Project'])
+    # Use a bogus node id
+    result = runner.invoke(main, ['session', 'bogus_id', '--no-prompt'])
+    # Should print an error message
+    assert result.exit_code == 0
+    assert 'not found' in result.output or 'error' in result.output.lower()
+
+
+def test_session_with_options(runner: CliRunner) -> None:
+    """Test the session command with various options."""
+    runner.invoke(main, ['init', 'Test Project'])
+    # Test with different options - should still fail due to invalid node but should parse correctly
+    result = runner.invoke(
+        main,
+        [
+            'session',
+            'bogus_id',
+            '--words',
+            '100',
+            '--time',
+            '30',
+            '--timer',
+            'alert',
+            '--stats',
+            'detailed',
+            '--no-prompt',
+        ],
+    )
+    assert result.exit_code == 0
+    assert 'not found' in result.output or 'error' in result.output.lower()
+
+
 def test_card_create_already_exists(runner: CliRunner) -> None:
     """Test creating a card when one already exists."""
     runner.invoke(main, ['init', 'Test Project'])
