@@ -300,6 +300,10 @@ class ProjectRepository:
             The serialized node content.
 
         """
+        # Check if this is a freewrite node and handle differently
+        if node.metadata.get('type') == 'freewrite':
+            return self._serialize_freewrite_node(node)
+
         # Create a dictionary with all node data
         node_data = {
             'id': node.id,
@@ -312,6 +316,34 @@ class ProjectRepository:
 
         # Use NodeParser to serialize
         return NodeParser.serialize(node_data)
+
+    def _serialize_freewrite_node(self, node: Node) -> str:
+        """Serialize a freewrite node without card/notes links.
+
+        Args:
+            node: The freewrite node to serialize.
+
+        Returns:
+            The serialized freewrite node content.
+
+        """
+        import yaml
+
+        # Create YAML header with node metadata
+        header_data = {'id': node.id, 'title': node.title}
+        header_data.update(node.metadata)
+
+        # Generate YAML header
+        yaml_header = yaml.dump(header_data, default_flow_style=False, sort_keys=False)
+
+        # Build the content without card/notes directives
+        lines = ['---', yaml_header.rstrip(), '---', '']
+
+        # Add text if present
+        if node.text:  # pragma: no branch
+            lines.append(node.text)
+
+        return '\n'.join(lines)
 
     def parse_node_content(self, node: Node, content: str) -> None:
         """Parse node content and update the node object.

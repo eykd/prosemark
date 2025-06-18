@@ -373,6 +373,56 @@ def test_session_with_options(runner: CliRunner) -> None:
     assert 'not found' in result.output or 'error' in result.output.lower()
 
 
+def test_freewrite_basic(runner: CliRunner) -> None:
+    """Test the basic freewrite command."""
+    runner.invoke(main, ['init', 'Test Project'])
+    # This should not fail since freewrite creates files automatically
+    # We use --no-prompt to avoid interactive prompts
+    result = runner.invoke(main, ['freewrite', '--no-prompt'])
+    assert result.exit_code == 0
+    assert 'completed successfully' in result.output or 'ended by user' in result.output
+
+
+def test_freewrite_with_options(runner: CliRunner) -> None:
+    """Test the freewrite command with various options."""
+    runner.invoke(main, ['init', 'Test Project'])
+    result = runner.invoke(
+        main,
+        [
+            'freewrite',
+            '--words',
+            '100',
+            '--time',
+            '5',
+            '--timer',
+            'none',
+            '--stats',
+            'detailed',
+            '--suffix',
+            'morning',
+            '--no-prompt',
+        ],
+    )
+    assert result.exit_code == 0
+    assert 'completed successfully' in result.output or 'ended by user' in result.output
+
+
+def test_freewrite_with_date(runner: CliRunner) -> None:
+    """Test the freewrite command with a specific date."""
+    runner.invoke(main, ['init', 'Test Project'])
+    result = runner.invoke(main, ['freewrite', '--date', '2025-06-15', '--no-prompt'])
+    assert result.exit_code == 0
+    assert 'completed successfully' in result.output or 'ended by user' in result.output
+
+
+def test_freewrite_invalid_date(runner: CliRunner) -> None:
+    """Test the freewrite command with an invalid date."""
+    runner.invoke(main, ['init', 'Test Project'])
+    result = runner.invoke(main, ['freewrite', '--date', 'invalid-date', '--no-prompt'])
+    assert result.exit_code == 0
+    assert 'Invalid date format' in result.output
+
+
 def test_card_create_already_exists(runner: CliRunner) -> None:
     """Test creating a card when one already exists."""
     runner.invoke(main, ['init', 'Test Project'])

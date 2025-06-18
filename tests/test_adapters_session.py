@@ -373,6 +373,197 @@ class TestSessionService:
         mock_session.assert_called_once()
         mock_session_instance.run.assert_called_once()
 
+    @patch('prosemark.adapters.session.FreezableWritingSession')
+    def test_start_freewrite_session_success(
+        self, mock_session: MagicMock, service: SessionService, repository: ProjectRepository
+    ) -> None:
+        """Test starting a freewrite session successfully."""
+        # Mock load_node_content to simulate no existing content (new freewrite)
+        repository.load_node_content = MagicMock()  # type: ignore[method-assign]
+        repository.save_node = MagicMock()  # type: ignore[method-assign]
+
+        # Mock the session instance
+        mock_session_instance = MagicMock()
+        mock_session.return_value = mock_session_instance
+
+        success, message = service.start_freewrite_session(
+            word_goal=100,
+            time_limit=30,
+            timer_mode='visible',
+            stats_mode='detailed',
+            no_prompt=True,
+            date_str='2025-06-17',
+            suffix='morning',
+        )
+
+        assert success
+        assert 'completed successfully' in message[0]
+        mock_session.assert_called_once()
+        mock_session_instance.run.assert_called_once()
+        repository.save_node.assert_called_once()
+
+    @patch('prosemark.adapters.session.FreezableWritingSession')
+    def test_start_freewrite_session_existing_node(
+        self, mock_session: MagicMock, service: SessionService, repository: ProjectRepository
+    ) -> None:
+        """Test starting a freewrite session with an existing node."""
+
+        # Mock load_node_content to simulate existing content being found
+        def mock_load_node_content(node: Node) -> None:
+            # Simulate loading existing freewrite content
+            node.text = 'Existing content\n\n## Session 1 - June 17, 2025 08:30\n\nSome existing text.'
+            node.metadata = {
+                'type': 'freewrite',
+                'date': '2025-06-17',
+                'created': '2025-06-17T08:30:00.000000+00:00',
+                'session_history': [],
+            }
+
+        repository.load_node_content = MagicMock(side_effect=mock_load_node_content)  # type: ignore[method-assign]
+
+        # Mock the session instance
+        mock_session_instance = MagicMock()
+        mock_session.return_value = mock_session_instance
+
+        success, message = service.start_freewrite_session(no_prompt=True)
+
+        assert success
+        assert 'completed successfully' in message[0]
+        mock_session.assert_called_once()
+        mock_session_instance.run.assert_called_once()
+
+        # Verify that load_node_content was called to check for existing content
+        repository.load_node_content.assert_called_once()
+
+        # Verify the node passed to load_node_content has the expected ID
+        call_args = repository.load_node_content.call_args[0]
+        loaded_node = call_args[0]
+        assert loaded_node.id.endswith('0000 daily')  # Today's date + suffix
+
+    @patch('prosemark.adapters.session.FreezableWritingSession')
+    def test_start_freewrite_session_invalid_date(
+        self, mock_session: MagicMock, service: SessionService, repository: ProjectRepository
+    ) -> None:
+        """Test starting a freewrite session with invalid date."""
+        success, message = service.start_freewrite_session(date_str='invalid-date')
+
+        assert not success
+        assert 'Invalid date format' in message[0]
+        mock_session.assert_not_called()
+
+    @patch('prosemark.adapters.session.FreezableWritingSession')
+    def test_start_freewrite_session_exception(
+        self, mock_session: MagicMock, service: SessionService, repository: ProjectRepository
+    ) -> None:
+        """Test handling exceptions during freewrite session."""
+        # Mock load_node_content to simulate no existing content (new freewrite)
+        repository.load_node_content = MagicMock()  # type: ignore[method-assign]
+        repository.save_node = MagicMock()  # type: ignore[method-assign]
+
+        # Mock the session instance to raise an exception
+        mock_session_instance = MagicMock()
+        mock_session_instance.run.side_effect = RuntimeError('Freewrite error')
+        mock_session.return_value = mock_session_instance
+
+        success, message = service.start_freewrite_session()
+
+        assert not success
+        assert 'error' in message[0]
+        mock_session.assert_called_once()
+        mock_session_instance.run.assert_called_once()
+
+    def test_is_continuation_session_logic(self, service: SessionService) -> None:
+        """Test the _is_continuation_session method directly."""
+        from prosemark.domain.nodes import Node
+
+        # Test 1: Empty node should not be continuation
+        empty_node = Node(id='test1', title='Test', text='')
+        assert not service._is_continuation_session(empty_node)  # noqa: SLF001
+
+        # Test 2: Node with only whitespace should not be continuation
+        whitespace_node = Node(id='test2', title='Test', text='  \n\n  ')
+        assert not service._is_continuation_session(whitespace_node)  # noqa: SLF001
+
+        # Test 3: Node with session header only should NOT be continuation (reuse the empty session)
+        header_node = Node(id='test3', title='Test', text='## Session 1 - June 18, 2025 10:30\n\n')
+        assert not service._is_continuation_session(header_node)  # noqa: SLF001
+
+        # Test 4: Node with session header and content should be continuation
+        content_node = Node(id='test4', title='Test', text='## Session 1 - June 18, 2025 10:30\n\nSome writing here.')
+        assert service._is_continuation_session(content_node)  # noqa: SLF001
+
+        # Test 5: Node with first session content + empty second session should NOT be continuation
+        empty_second_session = Node(
+            id='test5a',
+            title='Test',
+            text='## Session 1 - June 18, 2025 10:30\n\nFirst session.\n\n## Session 2 - June 18, 2025 14:30\n\n',
+        )
+        assert not service._is_continuation_session(empty_second_session)  # noqa: SLF001
+
+        # Test 6: Node with multiple sessions with content should be continuation
+        multi_session_node = Node(
+            id='test5',
+            title='Test',
+            text='## Session 1 - June 18, 2025 10:30\n\nFirst session.\n\n## Session 2 - June 18, 2025 14:30\n\nSecond session.',
+        )
+        assert service._is_continuation_session(multi_session_node)  # noqa: SLF001
+
+        # Test 7: Node with other content but no session header should not be continuation
+        other_content_node = Node(id='test6', title='Test', text='Some other content\n\n# A heading\n\nMore text.')
+        assert not service._is_continuation_session(other_content_node)  # noqa: SLF001
+
+    def test_freewrite_session_numbering_behavior(self, service: SessionService, repository: ProjectRepository) -> None:
+        """Test that freewrite sessions are numbered correctly in continuation scenarios."""
+        from prosemark.domain.nodes import Node
+
+        # Simulate the scenario that was problematic:
+        # 1. First session creates "Session 1"
+        # 2. Second session should create "Session 2", not overwrite
+
+        # Create a node that would be created after first freewrite session
+        first_session_node = Node(
+            id='202506180000 daily',
+            title='Freewrite Daily - June 18, 2025',
+            text='## Session 1 - June 18, 2025 10:30\n\nSome writing from first session.',
+            metadata={'type': 'freewrite', 'date': '2025-06-18'},
+        )
+
+        # Check that this is detected as a continuation (since it has content after Session 1)
+        assert service._is_continuation_session(first_session_node)  # noqa: SLF001
+
+        # Now simulate what happens when we create a FreezableWritingSession for continuation
+        # The session should append a new header, not overwrite
+        from prosemark.adapters.session import FreezableWritingSession
+
+        # Create a mock repository for this test
+        def mock_save_node(_: Node) -> None:
+            pass
+
+        repository.save_node = mock_save_node  # type: ignore[assignment]
+
+        # Create the continuation session
+        session = FreezableWritingSession(
+            node=first_session_node,
+            repository=repository,
+            word_goal=None,
+            time_limit=None,
+            timer_mode='visible',
+            stats_mode='minimal',
+            no_prompt=True,
+            is_continuation=True,
+        )
+
+        # Check that the node text now contains both sessions
+        expected_session_2_header = '## Session 2 - June 18, 2025'
+        assert 'Session 1' in first_session_node.text
+        assert expected_session_2_header in first_session_node.text
+        assert 'Some writing from first session.' in first_session_node.text
+
+        # Verify that the committed_lines contain all the content including both session headers
+        assert len(session.committed_lines) > 2  # Should have multiple lines
+        session_headers_in_committed = [line for line in session.committed_lines if line.startswith('## Session ')]
+        assert len(session_headers_in_committed) == 2  # Should have both Session 1 and Session 2 headers
+
 
 # Note: We can't easily test WritingSession directly because it uses prompt_toolkit's
 # interactive features. We would need to mock the Application and other components.

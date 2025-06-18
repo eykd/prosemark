@@ -286,6 +286,62 @@ def node_session(
 
 
 @no_type_check
+@main.command()
+@click_extra.option('-w', '--words', type=int, help='Word count goal for this session')
+@click_extra.option('-t', '--time', type=int, help='Session time limit in minutes')
+@click_extra.option(
+    '--timer',
+    type=click.Choice(['none', 'visible', 'alert']),
+    default='visible',
+    help='Timer display mode (default: visible)',
+)
+@click_extra.option(
+    '--stats',
+    type=click.Choice(['none', 'minimal', 'detailed']),
+    default='minimal',
+    help='Stats display mode (default: minimal)',
+)
+@click_extra.option('--no-prompt', is_flag=True, help='Skip goal/time prompts when not specified')
+@click_extra.option('--date', help='Use specific date (YYYY-MM-DD) instead of today')
+@click_extra.option('--suffix', default='daily', help="Custom suffix instead of 'daily' (e.g., 'morning', 'journal')")
+@click.pass_context
+def freewrite(
+    ctx: ClickContext,
+    *,
+    words: int | None = None,
+    time: int | None = None,
+    timer: str = 'visible',
+    stats: str = 'minimal',
+    no_prompt: bool = False,
+    date: str | None = None,
+    suffix: str = 'daily',
+) -> None:
+    """Start a freewriting session for today's date.
+
+    Creates or opens a file named YYYYMMDD0000 daily.md in the project root.
+    This file is intentionally excluded from the binder structure to maintain
+    separation between structured project work and free-form creative expression.
+    """
+    repository = ctx.obj['repository']
+    session_service = SessionService(repository)
+
+    success, message = session_service.start_freewrite_session(
+        word_goal=words,
+        time_limit=time,
+        timer_mode=timer,
+        stats_mode=stats,
+        no_prompt=no_prompt,
+        date_str=date,
+        suffix=suffix,
+    )
+
+    if not success:
+        click.echo('\n'.join(message), err=True)  # pragma: no cover
+    else:
+        click.echo('\n'.join(message))
+
+
+@no_type_check
 @main.group()
 @click.pass_context
 def card(ctx: ClickContext) -> None:
