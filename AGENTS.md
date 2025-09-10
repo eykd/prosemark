@@ -102,3 +102,5 @@ When using TYPE_CHECKING for import statements in Python code, follow these prac
   if TYPE_CHECKING:  # pragma: no cover
       from some_module import SomeType
   ```
+
+- The Linear project URL for this project is https://linear.app/solo-workbox/project/prosemark-1dcb08dfed59 and the project name is `Prosemark`.
