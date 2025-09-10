@@ -6,7 +6,8 @@
       "Bash(python:*)",
       "Bash(grep:*)",
       "Bash(sed:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "mcp__linear-server__list_teams"
     ],
     "deny": []
   }
