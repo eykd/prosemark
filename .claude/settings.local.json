@@ -8,7 +8,11 @@
       "Bash(sed:*)",
       "Bash(rg:*)",
       "mcp__linear-server__list_teams",
-      "mcp__linear-server__create_issue"
+      "mcp__linear-server__create_issue",
+      "mcp__linear-server__get_issue",
+      "Bash(uv sync:*)",
+      "Bash(uv add:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

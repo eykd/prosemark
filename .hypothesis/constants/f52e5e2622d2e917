@@ -1,0 +1,4 @@
+# file: /Users/eykd/code/py/prosemark/src/prosemark/domain/value_objects.py
+# hypothesis_version: 6.131.9
+
+['+00:00', 'BinderItem', 'Mapping[str, Any]', 'NodeMetadata', 'Timestamp', 'Z', 'created', 'id', 'synopsis', 'title', 'updated', 'value']

@@ -623,6 +623,7 @@ dependencies = [
     { name = "prompt-toolkit" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "uuid-extension" },
 ]
 
 [package.dev-dependencies]
@@ -657,6 +658,7 @@ requires-dist = [
     { name = "prompt-toolkit", specifier = ">=3.0.51" },
     { name = "pydantic", specifier = ">=2.11.4" },
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "uuid-extension", specifier = ">=0.2.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1082,6 +1084,15 @@ resolution-markers = [
 sdist = { url = "https://files.pythonhosted.org/packages/8a/78/16493d9c386d8e60e442a35feac5e00f0913c0f4b7c217c11e8ec2ff53e0/urllib3-2.4.0.tar.gz", hash = "sha256:414bc6535b787febd7567804cc015fee39daab8ad86268f1310a9250697de466", size = 390672, upload-time = "2025-04-10T15:23:39.232Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6b/11/cc635220681e93a0183390e26485430ca2c7b5f9d33b15c74c2861cb8091/urllib3-2.4.0-py3-none-any.whl", hash = "sha256:4e16665048960a0900c702d4a66415956a584919c03361cac9f1df5c5dd7e813", size = 128680, upload-time = "2025-04-10T15:23:37.377Z" },
+]
+
+[[package]]
+name = "uuid-extension"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/4e/55636e6655feae1e843e5db0255edb42497e1fb865529860a916e82286d9/uuid_extension-0.2.0.tar.gz", hash = "sha256:e68907184276f47a4b169dc9891477693371b5f3756aebdaffb7cf83b9a6077e", size = 54458, upload-time = "2025-07-21T05:51:13.782Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/82/006fbeb46fc6856ea813c4a09264c2fd60dc86e6c19b218b31b17766cba9/uuid_extension-0.2.0-py3-none-any.whl", hash = "sha256:8dac0d934afd07a16ae8537dd873bc833f1fcc31530295029d86c9cea49bf6a3", size = 5660, upload-time = "2025-07-21T05:51:12.095Z" },
 ]
 
 [[package]]
