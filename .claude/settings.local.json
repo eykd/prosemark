@@ -7,7 +7,8 @@
       "Bash(grep:*)",
       "Bash(sed:*)",
       "Bash(rg:*)",
-      "mcp__linear-server__list_teams"
+      "mcp__linear-server__list_teams",
+      "mcp__linear-server__create_issue"
     ],
     "deny": []
   }
