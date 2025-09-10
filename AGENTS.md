@@ -1,5 +1,7 @@
 # Conventions for the prosemark project
 
+The Linear project URL for this project is https://linear.app/solo-workbox/project/prosemark-1dcb08dfed59 and the project name is `Prosemark`.
+
 ## When asked to create new conventions
 
 When asked to create a new convention (`CONVENTIONS.md`), add a second-level
@@ -40,17 +42,81 @@ When designing application components (`*.py`), use hexagonal architecture to se
 
 When writing Python code (`*.py`), follow these testing practices:
 
-- Write tests first for each change using pytest.
-- Organize tests in a dedicated `tests/` folder in the project root.
-- Name test files by package and module, omitting the root `prosemark` package name.
-  - Example test file name: `tests/test_config_discovery.py` tests code in `src/prosemark/config/discovery.py`
-- Use descriptive names for test functions and methods.
-- Group related tests in test classes.
-- Use fixtures for complex setup.
-- Aim for 100% test coverage for code under `src/`.
-- When writing tests, move common fixtures to `tests/conftest.py`.
-- Run tests with `./scripts/runtests.sh` (which accepts normal `pytest` arguments and flags).
-  - Example: `./scripts/runtests.sh tests/test_config_discovery.py`
+* Use Test-Driven Development (TDD):
+  * Write one small test first for each change using pytest.
+  * Run the new tests and ensure that they fail.
+  * Implement just enough to make the test pass.
+  * Iterate between test and implementation until the implementation matches the spec.
+* Organize tests in a dedicated `tests/` folder in the project root.
+* Name test files by package and module, omitting the root `prosemark` package name.
+  * Example: `tests/test_domain_models.py` tests `src/prosemark/domain/models.py`
+* Use descriptive names for test functions and methods.
+* Group related tests in test classes.
+* Use fixtures for complex setup.
+* Aim for 100% test coverage for all code under `src/`.
+* When writing tests, move common fixtures to `tests/conftest.py`.
+* Run tests with `./runtests.sh` (which accepts normal `pytest` arguments and flags).
+  * Example: `./runtests.sh tests/test_config_loader.py`
+
+## Test organization with classes
+
+When organizing tests in pytest, group related tests using `TestX` classes:
+
+* Use `TestX` classes to group tests for the same module, function, or behavior.
+* Name test classes with descriptive titles like `TestGrammarParser` or `TestFileStorage`.
+* Do not inherit from `unittest.TestCase` since pytest handles plain classes.
+* Place setup and teardown logic in `setup_method` and `teardown_method`.
+* Example:
+  ```python
+  class TestGrammarParser:
+      @pytest.fixture
+      def parser(self) -> GrammarParser:
+          return GrammarParser()
+
+      def test_parses_simple_grammar(self, parser: GrammarParser) -> None:
+          result = parser.parse("Begin: hello")
+          assert result["Begin"] == ["hello"]
+  ```
+
+## Unit testing with pytest
+
+When writing unit tests for Python libraries, follow these pytest best practices:
+
+* Test public APIs and behaviors, not implementation details.
+* Focus on testing function contracts: inputs, outputs, and side effects.
+* Use pytest's built-in `assert` statements rather than unittest-style assertions.
+* Structure tests with arrange-act-assert pattern for clarity.
+* Test edge cases: empty inputs, None values, boundary conditions, and error states.
+* Use parametrized tests for testing multiple similar cases:
+  ```python
+  @pytest.mark.parametrize("input_val,expected", [(1, 2), (3, 4)])
+  def test_increment(input_val, expected):
+      assert increment(input_val) == expected
+  ```
+* Mock external dependencies using `pytest-mock` or `unittest.mock`.
+* Test exception handling explicitly with `pytest.raises()`:
+  ```python
+  def test_raises_value_error():
+      with pytest.raises(ValueError, match="invalid input"):
+          parse_config("bad_input")
+  ```
+* Use fixtures for test data and setup, preferring function-scoped fixtures.
+* Test one behavior per test function to maintain clarity and isolation.
+* Avoid testing private methods directly; test through public interfaces.
+* Do not test third-party library functionality; focus on your code's usage of it.
+
+## Test failure resolution
+
+When tests fail during development, always fix them immediately:
+
+* Stop all development work until failing tests are addressed.
+* Identify the root cause of test failures before making changes.
+* Fix the underlying issue rather than updating tests to match broken behavior.
+* Ensure all tests pass before continuing with new development.
+* Run the full test suite after fixes to prevent regression.
+* Update mocks, test data, or test logic only when the intended behavior has genuinely changed.
+* Never ignore or skip failing tests without explicit justification.
+
 
 ## Variable naming
 
@@ -103,4 +169,47 @@ When using TYPE_CHECKING for import statements in Python code, follow these prac
       from some_module import SomeType
   ```
 
-- The Linear project URL for this project is https://linear.app/solo-workbox/project/prosemark-1dcb08dfed59 and the project name is `Prosemark`.
+## Test coverage pragmas
+
+When writing Python code with untestable defensive programming constructs:
+
+* Use `# pragma: no cover` for lines that cannot be practically tested.
+* Use `# pragma: no branch` for branch conditions that cannot be practically tested.
+* Apply pragmas to defensive re-raises, impossible conditions, and safety checks.
+* Examples:
+
+  ```python
+  except DeploymentError:
+      raise  # pragma: no cover - defensive re-raise
+
+  if some_impossible_condition:  # pragma: no branch
+      raise RuntimeError("This should never happen")
+
+  except Exception as exc:
+      if isinstance(exc, SpecificError):  # pragma: no branch
+          raise  # pragma: no cover
+  ```
+
+## Dependency management
+
+When working with uv for dependency management:
+
+* Always use `uv sync --all-groups` to install dependencies including dev and test groups.
+* Use `uv add` to add new runtime dependencies.
+* Use `uv add --group dev` or `uv add --group test` for development dependencies.
+
+## Git commit style
+
+When committing changes to the repository, use conventional commit format:
+
+* Use the format: `<type>(<scope>): <description>`
+* Common types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+* Keep the first line under 50 characters
+* Use present tense imperative mood ("add feature" not "added feature")
+* Examples:
+  * `feat(cli): add new grammar validation command`
+  * `fix(storage): handle missing YAML files gracefully`
+  * `docs: update installation instructions`
+  * `test(grammars): add tests for include functionality`
+
+- The code formatter and linter will run via hook every time you write or edit a file. For instance, this will cause unused imports to disappear.
