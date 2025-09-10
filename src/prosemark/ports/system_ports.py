@@ -19,7 +19,7 @@ class IdGenerator(Protocol):
             NodeId: A new UUIDv7-based node identifier
 
         """
-        ...
+        ...  # pragma: no cover
 
 
 @runtime_checkable
@@ -37,7 +37,7 @@ class Clock(Protocol):
             str: Current UTC time in ISO8601 format
 
         """
-        ...
+        ...  # pragma: no cover
 
 
 @runtime_checkable
@@ -55,7 +55,7 @@ class Logger(Protocol):
             msg: Message to log
 
         """
-        ...
+        ...  # pragma: no cover
 
     def warn(self, msg: str) -> None:
         """Log warning message.
@@ -64,7 +64,7 @@ class Logger(Protocol):
             msg: Warning message to log
 
         """
-        ...
+        ...  # pragma: no cover
 
     def error(self, msg: str) -> None:
         """Log error message.
@@ -73,4 +73,4 @@ class Logger(Protocol):
             msg: Error message to log
 
         """
-        ...
+        ...  # pragma: no cover

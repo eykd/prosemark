@@ -67,13 +67,13 @@ class TestBinderItem:
 
         # Should not be able to modify attributes
         with pytest.raises(AttributeError):
-            item.id = NodeId(uuid7())
+            item.id = NodeId(uuid7())  # type: ignore[misc]
 
         with pytest.raises(AttributeError):
-            item.display_title = 'New Title'
+            item.display_title = 'New Title'  # type: ignore[misc]
 
         with pytest.raises(AttributeError):
-            item.children = []
+            item.children = []  # type: ignore[misc]
 
     def test_equality(self) -> None:
         """BinderItem equality is based on all attributes."""

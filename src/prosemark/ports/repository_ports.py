@@ -25,7 +25,7 @@ class BinderRepo(Protocol):
             ValueError: If binder file is malformed
 
         """
-        ...
+        ...  # pragma: no cover
 
     def save(self, binder: Binder) -> None:
         """Save binder to persistent storage.
@@ -37,7 +37,7 @@ class BinderRepo(Protocol):
             IOError: If unable to write to storage
 
         """
-        ...
+        ...  # pragma: no cover
 
 
 @runtime_checkable
@@ -48,11 +48,11 @@ class NodeRepo(Protocol):
     including frontmatter parsing and editor integration.
     """
 
-    def create(self, id: NodeId, title: str | None, synopsis: str | None) -> None:
+    def create(self, node_id: NodeId, title: str | None, synopsis: str | None) -> None:
         """Create new node files with frontmatter.
 
         Args:
-            id: Unique identifier for the node
+            node_id: Unique identifier for the node
             title: Optional title for the node
             synopsis: Optional synopsis text
 
@@ -61,13 +61,13 @@ class NodeRepo(Protocol):
             IOError: If unable to create files
 
         """
-        ...
+        ...  # pragma: no cover
 
-    def read_frontmatter(self, id: NodeId) -> dict[str, Any]:
+    def read_frontmatter(self, node_id: NodeId) -> dict[str, Any]:
         """Read frontmatter from node's draft file.
 
         Args:
-            id: Node identifier
+            node_id: Node identifier
 
         Returns:
             dict: Parsed frontmatter data
@@ -77,13 +77,13 @@ class NodeRepo(Protocol):
             ValueError: If frontmatter is malformed
 
         """
-        ...
+        ...  # pragma: no cover
 
-    def write_frontmatter(self, id: NodeId, frontmatter: dict[str, Any]) -> None:
+    def write_frontmatter(self, node_id: NodeId, frontmatter: dict[str, Any]) -> None:
         """Write frontmatter to node's draft file.
 
         Args:
-            id: Node identifier
+            node_id: Node identifier
             frontmatter: Frontmatter data to write
 
         Raises:
@@ -91,13 +91,13 @@ class NodeRepo(Protocol):
             IOError: If unable to write frontmatter
 
         """
-        ...
+        ...  # pragma: no cover
 
-    def open_in_editor(self, id: NodeId, part: str) -> None:
+    def open_in_editor(self, node_id: NodeId, part: str) -> None:
         """Open node file in configured editor.
 
         Args:
-            id: Node identifier
+            node_id: Node identifier
             part: Which part to edit ('draft' or 'notes')
 
         Raises:
@@ -106,13 +106,13 @@ class NodeRepo(Protocol):
             RuntimeError: If unable to launch editor
 
         """
-        ...
+        ...  # pragma: no cover
 
-    def delete(self, id: NodeId, *, delete_files: bool) -> None:
+    def delete(self, node_id: NodeId, *, delete_files: bool) -> None:
         """Delete node files from storage.
 
         Args:
-            id: Node identifier
+            node_id: Node identifier
             delete_files: Whether to actually delete files or just mark for removal
 
         Raises:
@@ -120,7 +120,7 @@ class NodeRepo(Protocol):
             IOError: If unable to delete files
 
         """
-        ...
+        ...  # pragma: no cover
 
 
 @runtime_checkable
@@ -144,4 +144,4 @@ class DailyRepo(Protocol):
             IOError: If unable to create file
 
         """
-        ...
+        ...  # pragma: no cover

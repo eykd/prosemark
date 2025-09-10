@@ -23,7 +23,7 @@ class EditorPort(Protocol):
             RuntimeError: If unable to launch editor
 
         """
-        ...
+        ...  # pragma: no cover
 
 
 @runtime_checkable
@@ -41,4 +41,4 @@ class ConsolePort(Protocol):
             msg: Message to display to user
 
         """
-        ...
+        ...  # pragma: no cover

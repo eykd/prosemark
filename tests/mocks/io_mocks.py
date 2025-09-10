@@ -6,9 +6,9 @@ from pathlib import Path
 class MockEditorPort:
     """Mock implementation of EditorPort for testing."""
 
-    def __init__(self, raise_on_nonexistent: bool = True) -> None:
+    def __init__(self, *, raise_on_nonexistent: bool = True) -> None:
         """Initialize mock editor.
-        
+
         Args:
             raise_on_nonexistent: Whether to raise FileNotFoundError for missing files
 
@@ -22,7 +22,8 @@ class MockEditorPort:
         self.open_called += 1
 
         if self._raise_on_nonexistent and not Path(path).exists():
-            raise FileNotFoundError(f'File not found: {path}')
+            msg = f'File not found: {path}'
+            raise FileNotFoundError(msg)
 
         self._opened_files.append((path, cursor_hint))
 

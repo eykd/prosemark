@@ -12,7 +12,7 @@ class MockIdGenerator:
 
     def __init__(self, fixed_ids: list[str] | None = None) -> None:
         """Initialize with optional fixed ID sequence.
-        
+
         Args:
             fixed_ids: If provided, will return these IDs in order, then generate random ones
 
@@ -47,7 +47,7 @@ class MockClock:
 
     def __init__(self, fixed_time: str | None = None) -> None:
         """Initialize with optional fixed time.
-        
+
         Args:
             fixed_time: If provided, will always return this time
 
@@ -60,10 +60,7 @@ class MockClock:
         """Get current time as ISO8601 string."""
         self.now_iso_called += 1
 
-        if self._fixed_time:
-            timestamp = self._fixed_time
-        else:
-            timestamp = datetime.now(UTC).isoformat()
+        timestamp = self._fixed_time or datetime.now(UTC).isoformat()
 
         self._call_times.append(timestamp)
         return timestamp
@@ -123,17 +120,17 @@ class MockLogger:
 
     def has_log_containing(self, text: str, level: str | None = None) -> bool:
         """Check if any log message contains the given text.
-        
+
         Args:
             text: Text to search for in log messages
             level: Optional level filter
-            
+
         Returns:
             bool: True if any message contains the text
 
         """
         logs_to_check = self._logs
         if level:
-            logs_to_check = [(l, m) for l, m in self._logs if l == level]
+            logs_to_check = [(log_level, msg) for log_level, msg in self._logs if log_level == level]
 
         return any(text in msg for _, msg in logs_to_check)

@@ -11,7 +11,7 @@ from prosemark.ports.repository_ports import BinderRepo, DailyRepo, NodeRepo
 
 class BinderRepoContractTest(abc.ABC):
     """Base contract test for BinderRepo implementations.
-    
+
     Inherit from this class to test any BinderRepo implementation.
     Implement get_repo() to return the implementation under test.
     """
@@ -56,7 +56,7 @@ class BinderRepoContractTest(abc.ABC):
 
 class NodeRepoContractTest(abc.ABC):
     """Base contract test for NodeRepo implementations.
-    
+
     Inherit from this class to test any NodeRepo implementation.
     Implement get_repo() to return the implementation under test.
     """
@@ -141,7 +141,7 @@ class NodeRepoContractTest(abc.ABC):
         repo.create(node_id, title='Test Title', synopsis=None)
 
         # Should raise for invalid part
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match='Invalid part'):
             repo.open_in_editor(node_id, 'invalid_part')
 
     def test_delete_with_files(self) -> None:
@@ -169,7 +169,7 @@ class NodeRepoContractTest(abc.ABC):
 
 class DailyRepoContractTest(abc.ABC):
     """Base contract test for DailyRepo implementations.
-    
+
     Inherit from this class to test any DailyRepo implementation.
     Implement get_repo() to return the implementation under test.
     """

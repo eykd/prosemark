@@ -69,7 +69,7 @@ class TestTimestamp:
 
         assert ts1 == ts2
         assert ts1 != ts3
-        assert ts1 != '2025-09-10T10:00:00Z'  # Should not equal plain string
+        assert ts1 != '2025-09-10T10:00:00Z'  # type: ignore[comparison-overlap]  # Should not equal plain string
 
     def test_ordering(self) -> None:
         """Timestamp supports chronological ordering."""
@@ -149,10 +149,10 @@ class TestNodeMetadata:
 
         # Should not be able to modify attributes
         with pytest.raises(AttributeError):
-            metadata.title = 'Modified'
+            metadata.title = 'Modified'  # type: ignore[misc]
 
         with pytest.raises(AttributeError):
-            metadata.id = NodeId(uuid7())
+            metadata.id = NodeId(uuid7())  # type: ignore[misc]
 
     def test_equality(self) -> None:
         """NodeMetadata equality is based on all attributes."""

@@ -9,7 +9,7 @@ from prosemark.ports.io_ports import ConsolePort, EditorPort
 
 class EditorPortContractTest(abc.ABC):
     """Base contract test for EditorPort implementations.
-    
+
     Inherit from this class to test any EditorPort implementation.
     Implement get_editor() to return the implementation under test.
     """
@@ -65,14 +65,14 @@ class EditorPortContractTest(abc.ABC):
         except FileNotFoundError:
             # This is the expected behavior
             pass
-        except Exception:
-            # Other exceptions may be acceptable (e.g., RuntimeError for editor issues)
+        except (RuntimeError, OSError):
+            # Other exceptions may be acceptable for editor issues
             pass
 
 
 class ConsolePortContractTest(abc.ABC):
     """Base contract test for ConsolePort implementations.
-    
+
     Inherit from this class to test any ConsolePort implementation.
     Implement get_console() to return the implementation under test.
     """
@@ -109,7 +109,7 @@ Line 3"""
         unicode_messages = [
             'Unicode test: ñáéíóú',
             'Emoji test: 🎉 📝 ✅',
-            'Math symbols: ∀ ∃ ∈ ∉ ∪ ∩',
+            'Math symbols: ∀ ∃ ∈ ∉ U ∩',
             'Box drawing: ┌─┐ │ │ └─┘',
         ]
 
@@ -122,7 +122,7 @@ Line 3"""
         console = self.get_console()
 
         special_messages = [
-            "Quotes: 'single' and \"double\"",
+            'Quotes: \'single\' and "double"',
             'Symbols: !@#$%^&*()[]{}',
             'Tabs and spaces: \t    \t',
             'Backslashes: \\ \\n \\t \\r',

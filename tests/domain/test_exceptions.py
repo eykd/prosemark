@@ -1,6 +1,5 @@
 """Tests for domain exceptions."""
 
-
 import pytest
 from uuid_extension import uuid7
 
@@ -26,8 +25,8 @@ class TestProsemarkDomainError:
         """ProsemarkDomainError provides proper inheritance chain."""
         error = ProsemarkDomainError('Test error')
 
-        # Should be catchable as Exception
-        with pytest.raises(Exception):
+        # Should be catchable as Exception (inheritance test)
+        with pytest.raises(Exception, match='Test error'):
             raise error
 
         # Should be catchable as ProsemarkDomainError

@@ -47,66 +47,72 @@ class MockNodeRepo:
         self.open_in_editor_called = 0
         self.delete_called = 0
 
-    def create(self, id: NodeId, title: str | None, synopsis: str | None) -> None:
+    def create(self, node_id: NodeId, title: str | None, synopsis: str | None) -> None:
         """Create mock node with frontmatter."""
         self.create_called += 1
 
-        if str(id) in self._frontmatters:
-            raise FileExistsError(f'Node {id} already exists')
+        if str(node_id) in self._frontmatters:
+            msg = f'Node {node_id} already exists'
+            raise FileExistsError(msg)
 
         now = datetime.now(UTC).isoformat()
-        self._frontmatters[str(id)] = {
-            'id': str(id),
+        self._frontmatters[str(node_id)] = {
+            'id': str(node_id),
             'title': title,
             'synopsis': synopsis,
             'created': now,
             'updated': now,
         }
-        self._files_created.add(str(id))
+        self._files_created.add(str(node_id))
 
-    def read_frontmatter(self, id: NodeId) -> dict[str, Any]:
+    def read_frontmatter(self, node_id: NodeId) -> dict[str, Any]:
         """Read mock frontmatter."""
         self.read_frontmatter_called += 1
 
-        if str(id) not in self._frontmatters:
-            raise FileNotFoundError(f'Node {id} not found')
+        if str(node_id) not in self._frontmatters:
+            msg = f'Node {node_id} not found'
+            raise FileNotFoundError(msg)
 
-        return self._frontmatters[str(id)].copy()
+        return self._frontmatters[str(node_id)].copy()
 
-    def write_frontmatter(self, id: NodeId, frontmatter: dict[str, Any]) -> None:
+    def write_frontmatter(self, node_id: NodeId, frontmatter: dict[str, Any]) -> None:
         """Write mock frontmatter."""
         self.write_frontmatter_called += 1
 
-        if str(id) not in self._frontmatters:
-            raise FileNotFoundError(f'Node {id} not found')
+        if str(node_id) not in self._frontmatters:
+            msg = f'Node {node_id} not found'
+            raise FileNotFoundError(msg)
 
         # Update timestamp
         frontmatter = frontmatter.copy()
         frontmatter['updated'] = datetime.now(UTC).isoformat()
-        self._frontmatters[str(id)] = frontmatter
+        self._frontmatters[str(node_id)] = frontmatter
 
-    def open_in_editor(self, id: NodeId, part: str) -> None:
+    def open_in_editor(self, node_id: NodeId, part: str) -> None:
         """Mock opening in editor."""
         self.open_in_editor_called += 1
 
-        if str(id) not in self._frontmatters:
-            raise FileNotFoundError(f'Node {id} not found')
+        if str(node_id) not in self._frontmatters:
+            msg = f'Node {node_id} not found'
+            raise FileNotFoundError(msg)
 
         if part not in ('draft', 'notes'):
-            raise ValueError(f'Invalid part: {part}')
+            msg = f'Invalid part: {part}'
+            raise ValueError(msg)
 
-        self._editor_opened.append((str(id), part))
+        self._editor_opened.append((str(node_id), part))
 
-    def delete(self, id: NodeId, *, delete_files: bool) -> None:
+    def delete(self, node_id: NodeId, *, delete_files: bool) -> None:
         """Mock node deletion."""
         self.delete_called += 1
 
-        if str(id) not in self._frontmatters:
-            raise FileNotFoundError(f'Node {id} not found')
+        if str(node_id) not in self._frontmatters:
+            msg = f'Node {node_id} not found'
+            raise FileNotFoundError(msg)
 
         if delete_files:
-            del self._frontmatters[str(id)]
-            self._files_deleted.add(str(id))
+            del self._frontmatters[str(node_id)]
+            self._files_deleted.add(str(node_id))
 
     def get_created_files(self) -> set[str]:
         """Get list of created file IDs."""

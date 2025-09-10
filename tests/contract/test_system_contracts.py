@@ -1,4 +1,5 @@
 """Contract test base classes for system protocols."""
+# ruff: noqa: G010
 
 import abc
 from datetime import datetime
@@ -9,7 +10,7 @@ from prosemark.ports.system_ports import Clock, IdGenerator, Logger
 
 class IdGeneratorContractTest(abc.ABC):
     """Base contract test for IdGenerator implementations.
-    
+
     Inherit from this class to test any IdGenerator implementation.
     Implement get_generator() to return the implementation under test.
     """
@@ -35,7 +36,7 @@ class IdGeneratorContractTest(abc.ABC):
             ids.append(node_id)
 
         # All IDs should be unique
-        unique_ids = set(str(id) for id in ids)
+        unique_ids = {str(node_id) for node_id in ids}
         assert len(unique_ids) == len(ids)
 
     def test_new_generates_valid_uuidv7(self) -> None:
@@ -63,7 +64,7 @@ class IdGeneratorContractTest(abc.ABC):
 
 class ClockContractTest(abc.ABC):
     """Base contract test for Clock implementations.
-    
+
     Inherit from this class to test any Clock implementation.
     Implement get_clock() to return the implementation under test.
     """
@@ -119,7 +120,7 @@ class ClockContractTest(abc.ABC):
 
 class LoggerContractTest(abc.ABC):
     """Base contract test for Logger implementations.
-    
+
     Inherit from this class to test any Logger implementation.
     Implement get_logger() to return the implementation under test.
     """
@@ -140,8 +141,8 @@ class LoggerContractTest(abc.ABC):
         """Test that warn() accepts string messages."""
         logger = self.get_logger()
         # Should not raise
-        logger.warning('Test warning message')
-        logger.warning('')  # Empty string should also work
+        logger.warn('Test warning message')
+        logger.warn('')  # Empty string should also work
 
     def test_error_accepts_string(self) -> None:
         """Test that error() accepts string messages."""
@@ -156,7 +157,7 @@ class LoggerContractTest(abc.ABC):
 
         # Should not raise
         logger.info('Info message')
-        logger.warning('Warning message')
+        logger.warn('Warning message')
         logger.error('Error message')
 
     def test_log_messages_with_special_characters(self) -> None:
@@ -166,12 +167,12 @@ class LoggerContractTest(abc.ABC):
         special_messages = [
             'Message with unicode: ñáéíóú',
             'Message with newlines:\nLine 2\nLine 3',
-            "Message with quotes: 'single' and \"double\"",
+            'Message with quotes: \'single\' and "double"',
             'Message with symbols: !@#$%^&*()[]{}',
         ]
 
         for msg in special_messages:
             # Should not raise
             logger.info(msg)
-            logger.warning(msg)
+            logger.warn(msg)
             logger.error(msg)

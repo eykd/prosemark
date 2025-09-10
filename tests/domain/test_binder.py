@@ -201,11 +201,13 @@ class TestBinder:
 
         # item3 should now be under item2
         new_item2 = new_binder.find_by_id(id2)
+        assert new_item2 is not None
         assert len(new_item2.children) == 1
         assert new_item2.children[0].id == id3
 
         # item1 should have no children
         new_item1 = new_binder.find_by_id(id1)
+        assert new_item1 is not None
         assert len(new_item1.children) == 0
 
     def test_insert_at_position(self) -> None:

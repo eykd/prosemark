@@ -1,25 +1,13 @@
 """Test protocol validation and mock implementations."""
 
-
 import sys
 from pathlib import Path
-
-from prosemark.ports import (
-    BinderRepo,
-    Clock,
-    ConsolePort,
-    DailyRepo,
-    EditorPort,
-    IdGenerator,
-    Logger,
-    NodeRepo,
-)
 
 # Add the tests directory to the Python path
 tests_dir = Path(__file__).parent
 sys.path.insert(0, str(tests_dir))
 
-from mocks import (
+from mocks import (  # noqa: E402
     MockBinderRepo,
     MockClock,
     MockConsolePort,
@@ -28,6 +16,17 @@ from mocks import (
     MockIdGenerator,
     MockLogger,
     MockNodeRepo,
+)
+
+from prosemark.ports import (  # noqa: E402
+    BinderRepo,
+    Clock,
+    ConsolePort,
+    DailyRepo,
+    EditorPort,
+    IdGenerator,
+    Logger,
+    NodeRepo,
 )
 
 
@@ -83,7 +82,9 @@ class TestProtocolValidation:
         for protocol in protocols:
             # Runtime checkable protocols should have the _is_runtime_protocol attribute
             # or be directly usable with isinstance (which our test above demonstrates)
-            assert getattr(protocol, '_is_runtime_protocol', False) or callable(getattr(protocol, '__instancecheck__', None))
+            assert getattr(protocol, '_is_runtime_protocol', False) or callable(
+                getattr(protocol, '__instancecheck__', None)
+            )
 
 
 class TestMockBasicFunctionality:
@@ -114,7 +115,7 @@ class TestMockBasicFunctionality:
         logger = MockLogger()
 
         logger.info('Info message')
-        logger.warning('Warning message')
+        logger.warn('Warning message')  # noqa: G010
         logger.error('Error message')
 
         assert logger.info_called == 1

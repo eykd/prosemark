@@ -1,0 +1,4 @@
+# file: /Users/eykd/code/py/prosemark/src/prosemark/ports/__init__.py
+# hypothesis_version: 6.131.9
+
+['BinderRepo', 'Clock', 'ConsolePort', 'DailyRepo', 'EditorPort', 'IdGenerator', 'Logger', 'NodeRepo']
