@@ -28,7 +28,10 @@ When writing or editing Python code (`*.py`), follow these quality standards:
 - After every change:
   1. Format: `uv run ruff format`
   2. Engage the @python-linter-fixer sub-agent to address any linting problems
-  3. Engage the @mypy-error-fixer sub-agent to address any typing problems.
+  3. Engage the @python-mypy-error-fixer sub-agent to address any typing problems.
+  4. Engage the @python-test-runner sub-agent to ensure all tests pass.
+  4. Repeat until all issues have been addressed.
+  5. Once the code quality is verified, engage the @conventional-committer sub-agent to commit your changes to Git.
 
 ## Hexagonal Architecture
 
