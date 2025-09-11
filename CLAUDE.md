@@ -32,6 +32,7 @@ When writing or editing Python code (`*.py`), follow these quality standards:
   4. Engage the @python-test-runner sub-agent to ensure all tests pass.
   4. Repeat until all issues have been addressed.
   5. Once the code quality is verified, engage the @conventional-committer sub-agent to commit your changes to Git.
+  6. If you're working on a Linear issue, if the commit completes the issue's task, then mark the issue as done.
 
 ## Hexagonal Architecture
 
