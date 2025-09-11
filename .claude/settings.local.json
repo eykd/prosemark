@@ -31,7 +31,8 @@
       "Bash(./runtests.sh:*)",
       "Bash(scripts/runtests.sh:*)",
       "mcp__linear-server__list_projects",
-      "mcp__linear-server__get_team"
+      "mcp__linear-server__get_team",
+      "mcp__serena__insert_after_symbol"
     ],
     "deny": []
   }
