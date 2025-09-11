@@ -1,1 +1,1 @@
-"""Prosemark package."""
+"""Prosemark long-form writing assistant"""
