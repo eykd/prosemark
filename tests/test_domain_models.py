@@ -2,7 +2,7 @@
 
 import pytest
 
-from prosemark.domain.models import NodeId
+from prosemark.domain.models import BinderItem, NodeId
 from prosemark.exceptions import NodeIdentityError
 
 
@@ -90,3 +90,100 @@ class TestNodeId:
         assert node_id != 'not-a-nodeid'
         assert node_id != 123
         assert node_id != None  # noqa: E711
+
+
+class TestBinderItem:
+    """Test BinderItem dataclass for hierarchical structure."""
+
+    def test_binder_item_with_node_id(self) -> None:
+        """Test creating BinderItem with NodeId."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        item = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        assert item.id == node_id
+        assert item.display_title == 'Chapter 1'
+        assert item.children == []
+
+    def test_binder_item_placeholder(self) -> None:
+        """Test creating placeholder BinderItem."""
+        item = BinderItem(id=None, display_title='New Placeholder', children=[])
+        assert item.id is None
+        assert item.display_title == 'New Placeholder'
+        assert item.children == []
+
+    def test_binder_item_hierarchy(self) -> None:
+        """Test BinderItem with children."""
+        parent = BinderItem(id=None, display_title='Part 1', children=[])
+        child1 = BinderItem(id=NodeId('0192f0c1-2345-7123-8abc-def012345678'), display_title='Chapter 1', children=[])
+        parent.children.append(child1)
+        assert len(parent.children) == 1
+        assert parent.children[0] == child1
+
+    def test_binder_item_equality(self) -> None:
+        """Test BinderItem equality comparison."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        item1 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        assert item1 == item2
+
+    def test_binder_item_equality_with_different_children(self) -> None:
+        """Test BinderItem equality includes children comparison."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        child = BinderItem(id=NodeId('0192f0c1-2345-7456-8abc-def012345678'), display_title='Sub Chapter', children=[])
+
+        item1 = BinderItem(id=node_id, display_title='Chapter 1', children=[child])
+        item2 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        item3 = BinderItem(id=node_id, display_title='Chapter 1', children=[child])
+
+        assert item1 != item2
+        assert item1 == item3
+
+    def test_binder_item_inequality_with_different_ids(self) -> None:
+        """Test BinderItem inequality with different ids."""
+        item1 = BinderItem(id=NodeId('0192f0c1-2345-7123-8abc-def012345678'), display_title='Chapter 1', children=[])
+        item2 = BinderItem(id=NodeId('0192f0c1-2345-7456-8abc-def012345678'), display_title='Chapter 1', children=[])
+        assert item1 != item2
+
+    def test_binder_item_inequality_with_different_titles(self) -> None:
+        """Test BinderItem inequality with different display_titles."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        item1 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id=node_id, display_title='Chapter 2', children=[])
+        assert item1 != item2
+
+    def test_binder_item_children_mutability(self) -> None:
+        """Test that BinderItem children list can be modified."""
+        parent = BinderItem(id=None, display_title='Parent', children=[])
+        child1 = BinderItem(id=None, display_title='Child 1', children=[])
+        child2 = BinderItem(id=None, display_title='Child 2', children=[])
+
+        # Test appending children
+        parent.children.append(child1)
+        parent.children.append(child2)
+        assert len(parent.children) == 2
+        assert parent.children[0] == child1
+        assert parent.children[1] == child2
+
+        # Test removing children
+        parent.children.remove(child1)
+        assert len(parent.children) == 1
+        assert parent.children[0] == child2
+
+    def test_binder_item_default_empty_children(self) -> None:
+        """Test BinderItem has default empty children list."""
+        item = BinderItem(id=None, display_title='Test')
+        assert item.children == []
+        assert isinstance(item.children, list)
+
+    def test_binder_item_deep_hierarchy(self) -> None:
+        """Test BinderItem supports deep hierarchical structures."""
+        # Create a 3-level hierarchy
+        grandparent = BinderItem(id=None, display_title='Book', children=[])
+        parent = BinderItem(id=None, display_title='Part 1', children=[])
+        child = BinderItem(id=NodeId('0192f0c1-2345-7123-8abc-def012345678'), display_title='Chapter 1', children=[])
+
+        parent.children.append(child)
+        grandparent.children.append(parent)
+
+        assert len(grandparent.children) == 1
+        assert len(grandparent.children[0].children) == 1
+        assert grandparent.children[0].children[0] == child

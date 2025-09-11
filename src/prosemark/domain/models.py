@@ -1,7 +1,7 @@
 """Domain models for prosemark."""
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from prosemark.exceptions import NodeIdentityError
 
@@ -62,3 +62,35 @@ class NodeId:
         if not isinstance(other, NodeId):
             return False
         return self.value == other.value
+
+
+@dataclass
+class BinderItem:
+    """Represents an individual node in the binder hierarchy.
+
+    BinderItem can either reference an existing node (with NodeId) or be a
+    placeholder (None id). Each item has a display title and can contain
+    children to form a tree structure.
+
+    Args:
+        id: Optional NodeId reference (None for placeholders)
+        display_title: Display title for the item
+        children: List of child BinderItem objects (defaults to empty list)
+
+    Examples:
+        >>> # Create a placeholder item
+        >>> placeholder = BinderItem(id=None, display_title='New Section')
+
+        >>> # Create an item with NodeId
+        >>> node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        >>> item = BinderItem(id=node_id, display_title='Chapter 1')
+
+        >>> # Create hierarchical structure
+        >>> parent = BinderItem(id=None, display_title='Part 1')
+        >>> parent.children.append(item)
+
+    """
+
+    id: NodeId | None
+    display_title: str
+    children: list['BinderItem'] = field(default_factory=list)
