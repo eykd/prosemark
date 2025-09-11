@@ -3,7 +3,7 @@
 import uuid
 from dataclasses import dataclass, field
 
-from prosemark.exceptions import NodeIdentityError
+from prosemark.exceptions import BinderIntegrityError, NodeIdentityError
 
 
 @dataclass(frozen=True)
@@ -94,3 +94,120 @@ class BinderItem:
     id: NodeId | None
     display_title: str
     children: list['BinderItem'] = field(default_factory=list)
+
+
+@dataclass
+class Binder:
+    """Aggregate root for document hierarchy with tree invariants.
+
+    The Binder maintains a collection of root-level BinderItems and enforces
+    critical tree invariants:
+    - No duplicate NodeIds across the entire tree
+    - Tree structure integrity
+    - Provides methods for tree operations and validation
+
+    Args:
+        roots: List of root-level BinderItem objects
+
+    Raises:
+        BinderIntegrityError: If tree invariants are violated (e.g., duplicate NodeIds)
+
+    Examples:
+        >>> # Create empty binder
+        >>> binder = Binder(roots=[])
+
+        >>> # Create binder with items
+        >>> item = BinderItem(id=None, display_title='Chapter 1')
+        >>> binder = Binder(roots=[item])
+
+        >>> # Find node by ID
+        >>> found = binder.find_by_id(node_id)
+
+        >>> # Get all NodeIds
+        >>> all_ids = binder.get_all_node_ids()
+
+    """
+
+    roots: list[BinderItem] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """Validate tree integrity during initialization."""
+        self.validate_integrity()
+
+    def validate_integrity(self) -> None:
+        """Validate all tree invariants.
+
+        Raises:
+            BinderIntegrityError: If any invariant is violated
+
+        """
+        node_ids = set[NodeId]()
+
+        def _collect_node_ids(item: BinderItem) -> None:
+            """Recursively collect all NodeIds and check for duplicates."""
+            if item.id is not None:
+                if item.id in node_ids:
+                    msg = f'Duplicate NodeId found in tree: {item.id}'
+                    raise BinderIntegrityError(msg, item.id)
+                node_ids.add(item.id)
+
+            for child in item.children:
+                _collect_node_ids(child)
+
+        for root_item in self.roots:
+            _collect_node_ids(root_item)
+
+    def find_by_id(self, node_id: NodeId) -> BinderItem | None:
+        """Find a BinderItem by its NodeId.
+
+        Performs a depth-first search through the tree to locate the item
+        with the matching NodeId.
+
+        Args:
+            node_id: The NodeId to search for
+
+        Returns:
+            The BinderItem with matching NodeId, or None if not found
+
+        """
+
+        def _search_item(item: BinderItem) -> BinderItem | None:
+            """Recursively search for the NodeId in the tree."""
+            if item.id == node_id:
+                return item
+
+            for child in item.children:
+                result = _search_item(child)
+                if result is not None:
+                    return result
+
+            return None
+
+        for root_item in self.roots:
+            result = _search_item(root_item)
+            if result is not None:
+                return result
+
+        return None
+
+    def get_all_node_ids(self) -> set[NodeId]:
+        """Get all NodeIds present in the tree.
+
+        Returns:
+            Set of all NodeIds in the tree (excludes None ids from placeholders)
+
+        """
+        node_ids = set[NodeId]()
+
+        def _collect_node_ids(item: BinderItem) -> None:
+            """Recursively collect all non-None NodeIds."""
+            if item.id is not None:
+                node_ids.add(item.id)
+
+            for child in item.children:
+                _collect_node_ids(child)
+
+        for root_item in self.roots:
+            _collect_node_ids(root_item)
+
+        return node_ids

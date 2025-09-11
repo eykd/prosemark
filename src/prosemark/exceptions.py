@@ -7,3 +7,7 @@ class ProsemarkError(Exception):
 
 class NodeIdentityError(ProsemarkError):
     """Error raised when node identity validation fails."""
+
+
+class BinderIntegrityError(ProsemarkError):
+    """Error raised when binder tree integrity is violated."""
