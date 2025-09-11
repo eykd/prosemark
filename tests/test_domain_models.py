@@ -2,7 +2,7 @@
 
 import pytest
 
-from prosemark.domain.models import Binder, BinderItem, NodeId
+from prosemark.domain.models import Binder, BinderItem, NodeId, NodeMetadata
 from prosemark.exceptions import BinderIntegrityError, NodeIdentityError
 
 
@@ -90,6 +90,225 @@ class TestNodeId:
         assert node_id != 'not-a-nodeid'
         assert node_id != 123
         assert node_id != None  # noqa: E711
+
+
+class TestNodeMetadata:
+    """Test NodeMetadata value object."""
+
+    def test_node_metadata_complete(self) -> None:
+        """Test NodeMetadata with all fields."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        metadata = NodeMetadata(
+            id=node_id,
+            title='Chapter 1 – Mercy Run',  # noqa: RUF001
+            synopsis='Free-form synopsis text...',
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:30:00-07:00',
+        )
+        assert metadata.id == node_id
+        assert metadata.title == 'Chapter 1 – Mercy Run'  # noqa: RUF001
+        assert metadata.synopsis == 'Free-form synopsis text...'
+        assert metadata.created == '2025-09-10T10:00:00-07:00'
+        assert metadata.updated == '2025-09-10T10:30:00-07:00'
+
+    def test_node_metadata_minimal(self) -> None:
+        """Test NodeMetadata with required fields only."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        metadata = NodeMetadata(
+            id=node_id,
+            title=None,
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+        assert metadata.id == node_id
+        assert metadata.title is None
+        assert metadata.synopsis is None
+        assert metadata.created == '2025-09-10T10:00:00-07:00'
+        assert metadata.updated == '2025-09-10T10:00:00-07:00'
+
+    def test_node_metadata_to_from_dict(self) -> None:
+        """Test NodeMetadata dictionary serialization."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        metadata = NodeMetadata(
+            id=node_id,
+            title='Chapter 1',
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+
+        # Test to_dict
+        data = metadata.to_dict()
+        assert data['id'] == '0192f0c1-2345-7123-8abc-def012345678'
+        assert data['title'] == 'Chapter 1'
+        assert 'synopsis' not in data or data['synopsis'] is None
+        assert data['created'] == '2025-09-10T10:00:00-07:00'
+        assert data['updated'] == '2025-09-10T10:00:00-07:00'
+
+        # Test from_dict
+        restored = NodeMetadata.from_dict(data)
+        assert restored == metadata
+
+    def test_node_metadata_to_from_dict_with_none_values(self) -> None:
+        """Test NodeMetadata dictionary serialization with None values."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        metadata = NodeMetadata(
+            id=node_id,
+            title=None,
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+
+        # Test to_dict
+        data = metadata.to_dict()
+        assert data['id'] == '0192f0c1-2345-7123-8abc-def012345678'
+        # None values should not be included in the dictionary
+        assert 'title' not in data
+        assert 'synopsis' not in data
+        assert data['created'] == '2025-09-10T10:00:00-07:00'
+        assert data['updated'] == '2025-09-10T10:00:00-07:00'
+
+        # Test from_dict
+        restored = NodeMetadata.from_dict(data)
+        assert restored == metadata
+
+    def test_node_metadata_equality_immutability(self) -> None:
+        """Test NodeMetadata equality and immutability."""
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        metadata1 = NodeMetadata(
+            id=node_id,
+            title='Chapter 1',
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+        metadata2 = NodeMetadata(
+            id=node_id,
+            title='Chapter 1',
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+
+        assert metadata1 == metadata2
+
+        # Test immutability
+        with pytest.raises(AttributeError):
+            metadata1.title = 'Different Title'  # type: ignore[misc]
+
+    def test_node_metadata_inequality(self) -> None:
+        """Test NodeMetadata inequality with different values."""
+        node_id1 = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        node_id2 = NodeId('0192f0c1-2345-7456-8abc-def012345678')
+
+        metadata1 = NodeMetadata(
+            id=node_id1,
+            title='Chapter 1',
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+        metadata2 = NodeMetadata(
+            id=node_id2,
+            title='Chapter 1',
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+        metadata3 = NodeMetadata(
+            id=node_id1,
+            title='Chapter 2',
+            synopsis=None,
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T10:00:00-07:00',
+        )
+
+        assert metadata1 != metadata2  # Different IDs
+        assert metadata1 != metadata3  # Different titles
+        assert metadata1 != 'not-metadata'  # type: ignore[comparison-overlap]
+
+    def test_node_metadata_from_dict_missing_optional_fields(self) -> None:
+        """Test from_dict handles missing optional fields correctly."""
+        data: dict[str, str | None] = {
+            'id': '0192f0c1-2345-7123-8abc-def012345678',
+            'created': '2025-09-10T10:00:00-07:00',
+            'updated': '2025-09-10T10:00:00-07:00',
+        }
+
+        metadata = NodeMetadata.from_dict(data)
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+
+        assert metadata.id == node_id
+        assert metadata.title is None
+        assert metadata.synopsis is None
+        assert metadata.created == '2025-09-10T10:00:00-07:00'
+        assert metadata.updated == '2025-09-10T10:00:00-07:00'
+
+    def test_node_metadata_from_dict_error_handling(self) -> None:
+        """Test from_dict error handling for missing or invalid fields."""
+        # Test missing ID
+        with pytest.raises(NodeIdentityError, match='Missing id field'):
+            NodeMetadata.from_dict({
+                'created': '2025-09-10T10:00:00-07:00',
+                'updated': '2025-09-10T10:00:00-07:00',
+            })
+
+        # Test missing created field
+        with pytest.raises(ValueError, match='Missing created field'):
+            NodeMetadata.from_dict({
+                'id': '0192f0c1-2345-7123-8abc-def012345678',
+                'updated': '2025-09-10T10:00:00-07:00',
+            })
+
+        # Test missing updated field
+        with pytest.raises(ValueError, match='Missing updated field'):
+            NodeMetadata.from_dict({
+                'id': '0192f0c1-2345-7123-8abc-def012345678',
+                'created': '2025-09-10T10:00:00-07:00',
+            })
+
+    def test_node_metadata_from_dict_with_explicit_none_values(self) -> None:
+        """Test from_dict handles explicit None values correctly."""
+        data = {
+            'id': '0192f0c1-2345-7123-8abc-def012345678',
+            'title': None,
+            'synopsis': None,
+            'created': '2025-09-10T10:00:00-07:00',
+            'updated': '2025-09-10T10:00:00-07:00',
+        }
+
+        metadata = NodeMetadata.from_dict(data)
+        node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+
+        assert metadata.id == node_id
+        assert metadata.title is None
+        assert metadata.synopsis is None
+        assert metadata.created == '2025-09-10T10:00:00-07:00'
+        assert metadata.updated == '2025-09-10T10:00:00-07:00'
+
+    def test_node_metadata_roundtrip_serialization(self) -> None:
+        """Test complete roundtrip serialization preserves all data."""
+        original_metadata = NodeMetadata(
+            id=NodeId('0192f0c1-2345-7123-8abc-def012345678'),
+            title='Chapter 1 – The Beginning',  # noqa: RUF001
+            synopsis='A detailed synopsis with special characters: ~!@#$%^&*()_+{}|:<>?',
+            created='2025-09-10T10:00:00-07:00',
+            updated='2025-09-10T15:30:00-07:00',
+        )
+
+        # Serialize to dict and back
+        data = original_metadata.to_dict()
+        restored_metadata = NodeMetadata.from_dict(data)
+
+        # Should be exactly equal
+        assert restored_metadata == original_metadata
+        assert restored_metadata.id == original_metadata.id
+        assert restored_metadata.title == original_metadata.title
+        assert restored_metadata.synopsis == original_metadata.synopsis
+        assert restored_metadata.created == original_metadata.created
+        assert restored_metadata.updated == original_metadata.updated
 
 
 class TestBinderItem:

@@ -211,3 +211,121 @@ class Binder:
             _collect_node_ids(root_item)
 
         return node_ids
+
+
+@dataclass(frozen=True)
+class NodeMetadata:
+    """Metadata for a node document.
+
+    NodeMetadata tracks essential information about each node including
+    its identity, title, timestamps, and optional synopsis. The class is immutable
+    (frozen) to ensure data integrity.
+
+    Args:
+        id: Unique identifier for the node (UUIDv7)
+        title: Optional title of the node document
+        synopsis: Optional synopsis/summary of the node content
+        created: ISO 8601 formatted creation timestamp string
+        updated: ISO 8601 formatted last update timestamp string
+
+    Examples:
+        >>> # Create new metadata with all fields
+        >>> node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
+        >>> metadata = NodeMetadata(
+        ...     id=node_id,
+        ...     title='Chapter One',
+        ...     synopsis='Introduction to the story',
+        ...     created='2025-09-10T10:00:00-07:00',
+        ...     updated='2025-09-10T10:30:00-07:00',
+        ... )
+
+        >>> # Create with minimal fields (None values)
+        >>> metadata = NodeMetadata(
+        ...     id=node_id,
+        ...     title=None,
+        ...     synopsis=None,
+        ...     created='2025-09-10T10:00:00-07:00',
+        ...     updated='2025-09-10T10:00:00-07:00',
+        ... )
+
+        >>> # Serialize to dictionary
+        >>> data = metadata.to_dict()
+
+        >>> # Deserialize from dictionary
+        >>> restored = NodeMetadata.from_dict(data)
+
+    """
+
+    id: NodeId
+    title: str | None
+    synopsis: str | None
+    created: str
+    updated: str
+
+    def to_dict(self) -> dict[str, str | None]:
+        """Convert NodeMetadata to a dictionary.
+
+        None values for title and synopsis are excluded from the dictionary
+        to keep the serialized format clean.
+
+        Returns:
+            Dictionary with metadata fields, excluding None values
+
+        """
+        result: dict[str, str | None] = {
+            'id': str(self.id),
+            'created': self.created,
+            'updated': self.updated,
+        }
+
+        # Only include title and synopsis if they are not None
+        if self.title is not None:
+            result['title'] = self.title
+        if self.synopsis is not None:
+            result['synopsis'] = self.synopsis
+
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict[str, str | None]) -> 'NodeMetadata':
+        """Create NodeMetadata from a dictionary.
+
+        Handles missing optional fields by defaulting them to None.
+
+        Args:
+            data: Dictionary containing metadata fields
+
+        Returns:
+            New NodeMetadata instance
+
+        Raises:
+            NodeIdentityError: If the id field contains an invalid NodeId
+
+        """
+        # Get the id and create a NodeId from it
+        id_str = data.get('id')
+        if not id_str:
+            raise NodeIdentityError('Missing id field in metadata dictionary', None)
+
+        node_id = NodeId(id_str)
+
+        # Get optional fields, defaulting to None if not present
+        title = data.get('title')
+        synopsis = data.get('synopsis')
+
+        # Get required timestamp fields
+        created = data.get('created')
+        updated = data.get('updated')
+
+        if not created:
+            raise ValueError('Missing created field in metadata dictionary')
+        if not updated:
+            raise ValueError('Missing updated field in metadata dictionary')
+
+        return cls(
+            id=node_id,
+            title=title,
+            synopsis=synopsis,
+            created=created,
+            updated=updated,
+        )
