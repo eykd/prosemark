@@ -29,7 +29,9 @@
       "mcp__serena__search_for_pattern",
       "mcp__serena__execute_shell_command",
       "Bash(./runtests.sh:*)",
-      "Bash(scripts/runtests.sh:*)"
+      "Bash(scripts/runtests.sh:*)",
+      "mcp__linear-server__list_projects",
+      "mcp__linear-server__get_team"
     ],
     "deny": []
   }

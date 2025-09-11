@@ -2,6 +2,10 @@
 
 The Linear project URL for this project is https://linear.app/solo-workbox/project/prosemark-1dcb08dfed59 and the project name is `Prosemark`.
 
+The Linear Project ID is `85e476c9-f184-4178-863a-c3b1f75c09fb`.
+
+The current spec we're working from is in `specs/prosemark_mvp_spec.md`.
+
 ## When asked to create new conventions
 
 When asked to create a new convention (`CLAUDE.md`), add a second-level
@@ -55,8 +59,7 @@ When writing Python code (`*.py`), follow these testing practices:
 * Use fixtures for complex setup.
 * Aim for 100% test coverage for all code under `src/`.
 * When writing tests, move common fixtures to `tests/conftest.py`.
-* Run tests with `./scripts/runtests.sh` (which accepts normal `pytest` arguments and flags).
-  * Example: `./scripts/runtests.sh tests/test_config_loader.py`
+* Engage the @python-test-runner agent to run and fix tests.
 
 ## Test organization with classes
 
