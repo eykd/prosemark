@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ruff format ."
+          },
+          {
+            "type": "command",
+            "command": "uv run ruff check --fix --unsafe-fixes ."
+          }
+        ]
+      }
+    ],
+    "file-change": [
+      {
+        "files": ["pyproject.toml", "uv.lock"],
+        "command": "uv sync --all-groups"
+      }
+    ]
+  }
+}
