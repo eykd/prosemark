@@ -3,7 +3,7 @@
 import uuid
 from dataclasses import dataclass, field
 
-from prosemark.exceptions import BinderIntegrityError, NodeIdentityError
+from prosemark.exceptions import NodeIdentityError
 
 
 @dataclass(frozen=True)
@@ -135,27 +135,23 @@ class Binder:
         self.validate_integrity()
 
     def validate_integrity(self) -> None:
-        """Validate all tree invariants.
+        """Validate all tree invariants using domain policies.
 
         Raises:
             BinderIntegrityError: If any invariant is violated
 
         """
-        node_ids = set[NodeId]()
+        # Import policies locally to avoid circular import
+        from prosemark.domain.policies import (
+            validate_no_duplicate_ids,
+            validate_placeholder_handling,
+            validate_tree_structure,
+        )
 
-        def _collect_node_ids(item: BinderItem) -> None:
-            """Recursively collect all NodeIds and check for duplicates."""
-            if item.id is not None:
-                if item.id in node_ids:
-                    msg = f'Duplicate NodeId found in tree: {item.id}'
-                    raise BinderIntegrityError(msg, item.id)
-                node_ids.add(item.id)
-
-            for child in item.children:
-                _collect_node_ids(child)
-
-        for root_item in self.roots:
-            _collect_node_ids(root_item)
+        # Apply all domain policies
+        validate_no_duplicate_ids(self.roots)
+        validate_tree_structure(self.roots)
+        validate_placeholder_handling(self.roots)
 
     def find_by_id(self, node_id: NodeId) -> BinderItem | None:
         """Find a BinderItem by its NodeId.
