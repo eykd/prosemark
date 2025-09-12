@@ -193,7 +193,7 @@ class Binder:
             Set of all NodeIds in the tree (excludes None ids from placeholders)
 
         """
-        node_ids = set[NodeId]()
+        node_ids: set[NodeId] = set()
 
         def _collect_node_ids(item: BinderItem) -> None:
             """Recursively collect all non-None NodeIds."""
