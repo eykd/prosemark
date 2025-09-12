@@ -87,3 +87,19 @@ class FilesystemError(ProsemarkError):
         *context: Additional context such as file paths and operation type
 
     """
+
+
+class EditorLaunchError(ProsemarkError):
+    """Error raised when external editor cannot be launched.
+
+    This exception indicates failures in launching external editors such as:
+    - Editor executable not found
+    - Editor launch command failed
+    - Editor configuration issues
+    - System-specific launch failures
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as editor name, command, error details
+
+    """
