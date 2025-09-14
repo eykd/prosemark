@@ -7,6 +7,7 @@ import pytest
 from prosemark.adapters.fake_clock import FakeClock
 from prosemark.adapters.fake_config import FakeConfigPort
 from prosemark.adapters.fake_console import FakeConsolePort
+from prosemark.adapters.fake_logger import FakeLogger
 from prosemark.adapters.fake_storage import FakeBinderRepo
 from prosemark.app.use_cases import InitProject
 from prosemark.domain.models import Binder
@@ -32,6 +33,11 @@ class TestInitProject:
         return FakeConsolePort()
 
     @pytest.fixture
+    def fake_logger(self) -> FakeLogger:
+        """Fake Logger for testing."""
+        return FakeLogger()
+
+    @pytest.fixture
     def fake_clock(self) -> FakeClock:
         """Fake Clock for testing."""
         return FakeClock('2025-09-13T12:00:00Z')
@@ -42,6 +48,7 @@ class TestInitProject:
         fake_binder_repo: FakeBinderRepo,
         fake_config_port: FakeConfigPort,
         fake_console_port: FakeConsolePort,
+        fake_logger: FakeLogger,
         fake_clock: FakeClock,
     ) -> InitProject:
         """InitProject instance with fake dependencies."""
@@ -49,6 +56,7 @@ class TestInitProject:
             binder_repo=fake_binder_repo,
             config_port=fake_config_port,
             console_port=fake_console_port,
+            logger=fake_logger,
             clock=fake_clock,
         )
 
@@ -58,6 +66,7 @@ class TestInitProject:
         fake_binder_repo: FakeBinderRepo,
         fake_config_port: FakeConfigPort,
         fake_console_port: FakeConsolePort,
+        fake_logger: FakeLogger,
         tmp_path: Path,
     ) -> None:
         """Test successful project initialization creates required files."""
@@ -77,10 +86,18 @@ class TestInitProject:
         # Assert - Config was created
         assert fake_config_port.config_exists(config_path)
 
-        # Assert - Success message was printed
+        # Assert - Success message was printed to console
         assert fake_console_port.output_contains(f'Initialized prosemark project at {project_path}')
 
-    def test_init_project_detects_existing_binder(self, init_project: InitProject, tmp_path: Path) -> None:
+        # Assert - Operational logging occurred
+        assert fake_logger.has_logged('info', 'Starting project initialization')
+        assert fake_logger.has_logged('info', 'Project initialization completed successfully')
+        assert fake_logger.has_logged('info', 'Initial binder structure created and saved')
+        assert fake_logger.has_logged('info', 'Default configuration created')
+
+    def test_init_project_detects_existing_binder(
+        self, init_project: InitProject, fake_logger: FakeLogger, tmp_path: Path
+    ) -> None:
         """Test raises BinderIntegrityError for existing _binder.md."""
         # Arrange
         project_path = tmp_path / 'existing_project'
@@ -94,6 +111,9 @@ class TestInitProject:
 
         assert 'Project already initialized' in str(exc_info.value)
         assert str(binder_path) in str(exc_info.value)
+
+        # Assert error was logged
+        assert fake_logger.has_logged('error', 'Project initialization failed: project already exists')
 
     def test_init_project_generates_default_config(
         self, init_project: InitProject, fake_config_port: FakeConfigPort, tmp_path: Path
@@ -119,6 +139,7 @@ class TestInitProject:
         fake_binder_repo: FakeBinderRepo,
         fake_config_port: FakeConfigPort,
         fake_console_port: FakeConsolePort,
+        fake_logger: FakeLogger,
         fake_clock: FakeClock,
         tmp_path: Path,
     ) -> None:
@@ -128,6 +149,7 @@ class TestInitProject:
             binder_repo=fake_binder_repo,
             config_port=fake_config_port,
             console_port=fake_console_port,
+            logger=fake_logger,
             clock=fake_clock,
         )
         project_path = tmp_path / 'test_project'
@@ -150,6 +172,10 @@ class TestInitProject:
 
         # Console output was generated
         assert len(fake_console_port.get_output()) > 0
+
+        # Logger was used for operational logging
+        assert fake_logger.log_count() > 0
+        assert fake_logger.has_logged('info', 'Starting project initialization')
 
     def test_init_project_handles_filesystem_errors(
         self, init_project: InitProject, fake_binder_repo: FakeBinderRepo, tmp_path: Path
