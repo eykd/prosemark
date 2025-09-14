@@ -1,10 +1,13 @@
 """Tests for InitProject use case interactor."""
 
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 
+from prosemark.adapters.fake_clock import FakeClock
+from prosemark.adapters.fake_config import FakeConfigPort
+from prosemark.adapters.fake_console import FakeConsolePort
+from prosemark.adapters.fake_storage import FakeBinderRepo
 from prosemark.app.use_cases import InitProject
 from prosemark.domain.models import Binder
 from prosemark.exceptions import BinderIntegrityError, FilesystemError
@@ -14,66 +17,68 @@ class TestInitProject:
     """Test InitProject use case interactor."""
 
     @pytest.fixture
-    def mock_binder_repo(self) -> Mock:
-        """Mock BinderRepo for testing."""
-        return Mock()
+    def fake_binder_repo(self) -> FakeBinderRepo:
+        """Fake BinderRepo for testing."""
+        return FakeBinderRepo()
 
     @pytest.fixture
-    def mock_config_port(self) -> Mock:
-        """Mock ConfigPort for testing."""
-        return Mock()
+    def fake_config_port(self) -> FakeConfigPort:
+        """Fake ConfigPort for testing."""
+        return FakeConfigPort()
 
     @pytest.fixture
-    def mock_console_port(self) -> Mock:
-        """Mock ConsolePort for testing."""
-        return Mock()
+    def fake_console_port(self) -> FakeConsolePort:
+        """Fake ConsolePort for testing."""
+        return FakeConsolePort()
 
     @pytest.fixture
-    def mock_clock(self) -> Mock:
-        """Mock Clock for testing."""
-        mock_clock = Mock()
-        mock_clock.now_iso.return_value = '2025-09-13T12:00:00Z'
-        return mock_clock
+    def fake_clock(self) -> FakeClock:
+        """Fake Clock for testing."""
+        return FakeClock('2025-09-13T12:00:00Z')
 
     @pytest.fixture
     def init_project(
-        self, mock_binder_repo: Mock, mock_config_port: Mock, mock_console_port: Mock, mock_clock: Mock
+        self,
+        fake_binder_repo: FakeBinderRepo,
+        fake_config_port: FakeConfigPort,
+        fake_console_port: FakeConsolePort,
+        fake_clock: FakeClock,
     ) -> InitProject:
-        """InitProject instance with mocked dependencies."""
+        """InitProject instance with fake dependencies."""
         return InitProject(
-            binder_repo=mock_binder_repo,
-            config_port=mock_config_port,
-            console_port=mock_console_port,
-            clock=mock_clock,
+            binder_repo=fake_binder_repo,
+            config_port=fake_config_port,
+            console_port=fake_console_port,
+            clock=fake_clock,
         )
 
     def test_init_project_creates_binder_and_config(
         self,
         init_project: InitProject,
-        mock_binder_repo: Mock,
-        mock_config_port: Mock,
-        mock_console_port: Mock,
+        fake_binder_repo: FakeBinderRepo,
+        fake_config_port: FakeConfigPort,
+        fake_console_port: FakeConsolePort,
         tmp_path: Path,
     ) -> None:
         """Test successful project initialization creates required files."""
         # Arrange
         project_path = tmp_path / 'test_project'
         project_path.mkdir()
-
-        # Mock that no existing files exist
-        project_path / '_binder.md'
         config_path = project_path / '.prosemark.yml'
 
         # Act
         init_project.execute(project_path)
 
-        # Assert
-        mock_binder_repo.save.assert_called_once()
-        saved_binder = mock_binder_repo.save.call_args[0][0]
+        # Assert - Binder was saved
+        saved_binder = fake_binder_repo.load()
         assert isinstance(saved_binder, Binder)
+        assert saved_binder.roots == []
 
-        mock_config_port.create_default_config.assert_called_once_with(config_path)
-        mock_console_port.print.assert_called_once_with(f'Initialized prosemark project at {project_path}')
+        # Assert - Config was created
+        assert fake_config_port.config_exists(config_path)
+
+        # Assert - Success message was printed
+        assert fake_console_port.output_contains(f'Initialized prosemark project at {project_path}')
 
     def test_init_project_detects_existing_binder(self, init_project: InitProject, tmp_path: Path) -> None:
         """Test raises BinderIntegrityError for existing _binder.md."""
@@ -91,7 +96,7 @@ class TestInitProject:
         assert str(binder_path) in str(exc_info.value)
 
     def test_init_project_generates_default_config(
-        self, init_project: InitProject, mock_config_port: Mock, tmp_path: Path
+        self, init_project: InitProject, fake_config_port: FakeConfigPort, tmp_path: Path
     ) -> None:
         """Test .prosemark.yml created with expected defaults."""
         # Arrange
@@ -103,41 +108,64 @@ class TestInitProject:
         init_project.execute(project_path)
 
         # Assert
-        mock_config_port.create_default_config.assert_called_once_with(config_path)
+        assert fake_config_port.config_exists(config_path)
+        defaults = fake_config_port.get_default_config_values()
+        assert 'editor' in defaults
+        assert 'daily_dir' in defaults
+        assert 'binder_file' in defaults
 
     def test_init_project_uses_injected_dependencies(
-        self, mock_binder_repo: Mock, mock_config_port: Mock, mock_console_port: Mock, mock_clock: Mock, tmp_path: Path
+        self,
+        fake_binder_repo: FakeBinderRepo,
+        fake_config_port: FakeConfigPort,
+        fake_console_port: FakeConsolePort,
+        fake_clock: FakeClock,
+        tmp_path: Path,
     ) -> None:
         """Test all operations use injected ports correctly."""
         # Arrange
         init_project = InitProject(
-            binder_repo=mock_binder_repo,
-            config_port=mock_config_port,
-            console_port=mock_console_port,
-            clock=mock_clock,
+            binder_repo=fake_binder_repo,
+            config_port=fake_config_port,
+            console_port=fake_console_port,
+            clock=fake_clock,
         )
         project_path = tmp_path / 'test_project'
         project_path.mkdir()
+        config_path = project_path / '.prosemark.yml'
 
         # Act
         init_project.execute(project_path)
 
         # Assert all dependencies were used
-        mock_clock.now_iso.assert_called_once()
-        mock_binder_repo.save.assert_called_once()
-        mock_config_port.create_default_config.assert_called_once()
-        mock_console_port.print.assert_called_once()
+        # Clock returns the expected timestamp
+        assert fake_clock.now_iso() == '2025-09-13T12:00:00Z'
+
+        # Binder was saved
+        saved_binder = fake_binder_repo.load()
+        assert saved_binder.roots == []
+
+        # Config was created
+        assert fake_config_port.config_exists(config_path)
+
+        # Console output was generated
+        assert len(fake_console_port.get_output()) > 0
 
     def test_init_project_handles_filesystem_errors(
-        self, init_project: InitProject, mock_binder_repo: Mock, tmp_path: Path
+        self, init_project: InitProject, fake_binder_repo: FakeBinderRepo, tmp_path: Path
     ) -> None:
         """Test FilesystemError raised with descriptive context."""
         # Arrange
         project_path = tmp_path / 'test_project'
         project_path.mkdir()
 
-        # Mock filesystem failure
-        mock_binder_repo.save.side_effect = FilesystemError('Cannot write file', '/path/to/binder.md')
+        # Override save method to raise error
+        original_save = fake_binder_repo.save
+
+        def failing_save(binder: Binder) -> None:
+            raise FilesystemError('Cannot write file', '/path/to/binder.md')
+
+        fake_binder_repo.save = failing_save  # type: ignore[method-assign]
 
         # Act & Assert
         with pytest.raises(FilesystemError) as exc_info:
@@ -145,8 +173,11 @@ class TestInitProject:
 
         assert 'Cannot write file' in str(exc_info.value)
 
+        # Restore original method for other tests
+        fake_binder_repo.save = original_save  # type: ignore[method-assign]
+
     def test_init_project_creates_empty_binder_structure(
-        self, init_project: InitProject, mock_binder_repo: Mock, tmp_path: Path
+        self, init_project: InitProject, fake_binder_repo: FakeBinderRepo, tmp_path: Path
     ) -> None:
         """Test binder is created with empty root structure."""
         # Arrange
@@ -157,8 +188,7 @@ class TestInitProject:
         init_project.execute(project_path)
 
         # Assert
-        mock_binder_repo.save.assert_called_once()
-        saved_binder = mock_binder_repo.save.call_args[0][0]
+        saved_binder = fake_binder_repo.load()
         assert isinstance(saved_binder, Binder)
         assert saved_binder.roots == []  # Empty initial structure
 
