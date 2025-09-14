@@ -34,7 +34,8 @@
       "mcp__linear-server__get_team",
       "mcp__serena__insert_after_symbol",
       "mcp__sequential-thinking__sequentialthinking",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "mcp__serena__check_onboarding_performed"
     ],
     "deny": []
   }
