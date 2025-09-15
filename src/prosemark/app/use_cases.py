@@ -580,3 +580,213 @@ class MoveNode:
             # Ensure position is not negative (treat as 0)
             position = max(0, position)
             target_list.insert(position, source_item)
+
+
+class RemoveNode:
+    """Use case interactor for removing nodes from the binder structure.
+
+    Orchestrates the removal of nodes by updating the binder hierarchy while
+    optionally deleting associated files. Follows hexagonal architecture
+    principles with pure business logic that delegates all I/O operations
+    to injected port implementations.
+
+    The node removal process:
+    1. Validates node exists in binder hierarchy
+    2. Handles child nodes by promoting them to removed node's parent level
+    3. Removes node from binder structure (from parent or root level)
+    4. Optionally deletes node files using NodeRepo when delete_files=True
+    5. Updates and saves binder changes to _binder.md
+    6. Logs removal operations with NodeId and file deletion status
+    7. Preserves binder integrity after node removal
+
+    Child nodes are promoted to maintain hierarchy consistency - when a parent
+    node is removed, its children are moved to the grandparent level rather
+    than being orphaned or automatically removed.
+
+    Args:
+        binder_repo: Port for binder persistence operations
+        node_repo: Port for node file deletion when delete_files=True
+        logger: Port for operational logging and audit trails
+
+    Examples:
+        >>> # With dependency injection
+        >>> interactor = RemoveNode(
+        ...     binder_repo=file_binder_repo,
+        ...     node_repo=file_node_repo,
+        ...     logger=production_logger,
+        ... )
+        >>> interactor.execute(node_id=node_id, delete_files=False)
+
+    """
+
+    def __init__(
+        self,
+        binder_repo: 'BinderRepo',
+        node_repo: 'NodeRepo',
+        logger: 'Logger',
+    ) -> None:
+        """Initialize RemoveNode with injected dependencies.
+
+        Args:
+            binder_repo: Port for binder persistence operations
+            node_repo: Port for node file deletion when delete_files=True
+            logger: Port for operational logging and audit trails
+
+        """
+        self._binder_repo = binder_repo
+        self._node_repo = node_repo
+        self._logger = logger
+
+    def execute(self, node_id: NodeId, *, delete_files: bool = False) -> None:
+        """Execute node removal workflow.
+
+        Removes the specified node from the binder hierarchy and optionally
+        deletes the associated files. Child nodes are promoted to the parent
+        level to maintain hierarchy consistency.
+
+        Args:
+            node_id: NodeId of the node to remove
+            delete_files: If True, delete {id}.md and {id}.notes.md files
+
+        Raises:
+            NodeNotFoundError: If node_id doesn't exist in binder
+            FilesystemError: If binder or node files cannot be updated
+
+        """
+        self._logger.info(
+            'Starting node removal for NodeId: %s with delete_files=%s',
+            node_id,
+            delete_files,
+        )
+
+        # Load and validate binder structure
+        binder = self._binder_repo.load()
+        self._logger.debug('Validating node exists in binder')
+
+        # Validate node exists
+        target_item = binder.find_by_id(node_id)
+        if target_item is None:
+            self._logger.error('Node not found in binder: %s', node_id)
+            raise NodeNotFoundError('Node not found in binder', str(node_id))
+
+        # Find parent for child promotion logic
+        parent_item = self._find_parent_of_node(binder, node_id)
+
+        # Promote children before removing node
+        if target_item.children:
+            self._logger.debug(
+                'Promoting %d children of node %s to parent level',
+                len(target_item.children),
+                node_id,
+            )
+            self._promote_children_to_parent_level(binder, target_item, parent_item)
+
+        # Remove node from binder structure
+        self._remove_node_from_binder(binder, target_item, parent_item)
+
+        # Delete files if requested
+        if delete_files:
+            self._logger.debug('Deleting node files for NodeId: %s', node_id)
+            self._node_repo.delete(node_id, delete_files=True)
+
+        # Save updated binder
+        self._binder_repo.save(binder)
+
+        self._logger.info(
+            'Node removal completed successfully for NodeId: %s (files deleted: %s)',
+            node_id,
+            delete_files,
+        )
+
+    def _find_parent_of_node(self, binder: Binder, node_id: NodeId) -> BinderItem | None:
+        """Find the parent BinderItem of the specified node.
+
+        Args:
+            binder: Binder instance to search
+            node_id: NodeId to find parent for
+
+        Returns:
+            Parent BinderItem or None if node is at root level
+
+        """
+
+        def _search_for_parent(item: BinderItem) -> BinderItem | None:
+            """Recursively search for parent of node_id."""
+            # Check if any direct child matches the target node_id
+            for child in item.children:
+                if child.id == node_id:
+                    return item
+
+            # Recursively search in children
+            for child in item.children:
+                result = _search_for_parent(child)
+                if result is not None:
+                    return result
+
+            return None
+
+        # Search through all root items
+        for root_item in binder.roots:
+            if root_item.id == node_id:
+                # Node is at root level, no parent
+                return None
+
+            result = _search_for_parent(root_item)
+            if result is not None:
+                return result
+
+        return None  # pragma: no cover
+
+    def _promote_children_to_parent_level(
+        self,
+        binder: Binder,
+        target_item: BinderItem,
+        parent_item: BinderItem | None,
+    ) -> None:
+        """Promote children of target node to parent level.
+
+        Args:
+            binder: Binder instance to modify
+            target_item: BinderItem being removed
+            parent_item: Parent of target item (None if at root level)
+
+        """
+        self._logger.debug('Preparing to promote children')
+        children_to_promote = target_item.children.copy()
+        self._logger.debug('Promoting %d children of %s', len(children_to_promote), target_item.id)
+
+        if parent_item is None:
+            # Target is at root level, promote children to root
+            target_index = binder.roots.index(target_item)
+            # Insert children at the target's position
+            for i, child in enumerate(children_to_promote):
+                binder.roots.insert(target_index + i, child)
+        else:
+            # Target is under a parent, promote children to parent level
+            target_index = parent_item.children.index(target_item)
+            # Insert children at the target's position under parent
+            for i, child in enumerate(children_to_promote):
+                parent_item.children.insert(target_index + i, child)
+
+    def _remove_node_from_binder(
+        self,
+        binder: Binder,
+        target_item: BinderItem,
+        parent_item: BinderItem | None,
+    ) -> None:
+        """Remove the target node from the binder structure.
+
+        Args:
+            binder: Binder instance to modify
+            target_item: BinderItem to remove
+            parent_item: Parent of target item (None if at root level)
+
+        """
+        self._logger.debug('Removing node from binder structure: %s', target_item.id)
+
+        if parent_item is None:
+            # Node is at root level
+            binder.roots.remove(target_item)
+        else:
+            # Node is under a parent
+            parent_item.children.remove(target_item)

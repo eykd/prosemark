@@ -35,6 +35,7 @@ class FakeNodeRepo(NodeRepo):
         """Initialize empty fake repository."""
         self._nodes: dict[str, dict[str, str | None]] = {}
         self._editor_calls: list[tuple[str, str]] = []
+        self._delete_calls: list[tuple[str, bool]] = []
 
     def create(self, node_id: 'NodeId', title: str | None, synopsis: str | None) -> None:
         """Create new node files with initial frontmatter.
@@ -121,7 +122,7 @@ class FakeNodeRepo(NodeRepo):
         # Track editor calls for test assertions
         self._editor_calls.append((node_key, part))
 
-    def delete(self, node_id: 'NodeId', *, delete_files: bool) -> None:  # noqa: ARG002  # pragma: no cover
+    def delete(self, node_id: 'NodeId', *, delete_files: bool) -> None:
         """Remove node from system.
 
         Args:
@@ -135,6 +136,9 @@ class FakeNodeRepo(NodeRepo):
         node_key = str(node_id)
         if node_key not in self._nodes:  # pragma: no cover
             raise NodeNotFoundError('Node not found', node_key)
+
+        # Track delete calls for test assertions
+        self._delete_calls.append((node_key, delete_files))
 
         # Remove from memory storage
         del self._nodes[node_key]
@@ -169,6 +173,36 @@ class FakeNodeRepo(NodeRepo):
 
         """
         self._editor_calls.clear()
+
+    def get_delete_calls(self) -> list[tuple[str, bool]]:
+        """Get list of delete calls for test assertions.
+
+        Returns:
+            List of tuples containing (node_id, delete_files) for each delete call
+
+        """
+        return self._delete_calls.copy()
+
+    def delete_called_with(self, node_id: 'NodeId', *, delete_files: bool) -> bool:
+        """Check if delete was called with specific parameters.
+
+        Args:
+            node_id: NodeId to check
+            delete_files: delete_files parameter to check
+
+        Returns:
+            True if delete was called with these parameters
+
+        """
+        return (str(node_id), delete_files) in self._delete_calls
+
+    def clear_delete_calls(self) -> None:
+        """Clear delete call history.
+
+        Useful for resetting state between test cases.
+
+        """
+        self._delete_calls.clear()
 
     def get_node_count(self) -> int:  # pragma: no cover
         """Get total number of nodes in repository.

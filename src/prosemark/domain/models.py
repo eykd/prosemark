@@ -63,6 +63,61 @@ class NodeId:
             return False
         return self.value == other.value
 
+    @classmethod
+    def generate(cls) -> 'NodeId':
+        """Generate a new NodeId with a UUIDv7.
+
+        Returns:
+            A new NodeId instance with a freshly generated UUIDv7
+
+        """
+        # TODO: Use uuid.uuid7() when available in Python standard library
+        # For now, create a UUID7-compliant UUID manually
+        import secrets
+        import time
+
+        # Get current timestamp in milliseconds (48 bits)
+        timestamp_ms = int(time.time() * 1000)
+
+        # Generate 10 random bytes for the rest
+        rand_bytes = secrets.token_bytes(10)
+
+        # Build UUID7 according to RFC 9562:
+        # 32 bits: timestamp high
+        # 16 bits: timestamp mid
+        # 4 bits: version (7)
+        # 12 bits: timestamp low + random
+        # 2 bits: variant (10)
+        # 62 bits: random
+
+        # Extract timestamp parts (48 bits total)
+        timestamp_high = (timestamp_ms >> 16) & 0xFFFFFFFF  # Upper 32 bits
+        timestamp_mid = timestamp_ms & 0xFFFF  # Lower 16 bits
+
+        # Version 7 + 12 random bits
+        version_and_rand = 0x7000 | (rand_bytes[0] << 4) | (rand_bytes[1] >> 4)
+
+        # Variant bits (10) + 14 random bits
+        variant_and_rand = 0x8000 | ((rand_bytes[1] & 0x0F) << 10) | (rand_bytes[2] << 2) | (rand_bytes[3] >> 6)
+
+        # Remaining 48 random bits
+        clock_seq_low = rand_bytes[3] & 0x3F
+        node = int.from_bytes(rand_bytes[4:10], 'big')
+
+        # Construct UUID bytes in the proper order
+        uuid_int = (
+            (timestamp_high << 96)
+            | (timestamp_mid << 80)
+            | (version_and_rand << 64)
+            | (variant_and_rand << 48)
+            | (clock_seq_low << 42)
+            | node
+        )
+
+        # Convert to UUID object
+        generated_uuid = uuid.UUID(int=uuid_int)
+        return cls(str(generated_uuid))
+
 
 @dataclass
 class BinderItem:

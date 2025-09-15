@@ -35,7 +35,10 @@
       "mcp__serena__insert_after_symbol",
       "mcp__sequential-thinking__sequentialthinking",
       "Bash(cat:*)",
-      "mcp__serena__check_onboarding_performed"
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__onboarding",
+      "mcp__serena__write_memory",
+      "Bash(lcov:*)"
     ],
     "deny": []
   }

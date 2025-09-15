@@ -113,6 +113,30 @@ class FakeLogger(Logger):
         level_logs = self.get_logs_by_level(level)
         return any(text in str(log[1]) for log in level_logs)
 
+    def get_logged_messages(self) -> list[str]:
+        """Get all logged messages formatted as strings.
+
+        Returns:
+            List of formatted log messages as strings.
+
+        """
+        messages = []
+        for _level, msg, args, kwargs in self._logs:
+            if args:
+                try:
+                    formatted_msg = str(msg) % args
+                except (TypeError, ValueError):  # pragma: no cover
+                    formatted_msg = f'{msg} {args}'
+            else:
+                formatted_msg = str(msg)
+
+            # Append kwargs if present
+            if kwargs:
+                formatted_msg += f' {kwargs!r}'
+
+            messages.append(formatted_msg)
+        return messages
+
     def clear_logs(self) -> None:
         """Clear all stored log messages.
 
