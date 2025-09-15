@@ -300,3 +300,283 @@ class AddNode:
 
         # Validate binder integrity after modification
         binder.validate_integrity()  # pragma: no cover
+
+
+class MoveNode:
+    """Use case interactor for moving nodes within the binder hierarchy.
+
+    Orchestrates the movement of existing nodes by updating the binder
+    structure while preserving node identity and files. Follows hexagonal
+    architecture principles with pure business logic that delegates all I/O
+    operations to injected port implementations.
+
+    The node movement process:
+    1. Validates source node exists in binder hierarchy
+    2. Validates target parent exists when specified
+    3. Checks for circular dependencies using ancestor traversal
+    4. Removes node from current location in binder tree
+    5. Adds node to new location at specified position
+    6. Updates and saves binder changes to _binder.md
+    7. Logs all operations with NodeId details for traceability
+
+    Node files remain unchanged during move operations - only the binder
+    hierarchy structure is modified.
+
+    Args:
+        binder_repo: Port for binder persistence operations
+        logger: Port for operational logging and audit trails
+
+    Examples:
+        >>> # With dependency injection
+        >>> interactor = MoveNode(
+        ...     binder_repo=file_binder_repo,
+        ...     logger=production_logger,
+        ... )
+        >>> interactor.execute(node_id=node_id, parent_id=new_parent_id, position=0)
+
+    """
+
+    def __init__(
+        self,
+        binder_repo: 'BinderRepo',
+        logger: 'Logger',
+    ) -> None:
+        """Initialize MoveNode with injected dependencies.
+
+        Args:
+            binder_repo: Port for binder persistence operations
+            logger: Port for operational logging and audit trails
+
+        """
+        self._binder_repo = binder_repo
+        self._logger = logger
+
+    def execute(
+        self,
+        node_id: NodeId,
+        parent_id: NodeId | None,
+        position: int | None,
+    ) -> None:
+        """Execute node movement workflow.
+
+        Moves the specified node to a new location in the binder hierarchy.
+        The node is moved to the root level if no parent is specified, or
+        under the specified parent node at the given position.
+
+        Args:
+            node_id: NodeId of the node to move
+            parent_id: Optional target parent NodeId (None = move to root)
+            position: Optional position for insertion order (None = append)
+
+        Raises:
+            NodeNotFoundError: If node_id or parent_id doesn't exist in binder
+            BinderIntegrityError: If move would create circular dependency
+            FilesystemError: If binder file cannot be saved (propagated from ports)
+
+        """
+        self._logger.info(
+            'Starting move node operation for NodeId: %s to parent: %s position: %s',
+            node_id,
+            parent_id,
+            position,
+        )
+
+        # Load and validate binder structure
+        binder = self._binder_repo.load()
+        self._logger.debug('Validating source and target nodes')
+
+        # Validate source node exists
+        source_item = binder.find_by_id(node_id)
+        if source_item is None:
+            self._logger.error('Source node not found in binder: %s', node_id)
+            raise NodeNotFoundError('Source node not found in binder', str(node_id))
+
+        # Validate target parent exists (if specified)
+        if parent_id is not None:
+            target_parent = binder.find_by_id(parent_id)
+            if target_parent is None:
+                self._logger.error('Target parent not found in binder: %s', parent_id)
+                raise NodeNotFoundError('Target parent not found in binder', str(parent_id))
+
+        # Check for circular dependencies
+        self._logger.debug('Checking for circular dependencies')
+        if self._would_create_circular_dependency(binder, node_id, parent_id):
+            self._logger.error(
+                'Circular dependency detected: cannot move %s under %s',
+                node_id,
+                parent_id,
+            )
+            raise BinderIntegrityError(
+                'Move would create circular dependency',
+                str(node_id),
+                str(parent_id),
+            )
+
+        # Perform the move operation
+        self._remove_node_from_current_location(binder, source_item)
+        self._add_node_to_new_location(binder, source_item, parent_id, position)
+
+        # Save updated binder
+        self._binder_repo.save(binder)
+
+        self._logger.info('Move node operation completed successfully for NodeId: %s', node_id)
+
+    def _would_create_circular_dependency(
+        self,
+        binder: Binder,
+        node_id: NodeId,
+        parent_id: NodeId | None,
+    ) -> bool:
+        """Check if moving node under parent would create circular dependency.
+
+        Uses ancestor traversal approach: walks up from target parent to see
+        if the source node is an ancestor.
+
+        Args:
+            binder: Binder instance to check
+            node_id: NodeId of node being moved
+            parent_id: Target parent NodeId (None means root level)
+
+        Returns:
+            True if move would create circular dependency, False otherwise
+
+        """
+        # Moving to root level cannot create circular dependency
+        if parent_id is None:
+            return False
+
+        # Check if source node is an ancestor of target parent
+        return self._is_ancestor(binder, node_id, parent_id)
+
+    def _is_ancestor(self, binder: Binder, potential_ancestor_id: NodeId, descendant_id: NodeId) -> bool:
+        """Check if potential_ancestor_id is an ancestor of descendant_id.
+
+        Traverses up the tree from descendant to see if potential_ancestor
+        is found in the ancestry chain.
+
+        Args:
+            binder: Binder instance to traverse
+            potential_ancestor_id: NodeId that might be an ancestor
+            descendant_id: NodeId to check ancestry for
+
+        Returns:
+            True if potential_ancestor_id is an ancestor of descendant_id
+
+        """
+        current_id: NodeId | None = descendant_id
+
+        while current_id is not None:
+            # Find parent of current node
+            parent_item = self._find_parent_of_node(binder, current_id)
+
+            if parent_item is None:
+                # Reached root level, no more ancestors
+                return False
+
+            if parent_item.id == potential_ancestor_id:
+                # Found the potential ancestor in ancestry chain
+                return True
+
+            # Continue up the tree
+            current_id = parent_item.id
+
+        return False  # pragma: no cover
+
+    def _find_parent_of_node(self, binder: Binder, node_id: NodeId) -> BinderItem | None:
+        """Find the parent BinderItem of the specified node.
+
+        Args:
+            binder: Binder instance to search
+            node_id: NodeId to find parent for
+
+        Returns:
+            Parent BinderItem or None if node is at root level
+
+        """
+
+        def _search_for_parent(item: BinderItem) -> BinderItem | None:
+            """Recursively search for parent of node_id."""
+            # Check if any direct child matches the target node_id
+            for child in item.children:
+                if child.id == node_id:
+                    return item
+
+            # Recursively search in children
+            for child in item.children:
+                result = _search_for_parent(child)
+                if result is not None:
+                    return result
+
+            return None
+
+        # Search through all root items
+        for root_item in binder.roots:
+            if root_item.id == node_id:
+                # Node is at root level, no parent
+                return None
+
+            result = _search_for_parent(root_item)
+            if result is not None:
+                return result
+
+        return None  # pragma: no cover
+
+    def _remove_node_from_current_location(self, binder: Binder, source_item: BinderItem) -> None:
+        """Remove the source node from its current location in the binder.
+
+        Args:
+            binder: Binder instance to modify
+            source_item: BinderItem to remove
+
+        """
+        self._logger.debug('Removing node from current location: %s', source_item.id)
+
+        # Source item must have a valid NodeId to be moved
+        if source_item.id is None:
+            raise BinderIntegrityError('Cannot remove item without NodeId', source_item)
+
+        # Find parent and remove from its children list
+        parent_item = self._find_parent_of_node(binder, source_item.id)
+
+        if parent_item is None:
+            # Node is at root level
+            binder.roots.remove(source_item)
+        else:
+            # Node is under a parent
+            parent_item.children.remove(source_item)
+
+    def _add_node_to_new_location(
+        self,
+        binder: Binder,
+        source_item: BinderItem,
+        parent_id: NodeId | None,
+        position: int | None,
+    ) -> None:
+        """Add the source node to its new location in the binder.
+
+        Args:
+            binder: Binder instance to modify
+            source_item: BinderItem to add
+            parent_id: Target parent NodeId (None = root level)
+            position: Position for insertion (None = append, out-of-bounds = append)
+
+        """
+        self._logger.debug('Adding node to new location: %s under parent: %s', source_item.id, parent_id)
+
+        if parent_id is None:
+            # Add to root level
+            target_list = binder.roots
+        else:
+            # Add under specified parent
+            parent_item = binder.find_by_id(parent_id)
+            if parent_item is None:
+                raise NodeNotFoundError('Parent item not found', parent_id)
+            target_list = parent_item.children
+
+        # Insert at specified position or append
+        if position is None or position >= len(target_list):
+            target_list.append(source_item)
+        else:
+            # Ensure position is not negative (treat as 0)
+            position = max(0, position)
+            target_list.insert(position, source_item)
