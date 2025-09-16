@@ -302,6 +302,98 @@ class AddNode:
         binder.validate_integrity()  # pragma: no cover
 
 
+class EditPart:
+    """Use case interactor for editing node parts in external editor.
+
+    Orchestrates the opening of node parts (draft, notes, synopsis) in the
+    configured external editor. Follows hexagonal architecture principles
+    with pure business logic that delegates all I/O operations to injected
+    port implementations.
+
+    The edit process:
+    1. Validates that the specified node exists in the binder
+    2. Validates that the requested part is valid (draft, notes, synopsis)
+    3. Opens the appropriate file part in the external editor
+    4. Logs the editor operation for traceability
+
+    Args:
+        binder_repo: Port for binder persistence operations (validation)
+        node_repo: Port for node file operations and editor integration
+        logger: Port for operational logging and audit trails
+
+    Examples:
+        >>> # With dependency injection
+        >>> interactor = EditPart(
+        ...     binder_repo=file_binder_repo,
+        ...     node_repo=file_node_repo,
+        ...     logger=production_logger,
+        ... )
+        >>> interactor.execute(node_id=node_id, part='draft')
+
+    """
+
+    def __init__(
+        self,
+        binder_repo: 'BinderRepo',
+        node_repo: 'NodeRepo',
+        logger: 'Logger',
+    ) -> None:
+        """Initialize EditPart with injected dependencies.
+
+        Args:
+            binder_repo: Port for binder persistence operations (validation)
+            node_repo: Port for node file operations and editor integration
+            logger: Port for operational logging and audit trails
+
+        """
+        self._binder_repo = binder_repo
+        self._node_repo = node_repo
+        self._logger = logger
+
+    def execute(self, node_id: NodeId, part: str) -> None:
+        """Execute part editing workflow.
+
+        Opens the specified part of the node in the external editor.
+        Validates that both the node and part are valid before proceeding.
+
+        Args:
+            node_id: NodeId of the node to edit
+            part: Which part to edit - must be one of:
+                  - 'draft': Edit the main content in {id}.md
+                  - 'notes': Edit the notes in {id}.notes.md
+                  - 'synopsis': Edit the synopsis field in {id}.md frontmatter
+
+        Raises:
+            NodeNotFoundError: If node_id doesn't exist in binder
+            ValueError: If part is not a valid option
+            FilesystemError: If editor cannot be launched or files don't exist
+
+        """
+        self._logger.info('Starting edit operation for NodeId: %s, part: %s', node_id, part)
+
+        # Validation Phase - Check node exists in binder
+        binder = self._binder_repo.load()
+        target_item = binder.find_by_id(node_id)
+        if target_item is None:
+            self._logger.error('Node not found in binder: %s', node_id)
+            raise NodeNotFoundError('Node not found in binder', str(node_id))
+
+        # Validation Phase - Check part is valid
+        valid_parts = {'draft', 'notes', 'synopsis'}
+        if part not in valid_parts:
+            self._logger.error('Invalid part specified: %s (valid: %s)', part, valid_parts)
+            msg = f'Invalid part: {part}. Must be one of: {", ".join(sorted(valid_parts))}'
+            raise ValueError(msg)
+
+        self._logger.debug('Validation passed: node exists and part is valid')
+
+        # Editor Launch Phase - Open file in external editor
+        self._logger.debug('Opening %s part of node %s in editor', part, node_id)
+        self._node_repo.open_in_editor(node_id, part)
+
+        self._logger.info('Edit operation completed successfully for NodeId: %s, part: %s', node_id, part)
+
+
 class MoveNode:
     """Use case interactor for moving nodes within the binder hierarchy.
 

@@ -179,3 +179,22 @@ class FakeLogger(Logger):
 
         """
         return len(self.get_logs_by_level(level))
+
+    @property
+    def info_messages(self) -> list[str]:
+        """Get formatted info messages."""
+        return [str(log[1]) % log[2] if log[2] else str(log[1]) for log in self.get_logs_by_level('info')]
+
+    @property
+    def error_messages(self) -> list[str]:
+        """Get formatted error messages."""
+        return [str(log[1]) % log[2] if log[2] else str(log[1]) for log in self.get_logs_by_level('error')]
+
+    @property
+    def debug_messages(self) -> list[str]:
+        """Get formatted debug messages."""
+        return [str(log[1]) % log[2] if log[2] else str(log[1]) for log in self.get_logs_by_level('debug')]
+
+    def clear(self) -> None:
+        """Alias for clear_logs for convenience."""
+        self.clear_logs()

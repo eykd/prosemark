@@ -36,6 +36,7 @@ class FakeNodeRepo(NodeRepo):
         self._nodes: dict[str, dict[str, str | None]] = {}
         self._editor_calls: list[tuple[str, str]] = []
         self._delete_calls: list[tuple[str, bool]] = []
+        self._open_in_editor_exception: Exception | None = None
 
     def create(self, node_id: 'NodeId', title: str | None, synopsis: str | None) -> None:
         """Create new node files with initial frontmatter.
@@ -100,7 +101,7 @@ class FakeNodeRepo(NodeRepo):
         # Update the stored frontmatter
         self._nodes[node_key] = fm.copy()
 
-    def open_in_editor(self, node_id: 'NodeId', part: str) -> None:  # pragma: no cover
+    def open_in_editor(self, node_id: 'NodeId', part: str) -> None:
         """Open specified node part in editor.
 
         Args:
@@ -119,8 +120,14 @@ class FakeNodeRepo(NodeRepo):
         if part not in ('draft', 'notes', 'synopsis'):  # pragma: no cover
             raise ValueError('Invalid part specification', part)
 
-        # Track editor calls for test assertions
+        # Track editor calls for test assertions (before potential exception)
         self._editor_calls.append((node_key, part))
+
+        # Check if exception should be raised (for testing)
+        if self._open_in_editor_exception is not None:
+            exception_to_raise = self._open_in_editor_exception
+            self._open_in_editor_exception = None  # Reset after raising
+            raise exception_to_raise
 
     def delete(self, node_id: 'NodeId', *, delete_files: bool) -> None:
         """Remove node from system.
@@ -212,3 +219,34 @@ class FakeNodeRepo(NodeRepo):
 
         """
         return len(self._nodes)
+
+    def set_open_in_editor_exception(self, exception: Exception | None) -> None:
+        """Set an exception to be raised on next open_in_editor call.
+
+        Args:
+            exception: Exception to raise, or None to clear
+
+        """
+        self._open_in_editor_exception = exception
+
+    @property
+    def open_in_editor_calls(self) -> list[tuple['NodeId', str]]:
+        """Get list of open_in_editor calls for test assertions.
+
+        Returns:
+            List of tuples containing (node_id, part) for each editor call
+
+        """
+        from prosemark.domain.models import NodeId
+
+        return [(NodeId(node_key), part) for node_key, part in self._editor_calls]
+
+    @open_in_editor_calls.setter
+    def open_in_editor_calls(self, value: list[tuple['NodeId', str]]) -> None:
+        """Set the open_in_editor_calls list (for test reset).
+
+        Args:
+            value: New list value
+
+        """
+        self._editor_calls = [(str(node_id), part) for node_id, part in value]

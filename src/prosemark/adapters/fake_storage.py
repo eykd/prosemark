@@ -57,3 +57,15 @@ class FakeBinderRepo(BinderRepo):
 
         """
         self._binder = binder
+
+    def set_binder(self, binder: 'Binder') -> None:
+        """Set binder directly for testing convenience.
+
+        This is a test-specific method that allows direct setup
+        of the binder state without going through the save() method.
+
+        Args:
+            binder: The Binder instance to store in memory.
+
+        """
+        self._binder = binder
