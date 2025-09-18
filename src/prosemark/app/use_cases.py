@@ -4,13 +4,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from prosemark.domain.models import Binder, BinderItem, NodeId
-from prosemark.exceptions import BinderIntegrityError, NodeNotFoundError
+from prosemark.exceptions import BinderIntegrityError, EditorLaunchError, FilesystemError, NodeNotFoundError
 
 if TYPE_CHECKING:  # pragma: no cover
     from prosemark.ports.binder_repo import BinderRepo
     from prosemark.ports.clock import Clock
     from prosemark.ports.config_port import ConfigPort
     from prosemark.ports.console_port import ConsolePort
+    from prosemark.ports.daily_repo import DailyRepo
+    from prosemark.ports.editor_port import EditorPort
     from prosemark.ports.id_generator import IdGenerator
     from prosemark.ports.logger import Logger
     from prosemark.ports.node_repo import NodeRepo
@@ -882,3 +884,107 @@ class RemoveNode:
         else:
             # Node is under a parent
             parent_item.children.remove(target_item)
+
+
+class WriteFreeform:
+    """Use case interactor for creating timestamped freewrite files.
+
+    Creates standalone markdown files with optional titles and UUIDv7 identifiers
+    outside the binder structure for frictionless writing. This interactor supports
+    spontaneous idea capture without structural constraints and can launch the
+    created file in the user's preferred editor.
+
+    The freewrite creation process:
+    1. Generates a unique timestamped filename with UUIDv7 identifier
+    2. Creates the file with optional title in YAML frontmatter
+    3. Opens the file in external editor for immediate writing
+    4. Logs the operation for reference and session tracking
+    5. Returns the filename for confirmation or further operations
+
+    Args:
+        daily_repo: Port for freewrite file creation and management
+        editor_port: Port for launching external editor
+        logger: Port for operational logging and audit trails
+        clock: Port for timestamp generation
+
+    Examples:
+        >>> # With dependency injection
+        >>> interactor = WriteFreeform(
+        ...     daily_repo=filesystem_daily_repo,
+        ...     editor_port=system_editor_port,
+        ...     logger=production_logger,
+        ...     clock=system_clock,
+        ... )
+        >>> filename = interactor.execute(title='Morning Thoughts')
+        >>> print(filename)
+        "20250911T0830_01932c5a-7f3e-7000-8000-000000000001.md"
+
+    """
+
+    def __init__(
+        self,
+        daily_repo: 'DailyRepo',
+        editor_port: 'EditorPort',
+        logger: 'Logger',
+        clock: 'Clock',
+    ) -> None:
+        """Initialize WriteFreeform with injected dependencies.
+
+        Args:
+            daily_repo: Port for freewrite file creation and management
+            editor_port: Port for launching external editor
+            logger: Port for operational logging and audit trails
+            clock: Port for timestamp generation
+
+        """
+        self._daily_repo = daily_repo
+        self._editor_port = editor_port
+        self._logger = logger
+        self._clock = clock
+
+    def execute(self, title: str | None = None) -> str:
+        """Execute freewrite creation workflow.
+
+        Creates a new timestamped freewrite file with optional title,
+        opens it in the external editor, and returns the filename for
+        confirmation. Handles editor launch failures gracefully.
+
+        Args:
+            title: Optional title to include in the file's frontmatter.
+                   If provided, will be added as a 'title' field in the
+                   YAML frontmatter block.
+
+        Returns:
+            The filename of the created freewrite file, following the
+            format YYYYMMDDTHHMM_<uuid7>.md
+
+        Raises:
+            FilesystemError: If the file cannot be created due to I/O
+                           errors, permission issues, or disk space
+                           constraints (propagated from DailyRepo).
+
+        """
+        # Log start of freewrite creation
+        if title:
+            self._logger.info('Starting freewrite creation with title: %s', title)
+        else:
+            self._logger.info('Starting freewrite creation without title')
+
+        try:
+            # Create the freewrite file
+            filename = self._daily_repo.write_freeform(title=title)
+            self._logger.info('Created freewrite file: %s', filename)
+
+            # Attempt to open in editor
+            try:
+                self._editor_port.open(filename)
+                self._logger.debug('Opened freewrite file in editor: %s', filename)
+                return filename  # noqa: TRY300
+            except EditorLaunchError as exc:
+                # Editor failure shouldn't prevent the freewrite from being created
+                self._logger.warning('Failed to open freewrite file in editor: %s (file still created)', str(exc))
+                return filename
+
+        except FilesystemError:
+            self._logger.error('Failed to create freewrite file')  # noqa: TRY400
+            raise  # Re-raise filesystem errors as they're critical
