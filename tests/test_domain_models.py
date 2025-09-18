@@ -596,3 +596,53 @@ class TestBinder:
         different_item = BinderItem(id=None, display_title='Chapter 2', children=[])
         binder4 = Binder(roots=[different_item])
         assert binder1 != binder4
+
+    def test_find_placeholder_by_display_title(self) -> None:
+        """Test finding placeholder items by display title."""
+        # Create mixed structure with materialized and placeholder items
+        node_id1 = NodeId('0192f0c1-1111-7000-8000-000000000001')
+        materialized = BinderItem(id=node_id1, display_title='Materialized', children=[])
+        placeholder1 = BinderItem(id=None, display_title='Placeholder 1', children=[])
+        placeholder2 = BinderItem(id=None, display_title='Placeholder 2', children=[])
+
+        binder = Binder(roots=[materialized, placeholder1, placeholder2])
+
+        # Should find placeholder items
+        found1 = binder.find_placeholder_by_display_title('Placeholder 1')
+        assert found1 == placeholder1
+
+        found2 = binder.find_placeholder_by_display_title('Placeholder 2')
+        assert found2 == placeholder2
+
+        # Should not find materialized items
+        not_found = binder.find_placeholder_by_display_title('Materialized')
+        assert not_found is None
+
+        # Should return None for non-existent title
+        not_found2 = binder.find_placeholder_by_display_title('Does Not Exist')
+        assert not_found2 is None
+
+    def test_find_placeholder_in_nested_structure_returns_none(self) -> None:
+        """Test find_placeholder_by_display_title returns None when no match in nested structure."""
+        # Create nested structure with no matching placeholders
+        node_id1 = NodeId('0192f0c1-1111-7000-8000-000000000001')
+        node_id2 = NodeId('0192f0c1-2222-7000-8000-000000000002')
+
+        # All items are materialized (have IDs)
+        child1 = BinderItem(id=node_id1, display_title='Child 1', children=[])
+        child2 = BinderItem(id=node_id2, display_title='Child 2', children=[])
+        parent = BinderItem(id=None, display_title='Parent Placeholder', children=[child1, child2])
+
+        binder = Binder(roots=[parent])
+
+        # Should not find materialized children even though parent is placeholder
+        result = binder.find_placeholder_by_display_title('Child 1')
+        assert result is None
+
+        # Should find the parent placeholder
+        result2 = binder.find_placeholder_by_display_title('Parent Placeholder')
+        assert result2 == parent
+
+        # Should return None when searching through all branches without finding match
+        result3 = binder.find_placeholder_by_display_title('Non-existent')
+        assert result3 is None

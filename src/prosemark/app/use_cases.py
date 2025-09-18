@@ -4,7 +4,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from prosemark.domain.models import Binder, BinderItem, NodeId
-from prosemark.exceptions import BinderIntegrityError, EditorLaunchError, FilesystemError, NodeNotFoundError
+from prosemark.exceptions import (
+    AlreadyMaterializedError,
+    BinderIntegrityError,
+    EditorLaunchError,
+    FilesystemError,
+    NodeNotFoundError,
+    PlaceholderNotFoundError,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from prosemark.ports.binder_repo import BinderRepo
@@ -1264,3 +1271,144 @@ class ShowStructure:
         for item in items:
             count += self._count_placeholders(item.children)
         return count
+
+
+class MaterializeNode:
+    """Use case interactor for converting binder placeholders into actual nodes.
+
+    Orchestrates the materialization of placeholder items by generating unique
+    identifiers, creating node files, and updating the binder structure.
+    Follows hexagonal architecture principles with pure business logic that
+    delegates all I/O operations to injected port implementations.
+
+    The materialization process:
+    1. Locates placeholder by display title in binder structure
+    2. Validates that the item is indeed a placeholder (has None id)
+    3. Generates unique NodeId for the new node
+    4. Creates node files with proper frontmatter and content
+    5. Updates binder structure replacing placeholder with node reference
+    6. Saves updated binder to persistent storage
+    7. Logs all operations for audit trail
+
+    Args:
+        binder_repo: Port for binder persistence operations
+        node_repo: Port for node file creation and management
+        id_generator: Port for generating unique NodeId values
+        logger: Port for operational logging and audit trails
+
+    Examples:
+        >>> # With dependency injection
+        >>> interactor = MaterializeNode(
+        ...     binder_repo=file_binder_repo,
+        ...     node_repo=file_node_repo,
+        ...     id_generator=uuid_generator,
+        ...     logger=production_logger,
+        ... )
+        >>> node_id = interactor.execute(display_title='Chapter One', synopsis='The beginning')
+
+    """
+
+    def __init__(
+        self,
+        binder_repo: 'BinderRepo',
+        node_repo: 'NodeRepo',
+        id_generator: 'IdGenerator',
+        logger: 'Logger',
+    ) -> None:
+        """Initialize MaterializeNode with injected dependencies.
+
+        Args:
+            binder_repo: Port for binder persistence operations
+            node_repo: Port for node file creation and management
+            id_generator: Port for generating unique NodeId values
+            logger: Port for operational logging and audit trails
+
+        """
+        self._binder_repo = binder_repo
+        self._node_repo = node_repo
+        self._id_generator = id_generator
+        self._logger = logger
+
+    def execute(self, display_title: str, synopsis: str | None) -> NodeId:
+        """Execute placeholder materialization workflow.
+
+        Converts a binder placeholder with the specified display title into
+        a concrete node with files and proper binder structure integration.
+
+        Args:
+            display_title: Display title of the placeholder to materialize
+            synopsis: Optional synopsis/summary for the new node
+
+        Returns:
+            NodeId of the materialized node
+
+        Raises:
+            PlaceholderNotFoundError: If no placeholder with display_title exists
+            AlreadyMaterializedError: If item with display_title already has NodeId
+            BinderIntegrityError: If binder integrity is violated after materialization
+            FilesystemError: If node files cannot be created (propagated from ports)
+
+        """
+        self._logger.info('Starting placeholder materialization for display_title=%s', display_title)
+
+        # Discovery Phase - Find the placeholder in binder structure
+        binder = self._binder_repo.load()
+        placeholder = binder.find_placeholder_by_display_title(display_title)
+
+        if placeholder is None:
+            # Check if an item with this title already exists but is materialized
+            for root_item in binder.roots:
+                existing_item = self._find_item_by_title_recursive(root_item, display_title)
+                if existing_item is not None and existing_item.id is not None:
+                    self._logger.error('Item with display_title already materialized: %s', display_title)
+                    raise AlreadyMaterializedError('Item already materialized', display_title, str(existing_item.id))
+
+            # No item found at all
+            self._logger.error('Placeholder not found with display_title: %s', display_title)
+            raise PlaceholderNotFoundError('Placeholder not found', display_title)
+
+        # Validation Phase - Ensure it's actually a placeholder
+        if placeholder.id is not None:  # pragma: no cover
+            # This should never happen as find_placeholder_by_display_title only returns items with id=None
+            self._logger.error('Item with display_title already materialized: %s', display_title)  # pragma: no cover
+            raise AlreadyMaterializedError(
+                'Item already materialized', display_title, str(placeholder.id)
+            )  # pragma: no cover
+
+        # Generation Phase - Create unique identity
+        node_id = self._id_generator.new()
+        self._logger.debug('Generated new NodeId for materialization: %s', node_id)
+
+        # Creation Phase - Set up node files with proper metadata
+        self._node_repo.create(node_id, display_title, synopsis)
+        self._logger.debug('Created node files for materialized NodeId: %s', node_id)
+
+        # Materialization Phase - Update placeholder to reference actual node
+        placeholder.id = node_id
+        self._binder_repo.save(binder)
+        self._logger.debug('Updated binder with materialized node: %s', node_id)
+
+        # Completion
+        self._logger.info('Placeholder materialization completed successfully for NodeId: %s', node_id)
+        return node_id
+
+    def _find_item_by_title_recursive(self, item: BinderItem, target_title: str) -> BinderItem | None:
+        """Recursively search for any item (placeholder or materialized) by display title.
+
+        Args:
+            item: Current item to check
+            target_title: Title to search for
+
+        Returns:
+            The BinderItem with matching display title, or None if not found
+
+        """
+        if item.display_title == target_title:
+            return item
+
+        for child in item.children:
+            result = self._find_item_by_title_recursive(child, target_title)
+            if result is not None:  # pragma: no branch
+                return result
+
+        return None

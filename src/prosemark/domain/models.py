@@ -263,6 +263,39 @@ class Binder:
 
         return node_ids
 
+    def find_placeholder_by_display_title(self, display_title: str) -> BinderItem | None:
+        """Find a placeholder (item with None id) by its display title.
+
+        Performs a depth-first search through the tree to locate the first
+        placeholder item with the matching display title.
+
+        Args:
+            display_title: The display title to search for
+
+        Returns:
+            The BinderItem with matching display title and None id, or None if not found
+
+        """
+
+        def _search_item(item: BinderItem) -> BinderItem | None:
+            """Recursively search for the placeholder by display title."""
+            if item.id is None and item.display_title == display_title:
+                return item
+
+            for child in item.children:
+                result = _search_item(child)
+                if result is not None:
+                    return result
+
+            return None
+
+        for root_item in self.roots:
+            result = _search_item(root_item)
+            if result is not None:
+                return result
+
+        return None
+
 
 @dataclass(frozen=True)
 class NodeMetadata:

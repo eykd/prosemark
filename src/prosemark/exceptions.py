@@ -103,3 +103,31 @@ class EditorLaunchError(ProsemarkError):
         *context: Additional context such as editor name, command, error details
 
     """
+
+
+class PlaceholderNotFoundError(ProsemarkError):
+    """Error raised when a placeholder cannot be found by display title.
+
+    This exception indicates that a binder placeholder with the specified
+    display title does not exist in the binder structure. Used primarily
+    by MaterializeNode when attempting to materialize a non-existent placeholder.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as the display title searched for
+
+    """
+
+
+class AlreadyMaterializedError(ProsemarkError):
+    """Error raised when attempting to materialize an already materialized item.
+
+    This exception indicates that a binder item already has a NodeId assigned
+    and cannot be materialized again. Used by MaterializeNode to prevent
+    double-materialization of existing nodes.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as the existing NodeId
+
+    """
