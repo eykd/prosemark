@@ -111,7 +111,20 @@ class FakeLogger(Logger):
 
         """
         level_logs = self.get_logs_by_level(level)
-        return any(text in str(log[1]) for log in level_logs)
+        for log in level_logs:
+            # Check raw message
+            if text in str(log[1]):
+                return True
+            # Check formatted message if args are present
+            if log[2]:  # args tuple is not empty
+                try:
+                    formatted_msg = str(log[1]) % log[2]
+                    if text in formatted_msg:
+                        return True
+                except (TypeError, ValueError):  # pragma: no cover
+                    # If formatting fails, continue to next log
+                    pass
+        return False
 
     def get_logged_messages(self) -> list[str]:
         """Get all logged messages formatted as strings.

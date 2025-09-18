@@ -988,3 +988,279 @@ class WriteFreeform:
         except FilesystemError:
             self._logger.error('Failed to create freewrite file')  # noqa: TRY400
             raise  # Re-raise filesystem errors as they're critical
+
+
+class ShowStructure:
+    """Use case interactor for displaying the hierarchical structure of the binder.
+
+    Provides a read-only view of the binder hierarchy, supporting both full
+    structure display and subtree filtering. Formats the tree structure using
+    ASCII art for console display with proper indentation and tree characters.
+
+    The structure display process:
+    1. Loads the current binder structure from storage
+    2. Validates subtree root node exists when node_id is specified
+    3. Filters to subtree or shows full structure based on parameters
+    4. Formats the hierarchy using tree drawing characters (├─, └─, │)
+    5. Shows placeholders with distinctive visual markers
+    6. Returns formatted string representation for console output
+    7. Logs operation details for traceability and debugging
+
+    Placeholders (items without NodeId) are displayed with [Placeholder]
+    markers to distinguish them from actual nodes. The formatter uses
+    standard tree drawing characters for clear hierarchy visualization.
+
+    Args:
+        binder_repo: Port for binder persistence operations
+        logger: Port for operational logging and audit trails
+
+    Examples:
+        >>> # With dependency injection
+        >>> interactor = ShowStructure(
+        ...     binder_repo=file_binder_repo,
+        ...     logger=production_logger,
+        ... )
+        >>> # Display full structure
+        >>> structure = interactor.execute()
+        >>> print(structure)
+        ├─ Part 1
+        │  ├─ Chapter 1
+        │  │  └─ Section 1.1
+        │  └─ Chapter 2
+        └─ Part 2
+        >>>
+        >>> # Display subtree from specific node
+        >>> subtree = interactor.execute(node_id=part1_id)
+        >>> print(subtree)
+        Part 1
+        ├─ Chapter 1
+        │  └─ Section 1.1
+        └─ Chapter 2
+
+    """
+
+    def __init__(
+        self,
+        binder_repo: 'BinderRepo',
+        logger: 'Logger',
+    ) -> None:
+        """Initialize ShowStructure with injected dependencies.
+
+        Args:
+            binder_repo: Port for binder persistence operations
+            logger: Port for operational logging and audit trails
+
+        """
+        self._binder_repo = binder_repo
+        self._logger = logger
+
+    def execute(self, node_id: NodeId | None = None) -> str:
+        """Execute structure display workflow.
+
+        Displays the binder hierarchy as a formatted tree structure.
+        When node_id is provided, shows only the subtree starting from
+        that node. When node_id is None, shows the complete binder structure.
+
+        Args:
+            node_id: Optional NodeId for subtree display (None = full structure)
+
+        Returns:
+            Formatted string representation of the tree structure using
+            ASCII art characters for hierarchy visualization
+
+        Raises:
+            NodeNotFoundError: If node_id is specified but doesn't exist in binder
+            FilesystemError: If binder cannot be loaded (propagated from ports)
+
+        """
+        if node_id is None:
+            self._logger.info('Displaying full binder structure')
+        else:
+            self._logger.info('Displaying subtree structure for NodeId: %s', node_id)
+
+        # Load binder structure
+        binder = self._binder_repo.load()
+
+        if node_id is None:
+            # Display full structure
+            return self._format_full_structure(binder)
+        # Display subtree
+        return self._format_subtree_structure(binder, node_id)
+
+    def _format_full_structure(self, binder: Binder) -> str:
+        """Format the complete binder structure.
+
+        Args:
+            binder: Binder instance to format
+
+        Returns:
+            Formatted string representation of full structure
+
+        """
+        if not binder.roots:
+            self._logger.debug('Binder is empty')
+            return 'Binder is empty - no nodes to display'
+
+        total_items = self._count_all_items(binder.roots)
+        placeholder_count = self._count_placeholders(binder.roots)
+
+        self._logger.debug('Found %d total items in binder', total_items)
+        if placeholder_count > 0:
+            self._logger.debug('Found %d placeholders in structure', placeholder_count)
+
+        # If there are multiple root items, they should have tree connectors
+        if len(binder.roots) > 1:
+            result = self._format_items_with_root_connectors(binder.roots)
+        else:
+            result = self._format_items(binder.roots, prefix='')
+
+        self._logger.info('Structure display completed successfully')
+        return result
+
+    def _format_subtree_structure(self, binder: Binder, node_id: NodeId) -> str:
+        """Format subtree structure starting from specified node.
+
+        Args:
+            binder: Binder instance to search
+            node_id: NodeId of subtree root
+
+        Returns:
+            Formatted string representation of subtree
+
+        Raises:
+            NodeNotFoundError: If node_id doesn't exist in binder
+
+        """
+        # Find the target node in binder structure
+        target_item = binder.find_by_id(node_id)
+        if target_item is None:
+            self._logger.error('Node not found for subtree display: %s', node_id)
+            raise NodeNotFoundError('Node not found for subtree display', str(node_id))
+
+        self._logger.debug('Found subtree root: %s', target_item.display_title)
+
+        # Format the subtree starting from the target node
+        result = self._format_single_item(
+            target_item, prefix='', is_last=True, show_children=True, force_connector=False
+        )
+
+        self._logger.info('Structure display completed successfully')
+        return result
+
+    def _format_items(self, items: list[BinderItem], prefix: str) -> str:
+        """Format a list of BinderItems with tree structure.
+
+        Args:
+            items: List of BinderItems to format
+            prefix: Current indentation prefix
+            is_last_group: Whether this is the last group of siblings
+
+        Returns:
+            Formatted string representation
+
+        """
+        if not items:
+            return ''
+
+        lines = []
+        for i, item in enumerate(items):
+            is_last = i == len(items) - 1
+            line = self._format_single_item(item, prefix, is_last=is_last, show_children=True, force_connector=False)
+            lines.append(line)
+
+        return '\n'.join(lines)
+
+    def _format_items_with_root_connectors(self, items: list[BinderItem]) -> str:
+        """Format root items with tree connectors.
+
+        Args:
+            items: List of root BinderItems to format
+
+        Returns:
+            Formatted string representation with root connectors
+
+        """
+        if not items:
+            return ''
+
+        lines = []
+        for i, item in enumerate(items):
+            is_last = i == len(items) - 1
+            # Force connector even at root level
+            line = self._format_single_item(item, prefix='', is_last=is_last, show_children=True, force_connector=True)
+            lines.append(line)
+
+        return '\n'.join(lines)
+
+    def _format_single_item(
+        self, item: BinderItem, prefix: str, *, is_last: bool, show_children: bool = True, force_connector: bool = False
+    ) -> str:
+        """Format a single BinderItem with proper tree characters.
+
+        Args:
+            item: BinderItem to format
+            prefix: Current indentation prefix
+            is_last: Whether this is the last sibling
+            show_children: Whether to recursively show children
+            force_connector: Whether to force tree connector even at root level
+
+        Returns:
+            Formatted string representation of item and its children
+
+        """
+        # Choose tree connector
+        connector = '' if not prefix and not force_connector else '└─ ' if is_last else '├─ '
+
+        # Format display title with placeholder marker if needed
+        display_title = item.display_title
+        if item.id is None:
+            display_title = f'{display_title} [Placeholder]'
+
+        # Create the line for this item
+        line = f'{prefix}{connector}{display_title}'
+
+        if not show_children or not item.children:
+            return line
+
+        # Format children with appropriate prefix
+        lines = [line]
+        child_prefix = prefix + ('   ' if is_last else '│  ')
+
+        for i, child in enumerate(item.children):
+            child_is_last = i == len(item.children) - 1
+            child_line = self._format_single_item(
+                child, child_prefix, is_last=child_is_last, show_children=True, force_connector=False
+            )
+            lines.append(child_line)
+
+        return '\n'.join(lines)
+
+    def _count_all_items(self, items: list[BinderItem]) -> int:
+        """Count total number of items in tree structure.
+
+        Args:
+            items: Root list of BinderItems
+
+        Returns:
+            Total count of all items including nested children
+
+        """
+        count = len(items)
+        for item in items:
+            count += self._count_all_items(item.children)
+        return count
+
+    def _count_placeholders(self, items: list[BinderItem]) -> int:
+        """Count placeholder items (items without NodeId) in tree structure.
+
+        Args:
+            items: Root list of BinderItems
+
+        Returns:
+            Count of placeholder items including nested children
+
+        """
+        count = sum(1 for item in items if item.id is None)
+        for item in items:
+            count += self._count_placeholders(item.children)
+        return count

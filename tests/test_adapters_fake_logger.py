@@ -74,3 +74,15 @@ class TestFakeLogger:
 
         with pytest.raises(IndexError, match='No logs have been recorded'):
             logger.last_log()
+
+    def test_has_logged_formatting_failures(self) -> None:
+        """Test logging with malformed formatting."""
+        logger = FakeLogger()
+        logger.debug('Test %s', 'value', 'extra')
+        assert not logger.has_logged('debug', 'unrelated')
+
+    def test_has_logged_kwargs_path(self) -> None:
+        """Test logging with kwargs."""
+        logger = FakeLogger()
+        logger.debug('Test message', {'key': 'value'})
+        assert logger.has_logged('debug', 'message')
