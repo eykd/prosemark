@@ -37,6 +37,8 @@ class FakeNodeRepo(NodeRepo):
         self._editor_calls: list[tuple[str, str]] = []
         self._delete_calls: list[tuple[str, bool]] = []
         self._open_in_editor_exception: Exception | None = None
+        self._existing_files: set[str] = set()
+        self._frontmatter_mismatches: dict[str, str] = {}
 
     def create(self, node_id: 'NodeId', title: str | None, synopsis: str | None) -> None:
         """Create new node files with initial frontmatter.
@@ -81,7 +83,13 @@ class FakeNodeRepo(NodeRepo):
         if node_key not in self._nodes:  # pragma: no cover
             raise NodeNotFoundError('Node not found', node_key)
 
-        return self._nodes[node_key].copy()
+        frontmatter = self._nodes[node_key].copy()
+
+        # Apply frontmatter mismatch if configured for testing
+        if node_key in self._frontmatter_mismatches:
+            frontmatter['id'] = self._frontmatter_mismatches[node_key]
+
+        return frontmatter
 
     def write_frontmatter(self, node_id: 'NodeId', fm: dict[str, str | None]) -> None:  # pragma: no cover
         """Update frontmatter in node draft file.
@@ -250,3 +258,31 @@ class FakeNodeRepo(NodeRepo):
 
         """
         self._editor_calls = [(str(node_id), part) for node_id, part in value]
+
+    def set_existing_files(self, file_ids: list[str]) -> None:
+        """Set which node files exist for audit testing.
+
+        Args:
+            file_ids: List of node ID strings that should be considered as existing files
+
+        """
+        self._existing_files = set(file_ids)
+
+    def get_existing_files(self) -> set[str]:
+        """Get all existing node file IDs for audit testing.
+
+        Returns:
+            Set of node ID strings that exist as files
+
+        """
+        return self._existing_files.copy()
+
+    def set_frontmatter_mismatch(self, file_id: str, frontmatter_id: str) -> None:
+        """Set a frontmatter ID mismatch for audit testing.
+
+        Args:
+            file_id: The file's actual node ID
+            frontmatter_id: The mismatched ID in the file's frontmatter
+
+        """
+        self._frontmatter_mismatches[file_id] = frontmatter_id
