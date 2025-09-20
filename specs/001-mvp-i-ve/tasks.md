@@ -1,0 +1,213 @@
+# Tasks: Prosemark CLI Writing Project Manager MVP
+
+**Input**: Design documents from `/specs/001-mvp-i-ve/`
+**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
+
+## Execution Flow (main)
+```
+1. Load plan.md from feature directory
+   → Tech stack: Python 3.9+, Typer, PyYAML, pytest
+   → Structure: Single project with src/prosemark hexagonal architecture
+2. Load design documents:
+   → data-model.md: Extract 6 entities → model tasks
+   → contracts/: CLI commands & domain interfaces → contract test tasks
+   → quickstart.md: Extract 8 user scenarios → integration tests
+3. Generate tasks by category:
+   → Setup: Python project, dependencies, linting
+   → Tests: CLI contract tests, domain contract tests, integration tests
+   → Core: domain models, adapters, use cases, CLI commands
+   → Integration: file system, editor, console integration
+   → Polish: unit tests, performance, documentation
+4. Apply task rules:
+   → Different files = mark [P] for parallel
+   → TDD order: Tests before implementation
+   → Hexagonal architecture: Domain → Adapters → CLI
+5. Number tasks sequentially (T001-T040)
+6. Generate dependency graph for execution order
+7. SUCCESS: 40 tasks ready for MVP implementation
+```
+
+## Format: `[ID] [P?] Description`
+- **[P]**: Can run in parallel (different files, no dependencies)
+- Paths assume src/prosemark/ structure per plan.md
+
+## Phase 3.1: Setup & Dependencies
+
+- [ ] **T001** Initialize Python project structure with src/prosemark/, tests/, pyproject.toml
+- [ ] **T002** Configure dependencies: Typer, PyYAML, pytest, ruff, mypy in pyproject.toml
+- [ ] **T003** [P] Configure ruff formatting and linting in pyproject.toml
+- [ ] **T004** [P] Configure mypy type checking in pyproject.toml
+- [ ] **T005** [P] Set up pytest configuration in pyproject.toml
+
+## Phase 3.2: Domain Models & Core Tests (TDD)
+**CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
+
+### Domain Entity Tests
+- [ ] **T006** [P] Contract test for NodeId value object in tests/contract/test_node_id.py
+- [ ] **T007** [P] Contract test for Binder entity in tests/contract/test_binder.py
+- [ ] **T008** [P] Contract test for BinderItem entity in tests/contract/test_binder_item.py
+- [ ] **T009** [P] Contract test for Node entity in tests/contract/test_node.py
+- [ ] **T010** [P] Contract test for FreeformContent entity in tests/contract/test_freeform_content.py
+
+### Port Interface Tests
+- [ ] **T011** [P] Contract test for BinderRepo protocol in tests/contract/test_binder_repo.py
+- [ ] **T012** [P] Contract test for NodeRepo protocol in tests/contract/test_node_repo.py
+- [ ] **T013** [P] Contract test for DailyRepo protocol in tests/contract/test_daily_repo.py
+- [ ] **T014** [P] Contract test for IdGenerator protocol in tests/contract/test_id_generator.py
+- [ ] **T015** [P] Contract test for Clock protocol in tests/contract/test_clock.py
+- [ ] **T016** [P] Contract test for EditorPort protocol in tests/contract/test_editor_port.py
+- [ ] **T017** [P] Contract test for ConsolePort protocol in tests/contract/test_console_port.py
+- [ ] **T018** [P] Contract test for Logger protocol in tests/contract/test_logger.py
+
+### CLI Command Tests
+- [ ] **T019** [P] Contract test for `pmk init` command in tests/contract/test_cli_init.py
+- [ ] **T020** [P] Contract test for `pmk add` command in tests/contract/test_cli_add.py
+- [ ] **T021** [P] Contract test for `pmk edit` command in tests/contract/test_cli_edit.py
+- [ ] **T022** [P] Contract test for `pmk structure` command in tests/contract/test_cli_structure.py
+- [ ] **T023** [P] Contract test for `pmk write` command in tests/contract/test_cli_write.py
+- [ ] **T024** [P] Contract test for `pmk materialize` command in tests/contract/test_cli_materialize.py
+- [ ] **T025** [P] Contract test for `pmk move` command in tests/contract/test_cli_move.py
+- [ ] **T026** [P] Contract test for `pmk remove` command in tests/contract/test_cli_remove.py
+- [ ] **T027** [P] Contract test for `pmk audit` command in tests/contract/test_cli_audit.py
+
+## Phase 3.3: Core Domain Implementation (ONLY after tests fail)
+
+### Domain Models
+- [ ] **T028** [P] NodeId value object in src/prosemark/domain/node_id.py
+- [ ] **T029** [P] Binder entity in src/prosemark/domain/binder.py
+- [ ] **T030** [P] BinderItem entity in src/prosemark/domain/binder_item.py
+- [ ] **T031** [P] Node entity in src/prosemark/domain/node.py
+- [ ] **T032** [P] FreeformContent entity in src/prosemark/domain/freeform_content.py
+- [ ] **T033** [P] Domain exceptions in src/prosemark/domain/exceptions.py
+
+### Port Interfaces
+- [ ] **T034** [P] All port protocols in src/prosemark/ports/
+
+## Phase 3.4: Adapter Implementation
+
+### File System Adapters
+- [ ] **T035** [P] BinderRepoFs adapter in src/prosemark/adapters/fs_binder_repo.py
+- [ ] **T036** [P] NodeRepoFs adapter in src/prosemark/adapters/fs_node_repo.py
+- [ ] **T037** [P] DailyRepoFs adapter in src/prosemark/adapters/fs_daily_repo.py
+
+### System Adapters
+- [ ] **T038** [P] FrontmatterCodec in src/prosemark/adapters/frontmatter_codec.py
+- [ ] **T039** [P] MarkdownBinderParser in src/prosemark/adapters/md_binder_parser.py
+- [ ] **T040** [P] IdGeneratorUuid7 in src/prosemark/adapters/system_uuid7.py
+- [ ] **T041** [P] ClockSystem in src/prosemark/adapters/system_clock.py
+- [ ] **T042** [P] EditorLauncher in src/prosemark/adapters/editor_launcher.py
+- [ ] **T043** [P] ConsolePretty in src/prosemark/adapters/console_pretty.py
+- [ ] **T044** [P] LoggerStdout in src/prosemark/adapters/system_logger.py
+
+## Phase 3.5: Use Cases & CLI
+
+### Use Case Implementation
+- [ ] **T045** InitProject use case in src/prosemark/app/init_project.py
+- [ ] **T046** AddNode use case in src/prosemark/app/add_node.py
+- [ ] **T047** MaterializeNode use case in src/prosemark/app/materialize_node.py
+- [ ] **T048** MoveNode use case in src/prosemark/app/move_node.py
+- [ ] **T049** RemoveNode use case in src/prosemark/app/remove_node.py
+- [ ] **T050** AuditProject use case in src/prosemark/app/audit_project.py
+
+### CLI Commands
+- [ ] **T051** CLI main entry point in src/prosemark/cli/main.py
+- [ ] **T052** `pmk init` command in src/prosemark/cli/init.py
+- [ ] **T053** `pmk add` command in src/prosemark/cli/add.py
+- [ ] **T054** `pmk edit` command in src/prosemark/cli/edit.py
+- [ ] **T055** `pmk structure` command in src/prosemark/cli/structure.py
+- [ ] **T056** `pmk write` command in src/prosemark/cli/write.py
+- [ ] **T057** `pmk materialize` command in src/prosemark/cli/materialize.py
+- [ ] **T058** `pmk move` command in src/prosemark/cli/move.py
+- [ ] **T059** `pmk remove` command in src/prosemark/cli/remove.py
+- [ ] **T060** `pmk audit` command in src/prosemark/cli/audit.py
+
+## Phase 3.6: Integration Tests
+**Based on quickstart.md scenarios**
+
+- [ ] **T061** [P] Integration test: Complete project lifecycle in tests/integration/test_project_lifecycle.py
+- [ ] **T062** [P] Integration test: Node content editing workflow in tests/integration/test_editing_workflow.py
+- [ ] **T063** [P] Integration test: Binder structure management in tests/integration/test_structure_management.py
+- [ ] **T064** [P] Integration test: Placeholder materialization in tests/integration/test_placeholder_workflow.py
+- [ ] **T065** [P] Integration test: Freeform writing in tests/integration/test_freeform_writing.py
+- [ ] **T066** [P] Integration test: Project audit and integrity in tests/integration/test_audit_integrity.py
+- [ ] **T067** [P] Integration test: File system safety in tests/integration/test_file_safety.py
+- [ ] **T068** [P] Integration test: Cross-platform compatibility in tests/integration/test_cross_platform.py
+
+## Phase 3.7: Polish & Validation
+
+### Unit Tests
+- [ ] **T069** [P] Unit tests for NodeId validation in tests/unit/test_node_id_validation.py
+- [ ] **T070** [P] Unit tests for YAML frontmatter parsing in tests/unit/test_frontmatter_parsing.py
+- [ ] **T071** [P] Unit tests for markdown parsing in tests/unit/test_markdown_parsing.py
+- [ ] **T072** [P] Unit tests for UUIDv7 generation in tests/unit/test_uuid7_generation.py
+
+### Performance & Quality
+- [ ] **T073** Performance tests: Large binder parsing (<1s) in tests/performance/test_large_binder.py
+- [ ] **T074** Performance tests: File I/O operations (<100ms) in tests/performance/test_file_operations.py
+- [ ] **T075** [P] Documentation: Update README.md with installation and usage
+- [ ] **T076** [P] Documentation: Create API documentation from docstrings
+- [ ] **T077** Code quality: Remove duplication and optimize imports
+- [ ] **T078** Execute quickstart.md scenarios as final validation
+
+## Dependencies
+
+### Phase Dependencies
+- Setup (T001-T005) must complete before all other phases
+- All test tasks (T006-T027) must complete and FAIL before implementation (T028+)
+- Domain models (T028-T034) must complete before adapters (T035-T044)
+- Adapters must complete before use cases (T045-T050) and CLI (T051-T060)
+- Core implementation must complete before integration tests (T061-T068)
+- Everything must complete before polish (T069-T078)
+
+### Specific Dependencies
+- T034 (ports) blocks T035-T044 (adapters)
+- T035-T044 (adapters) block T045-T050 (use cases)
+- T045-T050 (use cases) block T051-T060 (CLI)
+- T028-T033 (domain) required by all subsequent tasks
+
+## Parallel Execution Examples
+
+### Contract Tests (can run simultaneously)
+```bash
+# Launch T006-T027 together (22 parallel contract tests):
+Task: "Contract test for NodeId value object in tests/contract/test_node_id.py"
+Task: "Contract test for Binder entity in tests/contract/test_binder.py"
+Task: "Contract test for BinderItem entity in tests/contract/test_binder_item.py"
+# ... all contract tests can run in parallel
+```
+
+### Domain Models (can run simultaneously after tests fail)
+```bash
+# Launch T028-T033 together (6 parallel domain models):
+Task: "NodeId value object in src/prosemark/domain/node_id.py"
+Task: "Binder entity in src/prosemark/domain/binder.py"
+Task: "BinderItem entity in src/prosemark/domain/binder_item.py"
+# ... all domain models can run in parallel
+```
+
+### File System Adapters (can run simultaneously)
+```bash
+# Launch T035-T037 together (3 parallel FS adapters):
+Task: "BinderRepoFs adapter in src/prosemark/adapters/fs_binder_repo.py"
+Task: "NodeRepoFs adapter in src/prosemark/adapters/fs_node_repo.py"
+Task: "DailyRepoFs adapter in src/prosemark/adapters/fs_daily_repo.py"
+```
+
+## Notes
+- [P] tasks target different files with no dependencies
+- All tests must fail before implementing corresponding functionality (TDD)
+- Each task includes specific file path for clear execution
+- Hexagonal architecture enforced: Domain → Ports → Adapters → Use Cases → CLI
+- Constitutional compliance: TDD, type annotations, docstrings, 100% coverage
+
+## Validation Checklist
+*GATE: Checked before task execution*
+
+- [x] All contracts have corresponding tests (T006-T027)
+- [x] All entities have model tasks (T028-T033)
+- [x] All tests come before implementation (Phase 3.2 before 3.3+)
+- [x] Parallel tasks truly independent ([P] tasks target different files)
+- [x] Each task specifies exact file path
+- [x] No task modifies same file as another [P] task
+- [x] TDD order enforced (tests first, then implementation)
+- [x] Hexagonal architecture dependencies respected
