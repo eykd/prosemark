@@ -1,0 +1,28 @@
+services:
+  claude-container:
+    build:
+      context: .
+      args:
+        TZ: ${TZ:-UTC}                                   # Pass host timezone
+    user: "${UID:-1000}:${GID:-1000}"                    # run as you
+    command: tail -f /dev/null                           # Keep container running
+    environment:
+      TZ: ${TZ:-UTC}                                     # Set container timezone
+      ALLOWED_DOMAINS: >-
+        registry.npmjs.org,
+        api.anthropic.com,
+        sentry.io,
+        statsig.anthropic.com,
+        statsig.com
+    volumes:
+      - ./:/workspace:rw                        # dedicated workspace folder, RW
+      - ./.history:/commandhistory:rw                    # persist shell history
+    ports: []
+    tmpfs:
+      - /tmp                                             # avoid writing to container FS
+    read_only: false                                     # repo is already RW
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges
+    pids_limit: 256
