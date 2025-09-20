@@ -89,6 +89,20 @@ class FilesystemError(ProsemarkError):
     """
 
 
+class ProsemarkFileExistsError(ProsemarkError):
+    """Error raised when attempting to create a file that already exists.
+
+    This exception indicates that a file creation operation was attempted
+    on a path where a file already exists, and the operation does not
+    permit overwriting existing files.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as the existing file path
+
+    """
+
+
 class EditorLaunchError(ProsemarkError):
     """Error raised when external editor cannot be launched.
 
