@@ -39,7 +39,10 @@
       "mcp__serena__onboarding",
       "mcp__serena__write_memory",
       "Bash(lcov:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)"
     ],
     "deny": []
   }
