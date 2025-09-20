@@ -38,7 +38,8 @@
       "mcp__serena__check_onboarding_performed",
       "mcp__serena__onboarding",
       "mcp__serena__write_memory",
-      "Bash(lcov:*)"
+      "Bash(lcov:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
