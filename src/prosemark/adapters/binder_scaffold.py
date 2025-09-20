@@ -7,7 +7,7 @@ for new prosemark projects with proper structure, format, and example content.
 from contextlib import suppress
 from pathlib import Path
 
-from prosemark.exceptions import FilesystemError, ProsemarkFileExistsError
+from prosemark.exceptions import FileSystemError, ProsemarkFileExistsError
 
 
 def generate_binder_scaffold(target_path: Path, *, create_dirs: bool = False) -> None:
@@ -40,11 +40,11 @@ def generate_binder_scaffold(target_path: Path, *, create_dirs: bool = False) ->
         try:
             target_path.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
-            raise FilesystemError('Cannot create target directory', str(target_path)) from exc
+            raise FileSystemError('Cannot create target directory', str(target_path)) from exc
     elif not target_path.exists():
-        raise FilesystemError('Target directory does not exist', str(target_path))
+        raise FileSystemError('Target directory does not exist', str(target_path))
     elif not target_path.is_dir():
-        raise FilesystemError('Target path is not a directory', str(target_path))
+        raise FileSystemError('Target path is not a directory', str(target_path))
 
     # Check for existing binder file
     binder_file = target_path / '_binder.md'
@@ -53,7 +53,7 @@ def generate_binder_scaffold(target_path: Path, *, create_dirs: bool = False) ->
             raise ProsemarkFileExistsError('Binder file already exists', str(binder_file))
     except (OSError, PermissionError) as exc:
         # If we can't even check if the file exists due to permissions, we can't write either
-        raise FilesystemError('Cannot access target directory', str(target_path)) from exc
+        raise FileSystemError('Cannot access target directory', str(target_path)) from exc
 
     # Generate scaffold content
     content = _generate_scaffold_content()
@@ -70,7 +70,7 @@ def generate_binder_scaffold(target_path: Path, *, create_dirs: bool = False) ->
             with suppress(OSError):
                 temp_file.unlink()
 
-        raise FilesystemError('Cannot write binder file', str(binder_file)) from exc
+        raise FileSystemError('Cannot write binder file', str(binder_file)) from exc
 
 
 def _generate_scaffold_content() -> str:

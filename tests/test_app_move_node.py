@@ -51,11 +51,11 @@ class TestMoveNode:
         # Build hierarchy: root1 -> child1 -> grandchild
         #                  root1 -> child2
         #                  root2 (no children)
-        grandchild_item = BinderItem(id=grandchild_id, display_title='Grandchild', children=[])
-        child1_item = BinderItem(id=child1_id, display_title='Child 1', children=[grandchild_item])
-        child2_item = BinderItem(id=child2_id, display_title='Child 2', children=[])
-        root1_item = BinderItem(id=root1_id, display_title='Root 1', children=[child1_item, child2_item])
-        root2_item = BinderItem(id=root2_id, display_title='Root 2', children=[])
+        grandchild_item = BinderItem(id_=grandchild_id, display_title='Grandchild', children=[])
+        child1_item = BinderItem(id_=child1_id, display_title='Child 1', children=[grandchild_item])
+        child2_item = BinderItem(id_=child2_id, display_title='Child 2', children=[])
+        root1_item = BinderItem(id_=root1_id, display_title='Root 1', children=[child1_item, child2_item])
+        root2_item = BinderItem(id_=root2_id, display_title='Root 2', children=[])
 
         binder = Binder(roots=[root1_item, root2_item])
         fake_binder_repo.save(binder)
@@ -67,8 +67,8 @@ class TestMoveNode:
         node1_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
         node2_id = NodeId('0192f0c1-2222-7000-8000-000000000002')
 
-        item1 = BinderItem(id=node1_id, display_title='Node 1', children=[])
-        item2 = BinderItem(id=node2_id, display_title='Node 2', children=[])
+        item1 = BinderItem(id_=node1_id, display_title='Node 1', children=[])
+        item2 = BinderItem(id_=node2_id, display_title='Node 2', children=[])
 
         binder = Binder(roots=[item1, item2])
         fake_binder_repo.save(binder)
@@ -365,7 +365,7 @@ class TestMoveNode:
 
         # First add another child to Root 2 so we can test prepending
         another_child_id = NodeId('0192f0c1-6666-7000-8000-000000000006')
-        another_child = BinderItem(id=another_child_id, display_title='Another Child', children=[])
+        another_child = BinderItem(id_=another_child_id, display_title='Another Child', children=[])
         initial_binder = fake_binder_repo.load()
         initial_binder.roots[1].children.append(another_child)
         fake_binder_repo.save(initial_binder)
@@ -424,8 +424,8 @@ class TestMoveNode:
         # Create simple test data
         node1_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
         node2_id = NodeId('0192f0c1-2222-7000-8000-000000000002')
-        item1 = BinderItem(id=node1_id, display_title='Node 1', children=[])
-        item2 = BinderItem(id=node2_id, display_title='Node 2', children=[])
+        item1 = BinderItem(id_=node1_id, display_title='Node 1', children=[])
+        item2 = BinderItem(id_=node2_id, display_title='Node 2', children=[])
         binder = Binder(roots=[item1, item2])
         fake_binder_repo.save(binder)
 
@@ -518,7 +518,7 @@ class TestMoveNode:
     ) -> None:
         """Test MoveNode handles BinderItem without NodeId gracefully."""
         # Arrange: Create a binder item without NodeId (defensive programming test)
-        item_without_id = BinderItem(id=None, display_title='No ID Item', children=[])
+        item_without_id = BinderItem(id_=None, display_title='No ID Item', children=[])
         binder = Binder(roots=[item_without_id])
         fake_binder_repo.save(binder)
 
@@ -581,9 +581,9 @@ class TestMoveNode:
         child_id = NodeId('0192f0c1-2222-7000-8000-000000000002')
         orphan_id = NodeId('0192f0c1-3333-7000-8000-000000000003')
 
-        child_item = BinderItem(id=child_id, display_title='Child', children=[])
-        root_item = BinderItem(id=root_id, display_title='Root', children=[child_item])
-        orphan_item = BinderItem(id=orphan_id, display_title='Orphan', children=[])
+        child_item = BinderItem(id_=child_id, display_title='Child', children=[])
+        root_item = BinderItem(id_=root_id, display_title='Root', children=[child_item])
+        orphan_item = BinderItem(id_=orphan_id, display_title='Orphan', children=[])
 
         binder = Binder(roots=[root_item, orphan_item])
         fake_binder_repo.save(binder)

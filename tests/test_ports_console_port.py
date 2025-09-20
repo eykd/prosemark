@@ -2,10 +2,14 @@
 
 import inspect
 from abc import ABC
+from typing import TYPE_CHECKING
 
 import pytest
 
 from prosemark.ports.console_port import ConsolePort
+
+if TYPE_CHECKING:  # pragma: no cover
+    from prosemark.domain.models import Binder
 
 
 class TestConsolePort:
@@ -54,6 +58,9 @@ class TestConsolePort:
             def print(self, msg: str) -> None:
                 self.messages.append(msg)
 
+            def print_tree(self, binder: 'Binder') -> None:
+                pass
+
         # Act: Use mock in application layer code
         mock_console = MockConsolePort()
         mock_console.print('Test message')
@@ -68,6 +75,9 @@ class TestConsolePort:
         # Arrange: Concrete implementation class
         class StdoutConsolePort(ConsolePort):
             def print(self, msg: str) -> None:
+                pass
+
+            def print_tree(self, binder: 'Binder') -> None:
                 pass
 
         instance = StdoutConsolePort()

@@ -73,7 +73,20 @@ class NodeNotFoundError(ProsemarkError):
     """
 
 
-class FilesystemError(ProsemarkError):
+class BinderFormatError(ProsemarkError):
+    """Error raised when binder file format is invalid.
+
+    This exception indicates that the _binder.md file has malformed
+    managed blocks or invalid structure.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as file content or line numbers
+
+    """
+
+
+class FileSystemError(ProsemarkError):
     """Error raised for file system operation failures.
 
     This exception wraps various filesystem-related errors such as:
@@ -143,5 +156,100 @@ class AlreadyMaterializedError(ProsemarkError):
     Args:
         message: A descriptive error message without variable interpolation
         *context: Additional context such as the existing NodeId
+
+    """
+
+
+class EditorNotFoundError(ProsemarkError):
+    """Error raised when external editor executable cannot be found.
+
+    This exception indicates that the configured editor is not available
+    in the system PATH or at the specified location.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as editor name or path
+
+    """
+
+
+class FreeformContentValidationError(ProsemarkError):
+    """Error raised when freeform content validation fails.
+
+    This exception indicates issues with freeform content such as:
+    - Invalid filename format
+    - Mismatched timestamps or UUIDs
+    - Invalid UUIDv7 format
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as filename or validation details
+
+    """
+
+
+class NodeValidationError(ProsemarkError):
+    """Error raised when node validation fails.
+
+    This exception indicates issues with node data such as:
+    - Invalid timestamps
+    - Missing required fields
+    - Data consistency problems
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as node data or validation details
+
+    """
+
+
+class NodeAlreadyExistsError(ProsemarkError):
+    """Error raised when attempting to create a node that already exists.
+
+    This exception indicates that node files already exist for the
+    specified NodeId and cannot be recreated.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as NodeId and file paths
+
+    """
+
+
+class FrontmatterFormatError(ProsemarkError):
+    """Error raised when YAML frontmatter is malformed.
+
+    This exception indicates that the YAML frontmatter in a node file
+    cannot be parsed or contains invalid data.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as file path or YAML content
+
+    """
+
+
+class InvalidPartError(ProsemarkError):
+    """Error raised when an invalid content part is specified.
+
+    This exception indicates that an unsupported part was requested
+    for node editing (valid parts: draft, notes, synopsis).
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as the invalid part name
+
+    """
+
+
+class EditorError(ProsemarkError):
+    """Error raised when editor operation fails.
+
+    This exception indicates general editor-related failures that
+    don't fit into more specific error categories.
+
+    Args:
+        message: A descriptive error message without variable interpolation
+        *context: Additional context such as editor details or error info
 
     """

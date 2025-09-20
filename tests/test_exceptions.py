@@ -5,7 +5,7 @@ import pytest
 from prosemark.exceptions import (
     BinderIntegrityError,
     BinderNotFoundError,
-    FilesystemError,
+    FileSystemError,
     NodeIdentityError,
     NodeNotFoundError,
     ProsemarkError,
@@ -22,7 +22,7 @@ class TestExceptionCreation:
             NodeIdentityError('Invalid UUID format', 'bad-uuid'),
             BinderNotFoundError('Binder file missing', '_binder.md'),
             NodeNotFoundError('Node not found', 'missing-id'),
-            FilesystemError('Permission denied', '/path/file.md'),
+            FileSystemError('Permission denied', '/path/file.md'),
         ]
 
         for error in errors:
@@ -37,7 +37,7 @@ class TestExceptionCreation:
             NodeIdentityError('Invalid UUID format'),
             BinderNotFoundError('Binder file missing'),
             NodeNotFoundError('Node not found'),
-            FilesystemError('Permission denied'),
+            FileSystemError('Permission denied'),
         ]
 
         for error in errors:
@@ -81,12 +81,12 @@ class TestExceptionChaining:
 
     def test_chaining_different_exception_types(self) -> None:
         """Test chaining between different domain exception types."""
-        original = FilesystemError('File read error', '/path/to/file.md')
+        original = FileSystemError('File read error', '/path/to/file.md')
 
         def chain_different_types() -> None:
             try:
                 raise original
-            except FilesystemError as exc:
+            except FileSystemError as exc:
                 raise BinderNotFoundError('Cannot load binder', '_binder.md') from exc
 
         with pytest.raises(BinderNotFoundError) as exc_info:
@@ -94,7 +94,7 @@ class TestExceptionChaining:
 
         chained = exc_info.value
         assert chained.__cause__ == original
-        assert isinstance(chained.__cause__, FilesystemError)
+        assert isinstance(chained.__cause__, FileSystemError)
         assert chained.args[0] == 'Cannot load binder'
         assert chained.args[1] == '_binder.md'
 
@@ -106,9 +106,9 @@ class TestExceptionChaining:
             try:
                 raise original
             except OSError as exc:
-                raise FilesystemError('Cannot write file', '/restricted/file.md') from exc
+                raise FileSystemError('Cannot write file', '/restricted/file.md') from exc
 
-        with pytest.raises(FilesystemError) as exc_info:
+        with pytest.raises(FileSystemError) as exc_info:
             chain_from_standard()
 
         chained = exc_info.value
@@ -127,7 +127,7 @@ class TestExceptionHierarchy:
             NodeIdentityError('msg'),
             BinderNotFoundError('msg'),
             NodeNotFoundError('msg'),
-            FilesystemError('msg'),
+            FileSystemError('msg'),
         ]
 
         for error in domain_errors:
@@ -167,7 +167,7 @@ class TestErrorMessageFormat:
         errors = [
             BinderIntegrityError('Duplicate node detected', 'node_id_123'),
             NodeIdentityError('Invalid UUID format', 'not-a-uuid'),
-            FilesystemError('Permission denied', '/root/file.md'),
+            FileSystemError('Permission denied', '/root/file.md'),
         ]
 
         for error in errors:
@@ -227,8 +227,8 @@ class TestSpecificExceptionBehavior:
         assert error.args[1] == 'node_id_456'
 
     def test_filesystem_error(self) -> None:
-        """Test FilesystemError for file system operation failures."""
-        error = FilesystemError('Permission denied', '/restricted/path', 'write')
+        """Test FileSystemError for file system operation failures."""
+        error = FileSystemError('Permission denied', '/restricted/path', 'write')
 
         assert isinstance(error, ProsemarkError)
         assert error.args[0] == 'Permission denied'

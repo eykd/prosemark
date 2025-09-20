@@ -1,6 +1,10 @@
 """Abstract base class for output formatting."""
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover
+    from prosemark.domain.models import Binder, BinderItem
 
 
 class ConsolePort(ABC):
@@ -50,3 +54,29 @@ class ConsolePort(ABC):
 
         """
         raise NotImplementedError('Subclasses must implement the print() method')  # pragma: no cover
+
+    def print_tree(self, binder: 'Binder') -> None:
+        """Display a formatted tree representation of a binder structure.
+
+        Default implementation provides basic tree rendering. Subclasses can
+        override for custom formatting and visual styles.
+
+        Args:
+            binder: The Binder object containing the hierarchical structure
+
+        """
+        # Basic implementation - just print a simple representation
+        self.print(f'Binder: {binder.project_title}')
+        for item in binder.children:
+            self._print_item(item, indent=0)
+
+    def _print_item(self, item: 'BinderItem', indent: int) -> None:
+        """Helper method to print a binder item with indentation."""
+        prefix = '  ' * indent + '- '
+        display = f'{item.display_title}'
+        if item.node_id:
+            display += f' ({item.node_id})'
+        self.print(f'{prefix}{display}')
+
+        for child in item.children:
+            self._print_item(child, indent + 1)

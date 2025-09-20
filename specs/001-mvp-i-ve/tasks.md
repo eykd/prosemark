@@ -33,71 +33,71 @@
 
 ## Phase 3.1: Setup & Dependencies
 
-- [ ] **T001** Initialize Python project structure with src/prosemark/, tests/, pyproject.toml
-- [ ] **T002** Configure dependencies: Typer, PyYAML, pytest, ruff, mypy in pyproject.toml
-- [ ] **T003** [P] Configure ruff formatting and linting in pyproject.toml
-- [ ] **T004** [P] Configure mypy type checking in pyproject.toml
-- [ ] **T005** [P] Set up pytest configuration in pyproject.toml
+- [X] **T001** Initialize Python project structure with src/prosemark/, tests/, pyproject.toml
+- [X] **T002** Configure dependencies: Typer, PyYAML, pytest, ruff, mypy in pyproject.toml
+- [X] **T003** [P] Configure ruff formatting and linting in pyproject.toml
+- [X] **T004** [P] Configure mypy type checking in pyproject.toml
+- [X] **T005** [P] Set up pytest configuration in pyproject.toml
 
 ## Phase 3.2: Domain Models & Core Tests (TDD)
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
 ### Domain Entity Tests
-- [ ] **T006** [P] Contract test for NodeId value object in tests/contract/test_node_id.py
-- [ ] **T007** [P] Contract test for Binder entity in tests/contract/test_binder.py
-- [ ] **T008** [P] Contract test for BinderItem entity in tests/contract/test_binder_item.py
-- [ ] **T009** [P] Contract test for Node entity in tests/contract/test_node.py
-- [ ] **T010** [P] Contract test for FreeformContent entity in tests/contract/test_freeform_content.py
+- [X] **T006** [P] Contract test for NodeId value object in tests/contract/test_node_id.py
+- [X] **T007** [P] Contract test for Binder entity in tests/contract/test_binder.py
+- [X] **T008** [P] Contract test for BinderItem entity in tests/contract/test_binder_item.py
+- [X] **T009** [P] Contract test for Node entity in tests/contract/test_node.py
+- [X] **T010** [P] Contract test for FreeformContent entity in tests/contract/test_freeform_content.py
 
 ### Port Interface Tests
-- [ ] **T011** [P] Contract test for BinderRepo protocol in tests/contract/test_binder_repo.py
-- [ ] **T012** [P] Contract test for NodeRepo protocol in tests/contract/test_node_repo.py
-- [ ] **T013** [P] Contract test for DailyRepo protocol in tests/contract/test_daily_repo.py
-- [ ] **T014** [P] Contract test for IdGenerator protocol in tests/contract/test_id_generator.py
-- [ ] **T015** [P] Contract test for Clock protocol in tests/contract/test_clock.py
-- [ ] **T016** [P] Contract test for EditorPort protocol in tests/contract/test_editor_port.py
-- [ ] **T017** [P] Contract test for ConsolePort protocol in tests/contract/test_console_port.py
-- [ ] **T018** [P] Contract test for Logger protocol in tests/contract/test_logger.py
+- [X] **T011** [P] Contract test for BinderRepo protocol in tests/contract/test_binder_repo.py
+- [X] **T012** [P] Contract test for NodeRepo protocol in tests/contract/test_node_repo.py
+- [X] **T013** [P] Contract test for DailyRepo protocol in tests/contract/test_daily_repo.py
+- [X] **T014** [P] Contract test for IdGenerator protocol in tests/contract/test_id_generator.py
+- [X] **T015** [P] Contract test for Clock protocol in tests/contract/test_clock.py
+- [X] **T016** [P] Contract test for EditorPort protocol in tests/contract/test_editor_port.py
+- [X] **T017** [P] Contract test for ConsolePort protocol in tests/contract/test_console_port.py
+- [X] **T018** [P] Contract test for Logger protocol in tests/contract/test_logger.py
 
 ### CLI Command Tests
-- [ ] **T019** [P] Contract test for `pmk init` command in tests/contract/test_cli_init.py
-- [ ] **T020** [P] Contract test for `pmk add` command in tests/contract/test_cli_add.py
-- [ ] **T021** [P] Contract test for `pmk edit` command in tests/contract/test_cli_edit.py
-- [ ] **T022** [P] Contract test for `pmk structure` command in tests/contract/test_cli_structure.py
-- [ ] **T023** [P] Contract test for `pmk write` command in tests/contract/test_cli_write.py
-- [ ] **T024** [P] Contract test for `pmk materialize` command in tests/contract/test_cli_materialize.py
-- [ ] **T025** [P] Contract test for `pmk move` command in tests/contract/test_cli_move.py
-- [ ] **T026** [P] Contract test for `pmk remove` command in tests/contract/test_cli_remove.py
-- [ ] **T027** [P] Contract test for `pmk audit` command in tests/contract/test_cli_audit.py
+- [X] **T019** [P] Contract test for `pmk init` command in tests/contract/test_cli_init.py
+- [X] **T020** [P] Contract test for `pmk add` command in tests/contract/test_cli_add.py
+- [X] **T021** [P] Contract test for `pmk edit` command in tests/contract/test_cli_edit.py
+- [X] **T022** [P] Contract test for `pmk structure` command in tests/contract/test_cli_structure.py
+- [X] **T023** [P] Contract test for `pmk write` command in tests/contract/test_cli_write.py
+- [X] **T024** [P] Contract test for `pmk materialize` command in tests/contract/test_cli_materialize.py
+- [X] **T025** [P] Contract test for `pmk move` command in tests/contract/test_cli_move.py
+- [X] **T026** [P] Contract test for `pmk remove` command in tests/contract/test_cli_remove.py
+- [X] **T027** [P] Contract test for `pmk audit` command in tests/contract/test_cli_audit.py
 
 ## Phase 3.3: Core Domain Implementation (ONLY after tests fail)
 
 ### Domain Models
-- [ ] **T028** [P] NodeId value object in src/prosemark/domain/node_id.py
-- [ ] **T029** [P] Binder entity in src/prosemark/domain/binder.py
-- [ ] **T030** [P] BinderItem entity in src/prosemark/domain/binder_item.py
-- [ ] **T031** [P] Node entity in src/prosemark/domain/node.py
-- [ ] **T032** [P] FreeformContent entity in src/prosemark/domain/freeform_content.py
-- [ ] **T033** [P] Domain exceptions in src/prosemark/domain/exceptions.py
+- [X] **T028** [P] NodeId value object in src/prosemark/domain/node_id.py
+- [X] **T029** [P] Binder entity in src/prosemark/domain/binder.py
+- [X] **T030** [P] BinderItem entity in src/prosemark/domain/binder_item.py
+- [X] **T031** [P] Node entity in src/prosemark/domain/node.py
+- [X] **T032** [P] FreeformContent entity in src/prosemark/domain/freeform_content.py
+- [X] **T033** [P] Domain exceptions in src/prosemark/domain/exceptions.py
 
 ### Port Interfaces
-- [ ] **T034** [P] All port protocols in src/prosemark/ports/
+- [X] **T034** [P] All port protocols in src/prosemark/ports/
 
 ## Phase 3.4: Adapter Implementation
 
 ### File System Adapters
-- [ ] **T035** [P] BinderRepoFs adapter in src/prosemark/adapters/fs_binder_repo.py
-- [ ] **T036** [P] NodeRepoFs adapter in src/prosemark/adapters/fs_node_repo.py
-- [ ] **T037** [P] DailyRepoFs adapter in src/prosemark/adapters/fs_daily_repo.py
+- [x] **T035** [P] BinderRepoFs adapter in src/prosemark/adapters/binder_repo_fs.py
+- [x] **T036** [P] NodeRepoFs adapter in src/prosemark/adapters/node_repo_fs.py
+- [x] **T037** [P] DailyRepoFs adapter in src/prosemark/adapters/daily_repo_fs.py
 
 ### System Adapters
-- [ ] **T038** [P] FrontmatterCodec in src/prosemark/adapters/frontmatter_codec.py
-- [ ] **T039** [P] MarkdownBinderParser in src/prosemark/adapters/md_binder_parser.py
-- [ ] **T040** [P] IdGeneratorUuid7 in src/prosemark/adapters/system_uuid7.py
-- [ ] **T041** [P] ClockSystem in src/prosemark/adapters/system_clock.py
-- [ ] **T042** [P] EditorLauncher in src/prosemark/adapters/editor_launcher.py
-- [ ] **T043** [P] ConsolePretty in src/prosemark/adapters/console_pretty.py
-- [ ] **T044** [P] LoggerStdout in src/prosemark/adapters/system_logger.py
+- [x] **T038** [P] EditorLauncherSystem in src/prosemark/adapters/editor_launcher_system.py
+- [x] **T039** [P] FrontmatterCodec in src/prosemark/adapters/frontmatter_codec.py
+- [x] **T040** [P] MarkdownBinderParser in src/prosemark/adapters/markdown_binder_parser.py
+- [x] **T041** [P] IdGeneratorUuid7 in src/prosemark/adapters/id_generator_uuid7.py
+- [x] **T042** [P] ClockSystem in src/prosemark/adapters/clock_system.py
+- [x] **T043** [P] ConsolePretty in src/prosemark/adapters/console_pretty.py
+- [x] **T044** [P] LoggerStdout in src/prosemark/adapters/logger_stdout.py
 
 ## Phase 3.5: Use Cases & CLI
 

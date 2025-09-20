@@ -5,7 +5,7 @@ import pytest
 from prosemark.adapters.fake_clock import FakeClock
 from prosemark.adapters.fake_logger import FakeLogger
 from prosemark.app.use_cases import WriteFreeform
-from prosemark.exceptions import EditorLaunchError, FilesystemError
+from prosemark.exceptions import EditorLaunchError, FileSystemError
 from prosemark.ports.daily_repo import DailyRepo
 from prosemark.ports.editor_port import EditorPort
 
@@ -198,11 +198,11 @@ class TestWriteFreeform:
         fake_logger: FakeLogger,
     ) -> None:
         """Test that WriteFreeform handles filesystem errors appropriately."""
-        # Arrange: Make DailyRepo raise FilesystemError
-        fake_daily_repo.write_freeform_should_raise = FilesystemError('Disk is full', '/path/to/daily')
+        # Arrange: Make DailyRepo raise FileSystemError
+        fake_daily_repo.write_freeform_should_raise = FileSystemError('Disk is full', '/path/to/daily')
 
         # Act & Assert: Should propagate the exception
-        with pytest.raises(FilesystemError, match='Disk is full'):
+        with pytest.raises(FileSystemError, match='Disk is full'):
             write_freeform.execute()
 
         # Assert: Error should be logged

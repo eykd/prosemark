@@ -69,7 +69,7 @@ class TestAddNode:
     def binder_with_nodes(self, fake_binder_repo: FakeBinderRepo) -> Binder:
         """Binder with existing nodes for parent tests."""
         parent_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
-        parent_item = BinderItem(id=parent_id, display_title='Parent Chapter', children=[])
+        parent_item = BinderItem(id_=parent_id, display_title='Parent Chapter', children=[])
         binder = Binder(roots=[parent_item])
         fake_binder_repo.save(binder)
         return binder
@@ -271,10 +271,10 @@ class TestAddNode:
         frontmatter = fake_node_repo.read_frontmatter(result_id)
         assert frontmatter['title'] is None
 
-        # Assert - Display title defaults to empty string for None title
+        # Assert - Display title defaults to (untitled) for None title
         updated_binder = fake_binder_repo.load()
         new_item = updated_binder.roots[0]
-        assert new_item.display_title == ''
+        assert new_item.display_title == '(untitled)'
 
     def test_add_node_uses_title_as_display_title(
         self,

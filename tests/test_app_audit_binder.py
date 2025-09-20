@@ -58,8 +58,8 @@ class TestAuditBinder:
         fake_node_repo.create(node_id2, 'Chapter 2', 'Second chapter')
 
         # Create binder structure
-        item1 = BinderItem(id=node_id1, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=node_id2, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=node_id1, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=node_id2, display_title='Chapter 2', children=[])
         binder = Binder(roots=[item1, item2])
         fake_binder_repo.save(binder)
 
@@ -81,11 +81,11 @@ class TestAuditBinder:
     ) -> None:
         """Test placeholder detection."""
         # Given: A binder with items that have display titles but no IDs
-        placeholder1 = BinderItem(id=None, display_title='Chapter 3', children=[])
-        placeholder2 = BinderItem(id=None, display_title='Epilogue', children=[])
+        placeholder1 = BinderItem(id_=None, display_title='Chapter 3', children=[])
+        placeholder2 = BinderItem(id_=None, display_title='Epilogue', children=[])
 
         # Create hierarchical structure with nested placeholder
-        section = BinderItem(id=None, display_title='Part 1', children=[placeholder1])
+        section = BinderItem(id_=None, display_title='Part 1', children=[placeholder1])
 
         binder = Binder(roots=[section, placeholder2])
         fake_binder_repo.save(binder)
@@ -110,8 +110,8 @@ class TestAuditBinder:
         node_id2 = NodeId('0192f0c1-2222-7000-8000-000000000002')
 
         # Create binder items referencing nodes
-        item1 = BinderItem(id=node_id1, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=node_id2, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=node_id1, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=node_id2, display_title='Chapter 2', children=[])
         binder = Binder(roots=[item1, item2])
         fake_binder_repo.save(binder)
 
@@ -139,8 +139,8 @@ class TestAuditBinder:
         orphan_id = NodeId('0192f0c1-3333-7000-8000-000000000003')
 
         # Create binder with only some nodes
-        item1 = BinderItem(id=node_id1, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=node_id2, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=node_id1, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=node_id2, display_title='Chapter 2', children=[])
         binder = Binder(roots=[item1, item2])
         fake_binder_repo.save(binder)
 
@@ -169,7 +169,7 @@ class TestAuditBinder:
         wrong_id = NodeId('0192f0c1-9999-7000-8000-000000000999')
 
         # Create binder with expected ID
-        item1 = BinderItem(id=node_id1, display_title='Chapter 1', children=[])
+        item1 = BinderItem(id_=node_id1, display_title='Chapter 1', children=[])
         binder = Binder(roots=[item1])
         fake_binder_repo.save(binder)
 
@@ -200,9 +200,9 @@ class TestAuditBinder:
         wrong_id = NodeId('0192f0c1-9999-7000-8000-000000000999')
 
         # Create binder with mixed items
-        placeholder = BinderItem(id=None, display_title='Placeholder Chapter', children=[])
-        good_item = BinderItem(id=node_id1, display_title='Good Chapter', children=[])
-        missing_item = BinderItem(id=node_id2, display_title='Missing Chapter', children=[])
+        placeholder = BinderItem(id_=None, display_title='Placeholder Chapter', children=[])
+        good_item = BinderItem(id_=node_id1, display_title='Good Chapter', children=[])
+        missing_item = BinderItem(id_=node_id2, display_title='Missing Chapter', children=[])
         binder = Binder(roots=[placeholder, good_item, missing_item])
         fake_binder_repo.save(binder)
 
@@ -266,9 +266,9 @@ class TestAuditBinder:
     ) -> None:
         """Test report formatting with issues."""
         # Given: Binder with issues
-        placeholder = BinderItem(id=None, display_title='Chapter 3', children=[])
+        placeholder = BinderItem(id_=None, display_title='Chapter 3', children=[])
         missing_id = NodeId('0192f0c1-2222-7000-8000-000000000002')
-        missing_item = BinderItem(id=missing_id, display_title='Missing Chapter', children=[])
+        missing_item = BinderItem(id_=missing_id, display_title='Missing Chapter', children=[])
         binder = Binder(roots=[placeholder, missing_item])
         fake_binder_repo.save(binder)
 
@@ -297,7 +297,7 @@ class TestAuditBinder:
     ) -> None:
         """Test JSON output format."""
         # Given: Binder with a placeholder
-        placeholder = BinderItem(id=None, display_title='Test Placeholder', children=[])
+        placeholder = BinderItem(id_=None, display_title='Test Placeholder', children=[])
         binder = Binder(roots=[placeholder])
         fake_binder_repo.save(binder)
 
@@ -325,7 +325,7 @@ class TestAuditBinder:
     ) -> None:
         """Test format_report method covers all conditional sections."""
         # Given: Binder with placeholder only
-        placeholder = BinderItem(id=None, display_title='Test Placeholder', children=[])
+        placeholder = BinderItem(id_=None, display_title='Test Placeholder', children=[])
         binder = Binder(roots=[placeholder])
         fake_binder_repo.save(binder)
 
@@ -339,7 +339,7 @@ class TestAuditBinder:
 
         # Test missing section separately
         missing_id = NodeId('0192f0c1-2222-7000-8000-000000000002')
-        missing_item = BinderItem(id=missing_id, display_title='Missing Chapter', children=[])
+        missing_item = BinderItem(id_=missing_id, display_title='Missing Chapter', children=[])
         binder2 = Binder(roots=[missing_item])
         fake_binder_repo.save(binder2)
 
@@ -365,7 +365,7 @@ class TestAuditBinder:
         # Test mismatch section separately
         node_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
         wrong_id = NodeId('0192f0c1-9999-7000-8000-000000000999')
-        item = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        item = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
         binder4 = Binder(roots=[item])
         fake_binder_repo.save(binder4)
 
@@ -408,7 +408,7 @@ class TestAuditBinder:
         """Test handling of invalid frontmatter IDs."""
         # Given: Binder with valid node that has invalid frontmatter ID
         node_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
-        item = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        item = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
         binder = Binder(roots=[item])
         fake_binder_repo.save(binder)
 
@@ -431,7 +431,7 @@ class TestAuditBinder:
         """Test handling of file read errors during ID mismatch scan."""
         # Given: Binder with valid node
         node_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
-        item = BinderItem(id=node_id, display_title='Chapter 1', children=[])
+        item = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
         binder = Binder(roots=[item])
         fake_binder_repo.save(binder)
 

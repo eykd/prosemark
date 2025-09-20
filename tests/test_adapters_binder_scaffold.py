@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from prosemark.adapters.binder_scaffold import generate_binder_scaffold
-from prosemark.exceptions import FilesystemError, ProsemarkFileExistsError
+from prosemark.exceptions import FileSystemError, ProsemarkFileExistsError
 
 
 class TestGenerateBinderScaffold:
@@ -88,8 +88,8 @@ class TestGenerateBinderScaffold:
             assert not target_path.exists()
 
             # When: Scaffold generator is called without create_dirs=True
-            # Then: Raises FilesystemError due to missing parent directories
-            with pytest.raises(FilesystemError):
+            # Then: Raises FileSystemError due to missing parent directories
+            with pytest.raises(FileSystemError):
                 generate_binder_scaffold(target_path)
 
     def test_marker_format_validation(self) -> None:
@@ -202,8 +202,8 @@ class TestGenerateBinderScaffold:
             target_path.mkdir(mode=0o444)  # Read-only directory
 
             try:
-                # Should raise FilesystemError when cannot write to directory
-                with pytest.raises(FilesystemError):
+                # Should raise FileSystemError when cannot write to directory
+                with pytest.raises(FileSystemError):
                     generate_binder_scaffold(target_path)
             finally:
                 # Cleanup: restore write permissions for cleanup
@@ -241,7 +241,7 @@ class TestGenerateBinderScaffold:
 
             # Mock mkdir to raise OSError
             with patch.object(Path, 'mkdir', side_effect=OSError('Permission denied')):
-                with pytest.raises(FilesystemError) as exc_info:
+                with pytest.raises(FileSystemError) as exc_info:
                     generate_binder_scaffold(target_path, create_dirs=True)
 
                 assert 'Cannot create target directory' in str(exc_info.value)
@@ -254,7 +254,7 @@ class TestGenerateBinderScaffold:
             target_path = Path(temp_dir) / 'not_a_directory'
             target_path.write_text('I am a file, not a directory')
 
-            with pytest.raises(FilesystemError) as exc_info:
+            with pytest.raises(FileSystemError) as exc_info:
                 generate_binder_scaffold(target_path)
 
             assert 'Target path is not a directory' in str(exc_info.value)
@@ -270,7 +270,7 @@ class TestGenerateBinderScaffold:
 
             # Mock write_text to raise OSError
             with patch.object(Path, 'write_text', side_effect=OSError('No space left on device')):
-                with pytest.raises(FilesystemError) as exc_info:
+                with pytest.raises(FileSystemError) as exc_info:
                     generate_binder_scaffold(target_path)
 
                 assert 'Cannot write binder file' in str(exc_info.value)

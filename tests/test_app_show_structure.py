@@ -52,11 +52,11 @@ class TestShowStructure:
         part2_id = NodeId('0192f0c1-5555-7000-8000-000000000005')
 
         # Create hierarchy: Part 1 > Chapter 1 > Section 1, Chapter 2; Part 2
-        section1_item = BinderItem(id=section1_id, display_title='Section 1.1', children=[])
-        chapter1_item = BinderItem(id=chapter1_id, display_title='Chapter 1', children=[section1_item])
-        chapter2_item = BinderItem(id=chapter2_id, display_title='Chapter 2', children=[])
-        part1_item = BinderItem(id=part1_id, display_title='Part 1', children=[chapter1_item, chapter2_item])
-        part2_item = BinderItem(id=part2_id, display_title='Part 2', children=[])
+        section1_item = BinderItem(id_=section1_id, display_title='Section 1.1', children=[])
+        chapter1_item = BinderItem(id_=chapter1_id, display_title='Chapter 1', children=[section1_item])
+        chapter2_item = BinderItem(id_=chapter2_id, display_title='Chapter 2', children=[])
+        part1_item = BinderItem(id_=part1_id, display_title='Part 1', children=[chapter1_item, chapter2_item])
+        part2_item = BinderItem(id_=part2_id, display_title='Part 2', children=[])
 
         binder = Binder(roots=[part1_item, part2_item])
         fake_binder_repo.save(binder)
@@ -67,8 +67,8 @@ class TestShowStructure:
         """Binder containing placeholder items (no ID)."""
         # Create mix of real nodes and placeholders
         real_node_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
-        real_item = BinderItem(id=real_node_id, display_title='Real Chapter', children=[])
-        placeholder_item = BinderItem(id=None, display_title='Placeholder Section', children=[])
+        real_item = BinderItem(id_=real_node_id, display_title='Real Chapter', children=[])
+        placeholder_item = BinderItem(id_=None, display_title='Placeholder Section', children=[])
 
         binder = Binder(roots=[real_item, placeholder_item])
         fake_binder_repo.save(binder)
@@ -240,7 +240,7 @@ class TestShowStructure:
         """
         # Arrange - Create binder with only some nodes in structure
         included_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
-        included_item = BinderItem(id=included_id, display_title='Included Node', children=[])
+        included_item = BinderItem(id_=included_id, display_title='Included Node', children=[])
 
         # Note: We don't actually create orphaned nodes in the filesystem
         # since ShowStructure only reads from the binder structure

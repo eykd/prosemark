@@ -33,8 +33,16 @@ class NodeId:
 
     def __post_init__(self) -> None:
         """Validate that the value is a valid UUIDv7."""
+        # Validate type first
+        if not isinstance(self.value, str):
+            raise NodeIdentityError(f'NodeId value must be a string, got {type(self.value).__name__}', self.value)
+
         if not self.value:
             raise NodeIdentityError('NodeId value cannot be empty', self.value)
+
+        # Normalize to lowercase (standard UUID format)
+        normalized_value = self.value.lower()
+        object.__setattr__(self, 'value', normalized_value)
 
         try:
             parsed_uuid = uuid.UUID(self.value)
@@ -124,31 +132,120 @@ class BinderItem:
     """Represents an individual node in the binder hierarchy.
 
     BinderItem can either reference an existing node (with NodeId) or be a
-    placeholder (None id). Each item has a display title and can contain
+    placeholder (None node_id). Each item has a display title and can contain
     children to form a tree structure.
 
     Args:
-        id: Optional NodeId reference (None for placeholders)
         display_title: Display title for the item
+        node_id: Optional NodeId reference (None for placeholders)
         children: List of child BinderItem objects (defaults to empty list)
+        parent: Optional parent BinderItem reference
 
     Examples:
         >>> # Create a placeholder item
-        >>> placeholder = BinderItem(id=None, display_title='New Section')
+        >>> placeholder = BinderItem(display_title='New Section', node_id=None)
 
         >>> # Create an item with NodeId
         >>> node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        >>> item = BinderItem(id=node_id, display_title='Chapter 1')
+        >>> item = BinderItem(display_title='Chapter 1', node_id=node_id)
 
         >>> # Create hierarchical structure
-        >>> parent = BinderItem(id=None, display_title='Part 1')
+        >>> parent = BinderItem(display_title='Part 1', node_id=None)
         >>> parent.children.append(item)
 
     """
 
-    id: NodeId | None
     display_title: str
+    node_id: NodeId | None = None
     children: list['BinderItem'] = field(default_factory=list)
+    parent: 'BinderItem | None' = None
+
+    def __init__(
+        self,
+        display_title: str,
+        node_id: NodeId | None = None,
+        children: list['BinderItem'] | None = None,
+        parent: 'BinderItem | None' = None,
+        id_: NodeId | None = None,  # backward compatibility
+    ) -> None:
+        """Initialize BinderItem with backward compatibility for 'id_' parameter."""
+        # Handle backward compatibility: if 'id_' is provided, use it for node_id
+        if id_ is not None and node_id is None:
+            node_id = id_
+        elif id_ is not None and node_id is not None:
+            raise ValueError("Cannot specify both 'id_' and 'node_id' parameters")
+
+        # Validate display_title is not empty or whitespace-only
+        if not display_title or not display_title.strip():
+            raise ValueError('display_title cannot be empty or whitespace-only')
+
+        self.display_title = display_title
+        self.node_id = node_id
+        self.children = children or []
+        self.parent = parent
+
+    @property
+    def id(self) -> NodeId | None:
+        """Compatibility property for id access."""
+        return self.node_id
+
+    def is_root(self) -> bool:
+        """Check if this item is a root item (no parent)."""
+        return self.parent is None
+
+    def is_leaf(self) -> bool:
+        """Check if this item is a leaf item (no children)."""
+        return len(self.children) == 0
+
+    def is_placeholder(self) -> bool:
+        """Check if this item is a placeholder (no node_id)."""
+        return self.node_id is None
+
+    def is_materialized(self) -> bool:
+        """Check if this item is materialized (has node_id)."""
+        return self.node_id is not None
+
+    def materialize(self, node_id: NodeId) -> None:
+        """Materialize this placeholder with a real node_id."""
+        if self.node_id is not None:
+            from prosemark.exceptions import BinderIntegrityError
+            raise BinderIntegrityError('Cannot materialize item that already has a node_id')
+        self.node_id = node_id
+
+    def get_depth(self) -> int:
+        """Get the depth of this item in the tree (0 for root)."""
+        depth = 0
+        current = self.parent
+        while current is not None:
+            depth += 1
+            current = current.parent
+        return depth
+
+    def get_path_to_root(self) -> list['BinderItem']:
+        """Get the path from this item to the root as a list of items."""
+        path = []
+        current: BinderItem | None = self
+        while current is not None:
+            path.append(current)
+            current = current.parent
+        return path
+
+    def get_siblings(self) -> list['BinderItem']:
+        """Get all sibling items (items with the same parent)."""
+        if self.parent is None:
+            return []
+        return [child for child in self.parent.children if child is not self]
+
+    def add_child(self, child: 'BinderItem') -> None:
+        """Add a child item to this item."""
+        child.parent = self
+        self.children.append(child)
+
+    def remove_child(self, child: 'BinderItem') -> None:
+        """Remove a child item from this item."""
+        if child in self.children:
+            child.parent = None
+            self.children.remove(child)
 
 
 @dataclass
@@ -163,6 +260,8 @@ class Binder:
 
     Args:
         roots: List of root-level BinderItem objects
+        original_content: Original file content for round-trip preservation (internal use)
+        managed_content: Managed block content (internal use)
 
     Raises:
         BinderIntegrityError: If tree invariants are violated (e.g., duplicate NodeIds)
@@ -184,6 +283,8 @@ class Binder:
     """
 
     roots: list[BinderItem] = field(default_factory=list)
+    original_content: str | None = field(default=None, repr=False)
+    managed_content: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         """Validate tree integrity during initialization."""
@@ -224,7 +325,7 @@ class Binder:
 
         def _search_item(item: BinderItem) -> BinderItem | None:
             """Recursively search for the NodeId in the tree."""
-            if item.id == node_id:
+            if item.node_id == node_id:
                 return item
 
             for child in item.children:
@@ -241,6 +342,10 @@ class Binder:
 
         return None
 
+    def find_item_by_node_id(self, node_id: NodeId) -> BinderItem | None:
+        """Find a BinderItem by its NodeId (alias for find_by_id)."""
+        return self.find_by_id(node_id)
+
     def get_all_node_ids(self) -> set[NodeId]:
         """Get all NodeIds present in the tree.
 
@@ -252,8 +357,8 @@ class Binder:
 
         def _collect_node_ids(item: BinderItem) -> None:
             """Recursively collect all non-None NodeIds."""
-            if item.id is not None:
-                node_ids.add(item.id)
+            if item.node_id is not None:
+                node_ids.add(item.node_id)
 
             for child in item.children:
                 _collect_node_ids(child)
@@ -279,7 +384,7 @@ class Binder:
 
         def _search_item(item: BinderItem) -> BinderItem | None:
             """Recursively search for the placeholder by display title."""
-            if item.id is None and item.display_title == display_title:
+            if item.node_id is None and item.display_title == display_title:
                 return item
 
             for child in item.children:
@@ -295,6 +400,31 @@ class Binder:
                 return result
 
         return None
+
+    def add_root_item(self, item: BinderItem) -> None:
+        """Add a root item to the binder."""
+        item.parent = None
+        self.roots.append(item)
+        self.validate_integrity()
+
+    def remove_root_item(self, item: BinderItem) -> None:
+        """Remove a root item from the binder."""
+        if item in self.roots:
+            self.roots.remove(item)
+
+    def depth_first_traversal(self) -> list[BinderItem]:
+        """Perform depth-first traversal of all items in the binder."""
+        result = []
+
+        def _traverse(item: BinderItem) -> None:
+            result.append(item)
+            for child in item.children:
+                _traverse(child)
+
+        for root in self.roots:
+            _traverse(root)
+
+        return result
 
 
 @dataclass(frozen=True)

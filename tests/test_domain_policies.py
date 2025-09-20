@@ -18,8 +18,8 @@ class TestValidateNoDuplicateIds:
         """Test policy rejects binders with duplicate NodeId values."""
         # Arrange: Create binder with duplicate NodeId values
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        item1 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=node_id, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=node_id, display_title='Chapter 2', children=[])
 
         # Act & Assert: Validate with policy - should raise BinderIntegrityError
         with pytest.raises(BinderIntegrityError, match='Duplicate NodeId found'):
@@ -30,8 +30,8 @@ class TestValidateNoDuplicateIds:
         # Arrange: Create binder with unique NodeId values
         id1 = NodeId('0192f0c1-2345-7123-8abc-def012345678')
         id2 = NodeId('0192f0c1-2345-7456-8abc-def012345678')
-        item1 = BinderItem(id=id1, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=id2, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=id1, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=id2, display_title='Chapter 2', children=[])
 
         # Act: Validate with policy - should not raise
         validate_no_duplicate_ids([item1, item2])
@@ -39,8 +39,8 @@ class TestValidateNoDuplicateIds:
     def test_validate_no_duplicate_ids_accepts_multiple_none_ids(self) -> None:
         """Test policy allows multiple placeholder items with None id."""
         # Arrange: Create binder with multiple None ids
-        item1 = BinderItem(id=None, display_title='Placeholder 1', children=[])
-        item2 = BinderItem(id=None, display_title='Placeholder 2', children=[])
+        item1 = BinderItem(id_=None, display_title='Placeholder 1', children=[])
+        item2 = BinderItem(id_=None, display_title='Placeholder 2', children=[])
 
         # Act: Validate with policy - should not raise
         validate_no_duplicate_ids([item1, item2])
@@ -49,9 +49,9 @@ class TestValidateNoDuplicateIds:
         """Test policy detects duplicate NodeIds in nested children."""
         # Arrange: Create binder with duplicate NodeIds in children
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        child1 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
-        child2 = BinderItem(id=node_id, display_title='Chapter 2', children=[])
-        parent = BinderItem(id=None, display_title='Part 1', children=[child1, child2])
+        child1 = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
+        child2 = BinderItem(id_=node_id, display_title='Chapter 2', children=[])
+        parent = BinderItem(id_=None, display_title='Part 1', children=[child1, child2])
 
         # Act & Assert: Validate with policy - should raise BinderIntegrityError
         with pytest.raises(BinderIntegrityError, match='Duplicate NodeId found'):
@@ -72,9 +72,9 @@ class TestValidateNoDuplicateIds:
         id2 = NodeId('0192f0c1-2345-7456-8abc-def012345678')
         id3 = NodeId('0192f0c1-2345-7789-8abc-def012345678')
 
-        deep_child = BinderItem(id=id3, display_title='Deep Chapter', children=[])
-        middle_child = BinderItem(id=id2, display_title='Middle Chapter', children=[deep_child])
-        parent = BinderItem(id=id1, display_title='Parent Chapter', children=[middle_child])
+        deep_child = BinderItem(id_=id3, display_title='Deep Chapter', children=[])
+        middle_child = BinderItem(id_=id2, display_title='Middle Chapter', children=[deep_child])
+        parent = BinderItem(id_=id1, display_title='Parent Chapter', children=[middle_child])
 
         # Act: Validate with policy - should not raise
         validate_no_duplicate_ids([parent])
@@ -88,8 +88,8 @@ class TestValidateTreeStructure:
         # Arrange: Create properly nested binder structure
         id1 = NodeId('0192f0c1-2345-7123-8abc-def012345678')
         id2 = NodeId('0192f0c1-2345-7456-8abc-def012345678')
-        child = BinderItem(id=id1, display_title='Chapter 1', children=[])
-        parent = BinderItem(id=id2, display_title='Part 1', children=[child])
+        child = BinderItem(id_=id1, display_title='Chapter 1', children=[])
+        parent = BinderItem(id_=id2, display_title='Part 1', children=[child])
 
         # Act: Validate tree structure - should not raise
         validate_tree_structure([parent])
@@ -99,8 +99,8 @@ class TestValidateTreeStructure:
         # Arrange: Create flat structure
         id1 = NodeId('0192f0c1-2345-7123-8abc-def012345678')
         id2 = NodeId('0192f0c1-2345-7456-8abc-def012345678')
-        item1 = BinderItem(id=id1, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=id2, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=id1, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=id2, display_title='Chapter 2', children=[])
 
         # Act: Validate tree structure - should not raise
         validate_tree_structure([item1, item2])
@@ -113,11 +113,11 @@ class TestValidateTreeStructure:
         id3 = NodeId('0192f0c1-2345-7789-8abc-def012345678')
 
         # Nested part
-        child = BinderItem(id=id1, display_title='Chapter 1', children=[])
-        parent = BinderItem(id=id2, display_title='Part 1', children=[child])
+        child = BinderItem(id_=id1, display_title='Chapter 1', children=[])
+        parent = BinderItem(id_=id2, display_title='Part 1', children=[child])
 
         # Flat part
-        standalone = BinderItem(id=id3, display_title='Appendix', children=[])
+        standalone = BinderItem(id_=id3, display_title='Appendix', children=[])
 
         # Act: Validate tree structure - should not raise
         validate_tree_structure([parent, standalone])
@@ -134,8 +134,8 @@ class TestValidateTreeStructure:
         """Test policy handles placeholder items properly."""
         # Arrange: Structure with placeholders
         id1 = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        child = BinderItem(id=id1, display_title='Chapter 1', children=[])
-        placeholder = BinderItem(id=None, display_title='Future Section', children=[child])
+        child = BinderItem(id_=id1, display_title='Chapter 1', children=[])
+        placeholder = BinderItem(id_=None, display_title='Future Section', children=[child])
 
         # Act: Validate tree structure - should not raise
         validate_tree_structure([placeholder])
@@ -175,8 +175,8 @@ class TestValidatePlaceholderHandling:
     def test_validate_placeholder_handling_allows_empty_ids(self) -> None:
         """Test policy allows placeholder items with None id."""
         # Arrange: Create binder with placeholder items (id=None)
-        placeholder1 = BinderItem(id=None, display_title='New Section', children=[])
-        placeholder2 = BinderItem(id=None, display_title='Future Chapter', children=[])
+        placeholder1 = BinderItem(id_=None, display_title='New Section', children=[])
+        placeholder2 = BinderItem(id_=None, display_title='Future Chapter', children=[])
 
         # Act: Validate placeholder handling - should not raise
         validate_placeholder_handling([placeholder1, placeholder2])
@@ -185,8 +185,8 @@ class TestValidatePlaceholderHandling:
         """Test policy allows mixture of placeholders and regular items."""
         # Arrange: Create binder with mixed item types
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        regular_item = BinderItem(id=node_id, display_title='Chapter 1', children=[])
-        placeholder = BinderItem(id=None, display_title='Future Chapter', children=[])
+        regular_item = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
+        placeholder = BinderItem(id_=None, display_title='Future Chapter', children=[])
 
         # Act: Validate placeholder handling - should not raise
         validate_placeholder_handling([regular_item, placeholder])
@@ -195,8 +195,8 @@ class TestValidatePlaceholderHandling:
         """Test policy allows placeholders in nested structures."""
         # Arrange: Create nested structure with placeholders
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        child = BinderItem(id=node_id, display_title='Chapter 1', children=[])
-        placeholder_parent = BinderItem(id=None, display_title='Part 1', children=[child])
+        child = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
+        placeholder_parent = BinderItem(id_=None, display_title='Part 1', children=[child])
 
         # Act: Validate placeholder handling - should not raise
         validate_placeholder_handling([placeholder_parent])
@@ -212,9 +212,9 @@ class TestValidatePlaceholderHandling:
     def test_validate_placeholder_handling_allows_all_placeholders(self) -> None:
         """Test policy allows structures with only placeholders."""
         # Arrange: Create structure with only placeholders
-        placeholder1 = BinderItem(id=None, display_title='Section 1', children=[])
-        placeholder2 = BinderItem(id=None, display_title='Section 2', children=[])
-        placeholder_parent = BinderItem(id=None, display_title='Book', children=[placeholder1, placeholder2])
+        placeholder1 = BinderItem(id_=None, display_title='Section 1', children=[])
+        placeholder2 = BinderItem(id_=None, display_title='Section 2', children=[])
+        placeholder_parent = BinderItem(id_=None, display_title='Book', children=[placeholder1, placeholder2])
 
         # Act: Validate placeholder handling - should not raise
         validate_placeholder_handling([placeholder_parent])
@@ -242,8 +242,8 @@ class TestPolicyIntegration:
         """Test that Binder methods automatically enforce integrity policies."""
         # Arrange: Create binder with policy violations
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        item1 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=node_id, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=node_id, display_title='Chapter 2', children=[])
 
         # Act: Call binder constructor (mutation method) - should raise
         # Assert: Policies automatically enforced via __post_init__
@@ -255,8 +255,8 @@ class TestPolicyIntegration:
         # Arrange: Create valid binder first
         id1 = NodeId('0192f0c1-2345-7123-8abc-def012345678')
         id2 = NodeId('0192f0c1-2345-7456-8abc-def012345678')
-        item1 = BinderItem(id=id1, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=id2, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=id1, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=id2, display_title='Chapter 2', children=[])
         binder = Binder(roots=[item1, item2])
 
         # Act: Call validate_integrity - should not raise
@@ -272,8 +272,8 @@ class TestPolicyExceptionHandling:
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
 
         # Scenario 1: Duplicate NodeId violation
-        duplicate_item1 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
-        duplicate_item2 = BinderItem(id=node_id, display_title='Chapter 2', children=[])
+        duplicate_item1 = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
+        duplicate_item2 = BinderItem(id_=node_id, display_title='Chapter 2', children=[])
 
         # Act: Apply policies to invalid data
         # Assert: Correct exception types with descriptive messages
@@ -287,8 +287,8 @@ class TestPolicyExceptionHandling:
         """Test that policy exceptions include relevant context information."""
         # Arrange: Policy violation with specific NodeId
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        item1 = BinderItem(id=node_id, display_title='First Item', children=[])
-        item2 = BinderItem(id=node_id, display_title='Second Item', children=[])
+        item1 = BinderItem(id_=node_id, display_title='First Item', children=[])
+        item2 = BinderItem(id_=node_id, display_title='Second Item', children=[])
 
         # Act & Assert: Exception should include the problematic NodeId
         with pytest.raises(BinderIntegrityError) as exc_info:
@@ -302,8 +302,8 @@ class TestPolicyExceptionHandling:
         """Test that when multiple policy violations exist, the first detected error is raised."""
         # Arrange: Binder with duplicate NodeIds (first policy that would fail)
         node_id = NodeId('0192f0c1-2345-7123-8abc-def012345678')
-        item1 = BinderItem(id=node_id, display_title='Chapter 1', children=[])
-        item2 = BinderItem(id=node_id, display_title='Chapter 2', children=[])
+        item1 = BinderItem(id_=node_id, display_title='Chapter 1', children=[])
+        item2 = BinderItem(id_=node_id, display_title='Chapter 2', children=[])
 
         # Act & Assert: Should fail on duplicate IDs policy first
         with pytest.raises(BinderIntegrityError, match='Duplicate NodeId found'):

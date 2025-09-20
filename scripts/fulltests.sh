@@ -3,7 +3,7 @@ set -e
 set -x
 
 set -a # automatically export all variables
-source .env.test
+. "$(dirname "$0")/../.env.test"
 set +a
 
 uv run ruff check --fix

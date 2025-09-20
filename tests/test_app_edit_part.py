@@ -36,7 +36,7 @@ class TestEditPart:
     @pytest.fixture
     def binder_with_node(self, sample_node_id: NodeId) -> Binder:
         """Binder containing a sample node."""
-        item = BinderItem(id=sample_node_id, display_title='Test Node', children=[])
+        item = BinderItem(id_=sample_node_id, display_title='Test Node', children=[])
         return Binder(roots=[item])
 
     @pytest.fixture
@@ -217,8 +217,8 @@ class TestEditPart:
         """Test that EditPart works with nested nodes in binder."""
         # Arrange - Create binder with nested structure
         child_id = NodeId('0192f0c1-2345-7123-8abc-def012345679')
-        child_item = BinderItem(id=child_id, display_title='Child Node', children=[])
-        parent_item = BinderItem(id=sample_node_id, display_title='Parent Node', children=[child_item])
+        child_item = BinderItem(id_=child_id, display_title='Child Node', children=[])
+        parent_item = BinderItem(id_=sample_node_id, display_title='Parent Node', children=[child_item])
         binder = Binder(roots=[parent_item])
 
         fake_binder_repo.set_binder(binder)

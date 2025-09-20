@@ -51,7 +51,7 @@ class TestRemoveNode:
         """Test removing node from binder while preserving files."""
         # Arrange: Binder with node, delete_files=False
         node_id = NodeId.generate()
-        binder = Binder(roots=[BinderItem(id=node_id, display_title='Test Node', children=[])])
+        binder = Binder(roots=[BinderItem(id_=node_id, display_title='Test Node', children=[])])
         fake_binder_repo.save(binder)
 
         # Act: Execute RemoveNode preserving files
@@ -76,7 +76,7 @@ class TestRemoveNode:
         fake_node_repo.create(node_id, 'Test Node', None)
 
         # Create binder with the node
-        binder = Binder(roots=[BinderItem(id=node_id, display_title='Test Node', children=[])])
+        binder = Binder(roots=[BinderItem(id_=node_id, display_title='Test Node', children=[])])
         fake_binder_repo.save(binder)
 
         # Act: Execute RemoveNode with file deletion
@@ -98,9 +98,9 @@ class TestRemoveNode:
         child1_id = NodeId.generate()
         child2_id = NodeId.generate()
 
-        child1 = BinderItem(id=child1_id, display_title='Child 1', children=[])
-        child2 = BinderItem(id=child2_id, display_title='Child 2', children=[])
-        parent = BinderItem(id=parent_id, display_title='Parent', children=[child1, child2])
+        child1 = BinderItem(id_=child1_id, display_title='Child 1', children=[])
+        child2 = BinderItem(id_=child2_id, display_title='Child 2', children=[])
+        parent = BinderItem(id_=parent_id, display_title='Parent', children=[child1, child2])
 
         binder = Binder(roots=[parent])
         fake_binder_repo.save(binder)
@@ -128,10 +128,10 @@ class TestRemoveNode:
         child1_id = NodeId.generate()
         child2_id = NodeId.generate()
 
-        child1 = BinderItem(id=child1_id, display_title='Child 1', children=[])
-        child2 = BinderItem(id=child2_id, display_title='Child 2', children=[])
-        parent = BinderItem(id=parent_id, display_title='Parent', children=[child1, child2])
-        grandparent = BinderItem(id=grandparent_id, display_title='Grandparent', children=[parent])
+        child1 = BinderItem(id_=child1_id, display_title='Child 1', children=[])
+        child2 = BinderItem(id_=child2_id, display_title='Child 2', children=[])
+        parent = BinderItem(id_=parent_id, display_title='Parent', children=[child1, child2])
+        grandparent = BinderItem(id_=grandparent_id, display_title='Grandparent', children=[parent])
 
         binder = Binder(roots=[grandparent])
         fake_binder_repo.save(binder)
@@ -159,9 +159,9 @@ class TestRemoveNode:
         node2_id = NodeId.generate()
         node3_id = NodeId.generate()
 
-        node1 = BinderItem(id=node1_id, display_title='Node 1', children=[])
-        node2 = BinderItem(id=node2_id, display_title='Node 2', children=[])
-        node3 = BinderItem(id=node3_id, display_title='Node 3', children=[])
+        node1 = BinderItem(id_=node1_id, display_title='Node 1', children=[])
+        node2 = BinderItem(id_=node2_id, display_title='Node 2', children=[])
+        node3 = BinderItem(id_=node3_id, display_title='Node 3', children=[])
 
         binder = Binder(roots=[node1, node2, node3])
         fake_binder_repo.save(binder)
@@ -219,14 +219,14 @@ class TestRemoveNode:
         #               ├── child1
         #               └── child2
 
-        child1 = BinderItem(id=child1_id, display_title='Child 1', children=[])
-        child2 = BinderItem(id=child2_id, display_title='Child 2', children=[])
-        target = BinderItem(id=target_id, display_title='Target', children=[child1, child2])
-        subbranch2 = BinderItem(id=subbranch2_id, display_title='SubBranch 2', children=[target])
-        subbranch1 = BinderItem(id=subbranch1_id, display_title='SubBranch 1', children=[])
-        branch1 = BinderItem(id=branch1_id, display_title='Branch 1', children=[subbranch1])
-        branch2 = BinderItem(id=branch2_id, display_title='Branch 2', children=[subbranch2])
-        root = BinderItem(id=root_id, display_title='Root', children=[branch1, branch2])
+        child1 = BinderItem(id_=child1_id, display_title='Child 1', children=[])
+        child2 = BinderItem(id_=child2_id, display_title='Child 2', children=[])
+        target = BinderItem(id_=target_id, display_title='Target', children=[child1, child2])
+        subbranch2 = BinderItem(id_=subbranch2_id, display_title='SubBranch 2', children=[target])
+        subbranch1 = BinderItem(id_=subbranch1_id, display_title='SubBranch 1', children=[])
+        branch1 = BinderItem(id_=branch1_id, display_title='Branch 1', children=[subbranch1])
+        branch2 = BinderItem(id_=branch2_id, display_title='Branch 2', children=[subbranch2])
+        root = BinderItem(id_=root_id, display_title='Root', children=[branch1, branch2])
 
         binder = Binder(roots=[root])
         fake_binder_repo.save(binder)
@@ -263,7 +263,7 @@ class TestRemoveNode:
         # Create node in both binder and node repository
         fake_node_repo.create(node_id, 'Test Node', None)
 
-        binder = Binder(roots=[BinderItem(id=node_id, display_title='Test Node', children=[])])
+        binder = Binder(roots=[BinderItem(id_=node_id, display_title='Test Node', children=[])])
         fake_binder_repo.save(binder)
 
         # Act: Execute RemoveNode
@@ -287,9 +287,9 @@ class TestRemoveNode:
         child1_id = NodeId.generate()
         child2_id = NodeId.generate()
 
-        child1 = BinderItem(id=child1_id, display_title='Child 1', children=[])
-        child2 = BinderItem(id=child2_id, display_title='Child 2', children=[])
-        parent = BinderItem(id=parent_id, display_title='Parent', children=[child1, child2])
+        child1 = BinderItem(id_=child1_id, display_title='Child 1', children=[])
+        child2 = BinderItem(id_=child2_id, display_title='Child 2', children=[])
+        parent = BinderItem(id_=parent_id, display_title='Parent', children=[child1, child2])
 
         binder = Binder(roots=[parent])
         fake_binder_repo.save(binder)
@@ -311,7 +311,7 @@ class TestRemoveNode:
         """Test logging behavior when removing node with no children."""
         # Arrange: Binder with node that has no children
         node_id = NodeId.generate()
-        node = BinderItem(id=node_id, display_title='Leaf Node', children=[])
+        node = BinderItem(id_=node_id, display_title='Leaf Node', children=[])
 
         binder = Binder(roots=[node])
         fake_binder_repo.save(binder)

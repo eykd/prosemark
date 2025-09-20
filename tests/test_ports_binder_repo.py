@@ -44,9 +44,9 @@ def test_binder_repo_error_documentation() -> None:
 
     # Check docstrings mention expected exceptions
     assert 'BinderNotFoundError' in load_doc
-    assert 'FilesystemError' in load_doc
+    assert 'FileSystemError' in load_doc
     assert 'BinderIntegrityError' in load_doc
-    assert 'FilesystemError' in save_doc
+    assert 'FileSystemError' in save_doc
 
 
 class BinderRepoContractTests:
@@ -72,7 +72,7 @@ class BinderRepoContractTests:
         """Test save/load cycle preserves binder data."""
         # Create test binder with some content
         node_id = NodeId('01930000-0000-7000-8000-000000000000')
-        item = BinderItem(id=node_id, display_title='Test Item')
+        item = BinderItem(id_=node_id, display_title='Test Item')
         original = Binder(roots=[item])
 
         repo.save(original)
@@ -89,7 +89,7 @@ class BinderRepoContractTests:
         # Implementation-specific repos will need to override if needed
 
     def test_save_invalid_path_raises_filesystem_error(self, repo: BinderRepo) -> None:
-        """Test save raises FilesystemError for invalid paths."""
+        """Test save raises FileSystemError for invalid paths."""
         # This test assumes the repo can be configured with invalid path
         # Implementation-specific repos will need to override if needed
 
@@ -107,8 +107,8 @@ def create_test_binder() -> Binder:
     node_id2 = NodeId('01930000-0000-7000-8000-000000000002')
 
     # Create nested structure
-    child_item = BinderItem(id=node_id2, display_title='Child Item')
-    parent_item = BinderItem(id=node_id1, display_title='Parent Item', children=[child_item])
-    placeholder = BinderItem(id=None, display_title='Placeholder Section')
+    child_item = BinderItem(id_=node_id2, display_title='Child Item')
+    parent_item = BinderItem(id_=node_id1, display_title='Parent Item', children=[child_item])
+    placeholder = BinderItem(id_=None, display_title='Placeholder Section')
 
     return Binder(roots=[parent_item, placeholder])

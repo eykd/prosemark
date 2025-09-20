@@ -11,7 +11,7 @@ from prosemark.adapters.fake_logger import FakeLogger
 from prosemark.adapters.fake_storage import FakeBinderRepo
 from prosemark.app.use_cases import InitProject
 from prosemark.domain.models import Binder
-from prosemark.exceptions import BinderIntegrityError, FilesystemError
+from prosemark.exceptions import BinderIntegrityError, FileSystemError
 
 
 class TestInitProject:
@@ -180,7 +180,7 @@ class TestInitProject:
     def test_init_project_handles_filesystem_errors(
         self, init_project: InitProject, fake_binder_repo: FakeBinderRepo, tmp_path: Path
     ) -> None:
-        """Test FilesystemError raised with descriptive context."""
+        """Test FileSystemError raised with descriptive context."""
         # Arrange
         project_path = tmp_path / 'test_project'
         project_path.mkdir()
@@ -189,12 +189,12 @@ class TestInitProject:
         original_save = fake_binder_repo.save
 
         def failing_save(binder: Binder) -> None:
-            raise FilesystemError('Cannot write file', '/path/to/binder.md')
+            raise FileSystemError('Cannot write file', '/path/to/binder.md')
 
         fake_binder_repo.save = failing_save  # type: ignore[method-assign]
 
         # Act & Assert
-        with pytest.raises(FilesystemError) as exc_info:
+        with pytest.raises(FileSystemError) as exc_info:
             init_project.execute(project_path)
 
         assert 'Cannot write file' in str(exc_info.value)

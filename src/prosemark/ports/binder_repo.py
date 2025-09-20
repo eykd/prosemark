@@ -29,7 +29,7 @@ class BinderRepo(ABC):
 
         Raises:
             BinderNotFoundError: If binder file doesn't exist.
-            FilesystemError: If file cannot be read.
+            FileSystemError: If file cannot be read.
             BinderIntegrityError: If binder data is corrupted.
 
         """
@@ -42,6 +42,6 @@ class BinderRepo(ABC):
             binder: The Binder aggregate to persist.
 
         Raises:
-            FilesystemError: If file cannot be written.
+            FileSystemError: If file cannot be written.
 
         """

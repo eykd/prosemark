@@ -12,6 +12,7 @@ from prosemark.ports.console_port import ConsolePort
 from prosemark.ports.daily_repo import DailyRepo
 from prosemark.ports.editor_port import EditorPort
 from prosemark.ports.id_generator import IdGenerator
+from prosemark.ports.logger import Logger
 from prosemark.ports.node_repo import NodeRepo
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     'DailyRepo',
     'EditorPort',
     'IdGenerator',
+    'Logger',
     'NodeRepo',
 ]

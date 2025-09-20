@@ -55,12 +55,12 @@ class TestRemoveNodeAdvanced:
         child2_id = NodeId.generate()
 
         # Create deep hierarchy
-        child1 = BinderItem(id=child1_id, display_title='Child 1', children=[])
-        child2 = BinderItem(id=child2_id, display_title='Child 2', children=[])
-        parent = BinderItem(id=parent_id, display_title='Parent', children=[child1, child2])
-        grandparent = BinderItem(id=grandparent_id, display_title='Grandparent', children=[parent])
+        child1 = BinderItem(id_=child1_id, display_title='Child 1', children=[])
+        child2 = BinderItem(id_=child2_id, display_title='Child 2', children=[])
+        parent = BinderItem(id_=parent_id, display_title='Parent', children=[child1, child2])
+        grandparent = BinderItem(id_=grandparent_id, display_title='Grandparent', children=[parent])
         great_grandparent = BinderItem(
-            id=great_grandparent_id, display_title='Great Grandparent', children=[grandparent]
+            id_=great_grandparent_id, display_title='Great Grandparent', children=[grandparent]
         )
 
         binder = Binder(roots=[great_grandparent])
@@ -94,9 +94,9 @@ class TestRemoveNodeAdvanced:
         node2_id = NodeId.generate()
         node3_id = NodeId.generate()
 
-        node1 = BinderItem(id=node1_id, display_title='Node 1', children=[])
-        node2 = BinderItem(id=node2_id, display_title='Node 2', children=[])
-        node3 = BinderItem(id=node3_id, display_title='Node 3', children=[])
+        node1 = BinderItem(id_=node1_id, display_title='Node 1', children=[])
+        node2 = BinderItem(id_=node2_id, display_title='Node 2', children=[])
+        node3 = BinderItem(id_=node3_id, display_title='Node 3', children=[])
 
         binder = Binder(roots=[node1, node2, node3])
         fake_binder_repo.save(binder)

@@ -53,7 +53,7 @@ class TestMaterializeNode:
     @pytest.fixture
     def binder_with_placeholder(self, fake_binder_repo: FakeBinderRepo) -> Binder:
         """Binder with a placeholder item."""
-        placeholder = BinderItem(id=None, display_title='New Chapter', children=[])
+        placeholder = BinderItem(id_=None, display_title='New Chapter', children=[])
         binder = Binder(roots=[placeholder])
         fake_binder_repo.save(binder)
         return binder
@@ -62,8 +62,8 @@ class TestMaterializeNode:
     def binder_with_mixed_items(self, fake_binder_repo: FakeBinderRepo) -> Binder:
         """Binder with both placeholders and materialized items."""
         existing_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
-        existing_item = BinderItem(id=existing_id, display_title='Existing Chapter', children=[])
-        placeholder = BinderItem(id=None, display_title='Placeholder Chapter', children=[])
+        existing_item = BinderItem(id_=existing_id, display_title='Existing Chapter', children=[])
+        placeholder = BinderItem(id_=None, display_title='Placeholder Chapter', children=[])
         binder = Binder(roots=[existing_item, placeholder])
         fake_binder_repo.save(binder)
         return binder
@@ -72,8 +72,8 @@ class TestMaterializeNode:
     def binder_with_nested_placeholder(self, fake_binder_repo: FakeBinderRepo) -> Binder:
         """Binder with placeholder nested under an existing node."""
         parent_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
-        nested_placeholder = BinderItem(id=None, display_title='Nested Section', children=[])
-        parent_item = BinderItem(id=parent_id, display_title='Parent Chapter', children=[nested_placeholder])
+        nested_placeholder = BinderItem(id_=None, display_title='Nested Section', children=[])
+        parent_item = BinderItem(id_=parent_id, display_title='Parent Chapter', children=[nested_placeholder])
         binder = Binder(roots=[parent_item])
         fake_binder_repo.save(binder)
         return binder
@@ -256,8 +256,8 @@ class TestMaterializeNode:
     ) -> None:
         """Test behavior when multiple placeholders have the same title."""
         # Arrange - Create binder with two placeholders with same title
-        placeholder1 = BinderItem(id=None, display_title='Same Title', children=[])
-        placeholder2 = BinderItem(id=None, display_title='Same Title', children=[])
+        placeholder1 = BinderItem(id_=None, display_title='Same Title', children=[])
+        placeholder2 = BinderItem(id_=None, display_title='Same Title', children=[])
         binder = Binder(roots=[placeholder1, placeholder2])
         fake_binder_repo.save(binder)
 
@@ -280,19 +280,19 @@ class TestMaterializeNode:
     ) -> None:
         """Test materialization of deeply nested placeholder through recursive search."""
         # Arrange - Create a deeply nested structure with placeholder at the bottom
-        deep_placeholder = BinderItem(id=None, display_title='Deep Placeholder', children=[])
+        deep_placeholder = BinderItem(id_=None, display_title='Deep Placeholder', children=[])
         level3 = BinderItem(
-            id=NodeId('0192f0c1-3333-7000-8000-000000000003'),
+            id_=NodeId('0192f0c1-3333-7000-8000-000000000003'),
             display_title='Level 3',
             children=[deep_placeholder],
         )
         level2 = BinderItem(
-            id=NodeId('0192f0c1-2222-7000-8000-000000000002'),
+            id_=NodeId('0192f0c1-2222-7000-8000-000000000002'),
             display_title='Level 2',
             children=[level3],
         )
         level1 = BinderItem(
-            id=NodeId('0192f0c1-1111-7000-8000-000000000001'),
+            id_=NodeId('0192f0c1-1111-7000-8000-000000000001'),
             display_title='Level 1',
             children=[level2],
         )
@@ -318,12 +318,12 @@ class TestMaterializeNode:
         # Arrange - Create nested structure with materialized item deep in hierarchy
         existing_id = NodeId('0192f0c1-4444-7000-8000-000000000004')
         materialized_item = BinderItem(
-            id=existing_id,
+            id_=existing_id,
             display_title='Already Materialized',
             children=[],
         )
         parent = BinderItem(
-            id=NodeId('0192f0c1-1111-7000-8000-000000000001'),
+            id_=NodeId('0192f0c1-1111-7000-8000-000000000001'),
             display_title='Parent',
             children=[materialized_item],
         )
@@ -345,30 +345,30 @@ class TestMaterializeNode:
         """Test recursive search continues through multiple children branches."""
         # Arrange - Create structure where target is in second branch
         # This tests the loop continuation in _find_item_by_title_recursive
-        target_placeholder = BinderItem(id=None, display_title='Target Placeholder', children=[])
+        target_placeholder = BinderItem(id_=None, display_title='Target Placeholder', children=[])
 
         # First branch with no match
         branch1_child = BinderItem(
-            id=NodeId('0192f0c1-1111-7000-8000-000000000001'),
+            id_=NodeId('0192f0c1-1111-7000-8000-000000000001'),
             display_title='Branch 1 Child',
             children=[],
         )
         branch1 = BinderItem(
-            id=NodeId('0192f0c1-2222-7000-8000-000000000002'),
+            id_=NodeId('0192f0c1-2222-7000-8000-000000000002'),
             display_title='Branch 1',
             children=[branch1_child],
         )
 
         # Second branch with the target
         branch2 = BinderItem(
-            id=NodeId('0192f0c1-3333-7000-8000-000000000003'),
+            id_=NodeId('0192f0c1-3333-7000-8000-000000000003'),
             display_title='Branch 2',
             children=[target_placeholder],
         )
 
         # Parent with multiple children branches
         parent = BinderItem(
-            id=NodeId('0192f0c1-4444-7000-8000-000000000004'),
+            id_=NodeId('0192f0c1-4444-7000-8000-000000000004'),
             display_title='Parent',
             children=[branch1, branch2],  # Target is in second branch
         )
@@ -398,33 +398,33 @@ class TestMaterializeNode:
         # - This ensures the recursive call returns a non-None result that needs to be propagated
 
         target_item = BinderItem(
-            id=NodeId('0192f0c1-5555-7000-8000-000000000005'),
+            id_=NodeId('0192f0c1-5555-7000-8000-000000000005'),
             display_title='Deep Target',
             children=[],
         )
 
         # First child has target deep in its subtree
         deep_child = BinderItem(
-            id=NodeId('0192f0c1-6666-7000-8000-000000000006'),
+            id_=NodeId('0192f0c1-6666-7000-8000-000000000006'),
             display_title='Deep Child',
             children=[target_item],
         )
         first_child = BinderItem(
-            id=NodeId('0192f0c1-7777-7000-8000-000000000007'),
+            id_=NodeId('0192f0c1-7777-7000-8000-000000000007'),
             display_title='First Child',
             children=[deep_child],
         )
 
         # Second child (should not be searched if early return works)
         second_child = BinderItem(
-            id=NodeId('0192f0c1-8888-7000-8000-000000000008'),
+            id_=NodeId('0192f0c1-8888-7000-8000-000000000008'),
             display_title='Second Child',
             children=[],
         )
 
         # Root with multiple children
         root = BinderItem(
-            id=None,
+            id_=None,
             display_title='Root',
             children=[first_child, second_child],
         )

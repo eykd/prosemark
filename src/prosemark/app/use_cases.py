@@ -10,7 +10,7 @@ from prosemark.exceptions import (
     AlreadyMaterializedError,
     BinderIntegrityError,
     EditorLaunchError,
-    FilesystemError,
+    FileSystemError,
     NodeIdentityError,
     NodeNotFoundError,
     PlaceholderNotFoundError,
@@ -233,7 +233,7 @@ class InitProject:
 
         Raises:
             BinderIntegrityError: If project is already initialized (_binder.md exists)
-            FilesystemError: If files cannot be created (propagated from ports)
+            FileSystemError: If files cannot be created (propagated from ports)
 
         """
         self._logger.info('Starting project initialization at %s', project_path)
@@ -372,7 +372,7 @@ class AddNode:
         Raises:
             NodeNotFoundError: If specified parent_id doesn't exist in binder
             BinderIntegrityError: If binder integrity is violated after addition
-            FilesystemError: If node files cannot be created (propagated from ports)
+            FileSystemError: If node files cannot be created (propagated from ports)
 
         """
         self._logger.info('Starting node creation with title=%s, parent_id=%s', title, parent_id)
@@ -421,8 +421,8 @@ class AddNode:
 
         """
         # Create BinderItem for the new node
-        display_title = title if title is not None else ''
-        new_item = BinderItem(id=node_id, display_title=display_title, children=[])
+        display_title = title if title is not None else '(untitled)'
+        new_item = BinderItem(display_title=display_title, node_id=node_id, children=[])
 
         if parent_id is None:
             # Add to root level
@@ -512,7 +512,7 @@ class EditPart:
         Raises:
             NodeNotFoundError: If node_id doesn't exist in binder
             ValueError: If part is not a valid option
-            FilesystemError: If editor cannot be launched or files don't exist
+            FileSystemError: If editor cannot be launched or files don't exist
 
         """
         self._logger.info('Starting edit operation for NodeId: %s, part: %s', node_id, part)
@@ -609,7 +609,7 @@ class MoveNode:
         Raises:
             NodeNotFoundError: If node_id or parent_id doesn't exist in binder
             BinderIntegrityError: If move would create circular dependency
-            FilesystemError: If binder file cannot be saved (propagated from ports)
+            FileSystemError: If binder file cannot be saved (propagated from ports)
 
         """
         self._logger.info(
@@ -888,7 +888,7 @@ class RemoveNode:
 
         Raises:
             NodeNotFoundError: If node_id doesn't exist in binder
-            FilesystemError: If binder or node files cannot be updated
+            FileSystemError: If binder or node files cannot be updated
 
         """
         self._logger.info(
@@ -1103,7 +1103,7 @@ class WriteFreeform:
             format YYYYMMDDTHHMM_<uuid7>.md
 
         Raises:
-            FilesystemError: If the file cannot be created due to I/O
+            FileSystemError: If the file cannot be created due to I/O
                            errors, permission issues, or disk space
                            constraints (propagated from DailyRepo).
 
@@ -1129,7 +1129,7 @@ class WriteFreeform:
                 self._logger.warning('Failed to open freewrite file in editor: %s (file still created)', str(exc))
                 return filename
 
-        except FilesystemError:
+        except FileSystemError:
             self._logger.error('Failed to create freewrite file')  # noqa: TRY400
             raise  # Re-raise filesystem errors as they're critical
 
@@ -1214,7 +1214,7 @@ class ShowStructure:
 
         Raises:
             NodeNotFoundError: If node_id is specified but doesn't exist in binder
-            FilesystemError: If binder cannot be loaded (propagated from ports)
+            FileSystemError: If binder cannot be loaded (propagated from ports)
 
         """
         if node_id is None:
@@ -1483,7 +1483,7 @@ class MaterializeNode:
             PlaceholderNotFoundError: If no placeholder with display_title exists
             AlreadyMaterializedError: If item with display_title already has NodeId
             BinderIntegrityError: If binder integrity is violated after materialization
-            FilesystemError: If node files cannot be created (propagated from ports)
+            FileSystemError: If node files cannot be created (propagated from ports)
 
         """
         self._logger.info('Starting placeholder materialization for display_title=%s', display_title)
@@ -1521,7 +1521,7 @@ class MaterializeNode:
         self._logger.debug('Created node files for materialized NodeId: %s', node_id)
 
         # Materialization Phase - Update placeholder to reference actual node
-        placeholder.id = node_id
+        placeholder.node_id = node_id
         self._binder_repo.save(binder)
         self._logger.debug('Updated binder with materialized node: %s', node_id)
 
@@ -1624,7 +1624,7 @@ class AuditBinder:
 
         Raises:
             BinderNotFoundError: If binder file doesn't exist
-            FilesystemError: If files cannot be read (propagated from ports)
+            FileSystemError: If files cannot be read (propagated from ports)
 
         """
         self._logger.info('Starting binder audit')
