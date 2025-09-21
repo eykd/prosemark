@@ -217,6 +217,7 @@ class FreeformContent:
                 self._raise_uuid_version_error(parsed_uuid.version or 0)
         except ValueError as exc:
             from prosemark.exceptions import FreeformContentValidationError
+
             msg = f'Invalid UUID format for FreeformContent ID: {self.id}'
             raise FreeformContentValidationError(msg) from exc
 

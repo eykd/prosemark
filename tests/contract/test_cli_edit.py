@@ -123,7 +123,7 @@ class TestCLIEditCommand:
         This test documents the expected import structure.
         """
         # Should be able to import edit_command successfully
-        from prosemark.cli import edit_command  # noqa: F401
+        from prosemark.cli import edit_command
 
         # Verify it's a callable (click command)
         assert callable(edit_command)

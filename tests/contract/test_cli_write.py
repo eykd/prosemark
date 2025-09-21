@@ -122,7 +122,7 @@ class TestCLIWriteCommand:
         This test documents the expected import structure.
         """
         # Should be able to import write_command successfully
-        from prosemark.cli import write_command  # noqa: F401
+        from prosemark.cli import write_command
 
         # Verify it's a callable (click command)
         assert callable(write_command)

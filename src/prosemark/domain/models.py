@@ -35,7 +35,8 @@ class NodeId:
         """Validate that the value is a valid UUIDv7."""
         # Validate type first
         if not isinstance(self.value, str):
-            raise NodeIdentityError(f'NodeId value must be a string, got {type(self.value).__name__}', self.value)
+            msg = f'NodeId value must be a string, got {type(self.value).__name__}'
+            raise NodeIdentityError(msg, self.value)
 
         if not self.value:
             raise NodeIdentityError('NodeId value cannot be empty', self.value)
@@ -209,6 +210,7 @@ class BinderItem:
         """Materialize this placeholder with a real node_id."""
         if self.node_id is not None:
             from prosemark.exceptions import BinderIntegrityError
+
             raise BinderIntegrityError('Cannot materialize item that already has a node_id')
         self.node_id = node_id
 

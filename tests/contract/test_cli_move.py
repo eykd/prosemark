@@ -146,7 +146,7 @@ class TestCLIMoveCommand:
         This test documents the expected import structure.
         """
         # Should be able to import move_command successfully
-        from prosemark.cli import move_command  # noqa: F401
+        from prosemark.cli import move_command
 
         # Verify it's a callable (click command)
         assert callable(move_command)

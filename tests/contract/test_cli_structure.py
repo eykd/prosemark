@@ -123,7 +123,7 @@ class TestCLIStructureCommand:
         This test documents the expected import structure.
         """
         # Should be able to import structure_command successfully
-        from prosemark.cli import structure_command  # noqa: F401
+        from prosemark.cli import structure_command
 
         # Verify it's a callable (click command)
         assert callable(structure_command)
