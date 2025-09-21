@@ -387,6 +387,36 @@ class TestBinderItem:
         assert len(parent.children) == 1
         assert parent.children[0] == child2
 
+    def test_binder_item_add_remove_child_methods(self) -> None:
+        """Test BinderItem add_child and remove_child methods."""
+        parent = BinderItem(id_=None, display_title='Parent', children=[])
+        child1 = BinderItem(id_=None, display_title='Child 1', children=[])
+        child2 = BinderItem(id_=None, display_title='Child 2', children=[])
+
+        # Test add_child
+        parent.add_child(child1)
+        assert len(parent.children) == 1
+        assert child1 in parent.children
+        assert child1.parent is parent
+
+        parent.add_child(child2)
+        assert len(parent.children) == 2
+        assert child2 in parent.children
+        assert child2.parent is parent
+
+        # Test remove_child
+        parent.remove_child(child1)
+        assert len(parent.children) == 1
+        assert child1 not in parent.children
+        assert child1.parent is None
+        assert child2 in parent.children
+
+        # Test remove_child with child not in children list (should do nothing)
+        child3 = BinderItem(id_=None, display_title='Child 3', children=[])
+        parent.remove_child(child3)  # Should not raise error
+        assert len(parent.children) == 1  # Should remain unchanged
+        assert child2 in parent.children
+
     def test_binder_item_default_empty_children(self) -> None:
         """Test BinderItem has default empty children list."""
         item = BinderItem(id_=None, display_title='Test')

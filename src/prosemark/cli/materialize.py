@@ -16,8 +16,8 @@ from prosemark.exceptions import AlreadyMaterializedError, FileSystemError, Plac
 
 @click.command()
 @click.argument('title')
-@click.option('--parent', help='Parent node ID to search within')
-def materialize_command(title: str, parent: str | None) -> None:
+@click.option('--parent', '_parent', help='Parent node ID to search within')
+def materialize_command(title: str, _parent: str | None) -> None:
     """Convert a placeholder to an actual node."""
     try:
         project_root = Path.cwd()
@@ -47,10 +47,10 @@ def materialize_command(title: str, parent: str | None) -> None:
 
     except PlaceholderNotFoundError:
         click.echo('Error: Placeholder not found', err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
     except AlreadyMaterializedError:
         click.echo(f"Error: '{title}' is already materialized", err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
     except FileSystemError:
         click.echo('Error: File creation failed', err=True)
-        raise SystemExit(2)
+        raise SystemExit(2) from None

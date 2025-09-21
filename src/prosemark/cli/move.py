@@ -51,10 +51,10 @@ def move_command(node_id: str, parent: str | None, position: int | None) -> None
 
     except NodeNotFoundError as e:
         click.echo(f'Error: {e}', err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from e
     except ValueError:
         click.echo('Error: Invalid parent or position', err=True)
-        raise SystemExit(2)
+        raise SystemExit(2) from None
     except BinderIntegrityError:
         click.echo('Error: Would create circular reference', err=True)
-        raise SystemExit(3)
+        raise SystemExit(3) from None

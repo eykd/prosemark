@@ -16,7 +16,7 @@ from prosemark.exceptions import EditorLaunchError, FileSystemError, NodeNotFoun
 
 @click.command()
 @click.argument('node_id')
-@click.option('--part', default='draft', help='Content part to edit (draft/notes/synopsis)')
+@click.option('--part', required=True, help='Content part to edit (draft/notes/synopsis)')
 def edit_command(node_id: str, part: str) -> None:
     """Open node content in your preferred editor."""
     try:

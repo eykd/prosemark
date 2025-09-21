@@ -29,7 +29,7 @@ class FileSystemConfigPort(ConfigPort):
         """Return default configuration values as dictionary."""
         return {}
 
-    def load_config(self, config_path: Path | None = None) -> dict[str, Any]:
+    def load_config(self, _config_path: Path | None = None) -> dict[str, Any]:
         """Load configuration from file."""
         return {}
 
@@ -65,7 +65,7 @@ def init_command(title: str, path: Path | None) -> None:
 
     except BinderIntegrityError:
         click.echo('Error: Directory already contains a prosemark project', file=click.get_text_stream('stderr'))
-        raise SystemExit(1)
+        raise SystemExit(1) from None
     except FileSystemError as err:
         click.echo(f'Error: {err}', file=click.get_text_stream('stderr'))
         raise SystemExit(2) from err

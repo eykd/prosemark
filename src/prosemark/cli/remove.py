@@ -18,7 +18,7 @@ from prosemark.exceptions import FileSystemError, NodeNotFoundError
 @click.argument('node_id')
 @click.option('--delete-files', is_flag=True, help='Also delete node files')
 @click.option('--force', '-f', is_flag=True, help='Skip confirmation prompt')
-def remove_command(node_id: str, delete_files: bool, force: bool) -> None:
+def remove_command(node_id: str, delete_files: bool, force: bool) -> None:  # noqa: FBT001
     """Remove a node from the binder."""
     try:
         project_root = Path.cwd()
@@ -58,7 +58,7 @@ def remove_command(node_id: str, delete_files: bool, force: bool) -> None:
 
     except NodeNotFoundError:
         click.echo('Error: Node not found', err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
     except FileSystemError:
         click.echo('Error: File deletion failed', err=True)
-        raise SystemExit(3)
+        raise SystemExit(3) from None

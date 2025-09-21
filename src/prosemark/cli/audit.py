@@ -29,7 +29,7 @@ class AuditReport(Protocol):
             bool: True if no integrity issues found, False otherwise.
 
         """
-        ...
+        ...  # pragma: no cover
 
 
 def _report_placeholders(report: AuditReport) -> None:

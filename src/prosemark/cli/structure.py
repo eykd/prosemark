@@ -12,13 +12,15 @@ from prosemark.app.use_cases import ShowStructure
 from prosemark.domain.binder import Item
 from prosemark.exceptions import FileSystemError
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from prosemark.domain.models import BinderItem
 
 
 @click.command()
-@click.option('--format', '-f', default='tree', type=click.Choice(['tree', 'json']), help='Output format')
-def structure_command(format: str) -> None:
+@click.option(
+    '--format', '-f', 'output_format', default='tree', type=click.Choice(['tree', 'json']), help='Output format'
+)
+def structure_command(output_format: str) -> None:
     """Display project hierarchy."""
     try:
         project_root = Path.cwd()
@@ -35,16 +37,16 @@ def structure_command(format: str) -> None:
 
         structure_str = interactor.execute()
 
-        if format == 'tree':
+        if output_format == 'tree':
             click.echo('Project Structure:')
             click.echo(structure_str)
-        elif format == 'json':
+        elif output_format == 'json':  # pragma: no branch
             # For JSON format, we need to convert the tree to JSON
             binder = binder_repo.load()
 
             def item_to_dict(item: Union[Item, 'BinderItem']) -> dict[str, Any]:
                 result: dict[str, Any] = {
-                    'display_title': item.display_title if hasattr(item, 'display_title') else item.display_title,
+                    'display_title': item.display_title,
                 }
                 node_id = item.id if hasattr(item, 'id') else (item.node_id if hasattr(item, 'node_id') else None)
                 if node_id:
@@ -59,4 +61,4 @@ def structure_command(format: str) -> None:
 
     except FileSystemError as e:
         click.echo(f'Error: {e}', err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from e

@@ -64,7 +64,7 @@ class FileSystemConfigPort(ConfigPort):
         """Return default configuration values as dictionary."""
         return {}
 
-    def load_config(self, config_path: Path) -> dict[str, Any]:
+    def load_config(self, _config_path: Path) -> dict[str, Any]:
         """Load configuration from file."""
         return {}
 
@@ -106,13 +106,13 @@ def init(
 
     except BinderIntegrityError:
         typer.echo('Error: Directory already contains a prosemark project', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except FileSystemError as e:
         typer.echo(f'Error: {e}', err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from e
     except Exception as e:
         typer.echo(f'Unexpected error: {e}', err=True)
-        raise typer.Exit(3)
+        raise typer.Exit(3) from e
 
 
 @app.command()
@@ -157,13 +157,13 @@ def add(
 
     except NodeNotFoundError:
         typer.echo('Error: Parent node not found', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except ValueError:
         typer.echo('Error: Invalid position index', err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from None
     except FileSystemError as e:
         typer.echo(f'Error: File creation failed - {e}', err=True)
-        raise typer.Exit(3)
+        raise typer.Exit(3) from e
 
 
 @app.command()
@@ -201,21 +201,21 @@ def edit(
 
     except NodeNotFoundError:
         typer.echo('Error: Node not found', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except EditorLaunchError:
         typer.echo('Error: Editor not available', err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from None
     except FileSystemError:
         typer.echo('Error: File permission denied', err=True)
-        raise typer.Exit(3)
+        raise typer.Exit(3) from None
     except ValueError as e:
         typer.echo(f'Error: {e}', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
 def structure(
-    format: Annotated[str, typer.Option('--format', '-f', help='Output format')] = 'tree',
+    output_format: Annotated[str, typer.Option('--format', '-f', help='Output format')] = 'tree',
 ) -> None:
     """Display project hierarchy."""
     try:
@@ -233,19 +233,19 @@ def structure(
 
         structure_str = interactor.execute()
 
-        if format == 'tree':
+        if output_format == 'tree':
             typer.echo('Project Structure:')
             typer.echo(structure_str)
-        elif format == 'json':
+        elif output_format == 'json':
             # For JSON format, we need to convert the tree to JSON
             # This is a simplified version for MVP
             import json
 
             binder = binder_repo.load()
 
-            def item_to_dict(item: Item | 'BinderItem') -> dict[str, Any]:
+            def item_to_dict(item: Item | BinderItem) -> dict[str, Any]:
                 result: dict[str, Any] = {
-                    'display_title': item.display_title if hasattr(item, 'display_title') else item.display_title,
+                    'display_title': item.display_title,
                 }
                 node_id = item.id if hasattr(item, 'id') else (item.node_id if hasattr(item, 'node_id') else None)
                 if node_id:
@@ -258,12 +258,12 @@ def structure(
             data: dict[str, list[dict[str, Any]]] = {'roots': [item_to_dict(item) for item in binder.roots]}
             typer.echo(json.dumps(data, indent=2))
         else:
-            typer.echo(f"Error: Unknown format '{format}'", err=True)
+            typer.echo(f"Error: Unknown format '{output_format}'", err=True)
             raise typer.Exit(1)
 
     except FileSystemError as e:
         typer.echo(f'Error: {e}', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
@@ -297,16 +297,16 @@ def write(
 
     except FileSystemError:
         typer.echo('Error: File creation failed', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except EditorLaunchError:
         typer.echo('Error: Editor launch failed', err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from None
 
 
 @app.command()
 def materialize(
     title: Annotated[str, typer.Argument(help='Display title of placeholder to materialize')],
-    parent: Annotated[str | None, typer.Option('--parent', help='Parent node ID to search within')] = None,
+    _parent: Annotated[str | None, typer.Option('--parent', help='Parent node ID to search within')] = None,
 ) -> None:
     """Convert a placeholder to an actual node."""
     try:
@@ -337,13 +337,13 @@ def materialize(
 
     except PlaceholderNotFoundError:
         typer.echo('Error: Placeholder not found', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except AlreadyMaterializedError:
         typer.echo(f"Error: '{title}' is already materialized", err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except FileSystemError:
         typer.echo('Error: File creation failed', err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from None
 
 
 @app.command()
@@ -381,20 +381,20 @@ def move(
 
     except NodeNotFoundError as e:
         typer.echo(f'Error: {e}', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
     except ValueError:
         typer.echo('Error: Invalid parent or position', err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from None
     except BinderIntegrityError:
         typer.echo('Error: Would create circular reference', err=True)
-        raise typer.Exit(3)
+        raise typer.Exit(3) from None
 
 
 @app.command()
 def remove(
     node_id: Annotated[str, typer.Argument(help='Node to remove')],
-    delete_files: Annotated[bool, typer.Option('--delete-files', help='Also delete node files')] = False,
-    force: Annotated[bool, typer.Option('--force', '-f', help='Skip confirmation prompt')] = False,
+    delete_files: Annotated[bool, typer.Option('--delete-files', help='Also delete node files')] = False,  # noqa: FBT002
+    force: Annotated[bool, typer.Option('--force', '-f', help='Skip confirmation prompt')] = False,  # noqa: FBT002
 ) -> None:
     """Remove a node from the binder."""
     try:
@@ -437,15 +437,15 @@ def remove(
 
     except NodeNotFoundError:
         typer.echo('Error: Node not found', err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except FileSystemError:
         typer.echo('Error: File deletion failed', err=True)
-        raise typer.Exit(3)
+        raise typer.Exit(3) from None
 
 
 @app.command()
-def audit(
-    fix: Annotated[bool, typer.Option('--fix', help='Attempt to fix discovered issues')] = False,
+def audit(  # noqa: C901
+    fix: Annotated[bool, typer.Option('--fix', help='Attempt to fix discovered issues')] = False,  # noqa: FBT002
 ) -> None:
     """Check project integrity."""
     try:
@@ -498,7 +498,7 @@ def audit(
 
     except FileSystemError as e:
         typer.echo(f'Error: {e}', err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from e
 
 
 def main() -> None:
@@ -506,5 +506,5 @@ def main() -> None:
     app()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()

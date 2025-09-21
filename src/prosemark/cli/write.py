@@ -23,7 +23,7 @@ def write_command(title: str | None) -> None:
         # Wire up dependencies
         clock = ClockSystem()
         id_generator = SimpleIdGenerator()
-        daily_repo = DailyRepoFs(project_root, id_generator=id_generator, clock=clock)  # type: ignore
+        daily_repo = DailyRepoFs(project_root, id_generator=id_generator, clock=clock)
         editor_port = EditorLauncherSystem()
         logger = LoggerStdout()
         clock = ClockSystem()
@@ -44,7 +44,7 @@ def write_command(title: str | None) -> None:
 
     except FileSystemError:
         click.echo('Error: File creation failed', err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
     except EditorLaunchError:
         click.echo('Error: Editor launch failed', err=True)
-        raise SystemExit(2)
+        raise SystemExit(2) from None
