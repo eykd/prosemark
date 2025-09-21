@@ -4,8 +4,6 @@ Tests the `pmk remove` command interface and validation.
 These tests will fail with import errors until the CLI module is implemented.
 """
 
-import string
-
 import pytest
 from click.testing import CliRunner
 
@@ -26,11 +24,51 @@ class TestCLIRemoveCommand:
         """Set up test environment."""
         self.runner = CliRunner()
 
+    def _create_test_node(self) -> tuple[str, str]:
+        """Create a test node for remove operations.
+
+        Returns:
+            tuple: (node_id, dummy_parent_id) for testing
+
+        """
+        from prosemark.cli import add_command, init_command
+
+        # Initialize project
+        init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+        assert init_result.exit_code == 0
+
+        # Create a node to remove
+        node_result = self.runner.invoke(add_command, ['Node to Remove'])
+        assert node_result.exit_code == 0
+
+        # Extract ID
+        import re
+
+        match = re.search(r'Added "Node to Remove" \(([^)]+)\)', node_result.output)
+        assert match is not None
+        return match.group(1), ''  # Return empty string as dummy parent
+
     @pytest.mark.skipif(not CLI_AVAILABLE, reason='CLI module not implemented')
     def test_remove_command_preserve_files_succeeds(self) -> None:
         """Test remove command without --delete-files preserves files."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(remove_command, [string.octdigits])
+            from prosemark.cli import add_command, init_command
+
+            # Initialize project and create a node
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            add_result = self.runner.invoke(add_command, ['Test Chapter'])
+            assert add_result.exit_code == 0
+
+            # Extract the node ID from the output
+            import re
+
+            match = re.search(r'Added "Test Chapter" \(([^)]+)\)', add_result.output)
+            assert match is not None
+            node_id = match.group(1)
+
+            result = self.runner.invoke(remove_command, [node_id])
 
             assert result.exit_code == 0
             assert 'Removed' in result.output
@@ -43,7 +81,23 @@ class TestCLIRemoveCommand:
     def test_remove_command_delete_files_succeeds(self) -> None:
         """Test remove command with --delete-files deletes files."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(remove_command, [string.octdigits, '--delete-files'])
+            from prosemark.cli import add_command, init_command
+
+            # Initialize project and create a node
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            add_result = self.runner.invoke(add_command, ['Test Chapter'])
+            assert add_result.exit_code == 0
+
+            # Extract the node ID from the output
+            import re
+
+            match = re.search(r'Added "Test Chapter" \(([^)]+)\)', add_result.output)
+            assert match is not None
+            node_id = match.group(1)
+
+            result = self.runner.invoke(remove_command, [node_id, '--delete-files', '--force'])
 
             assert result.exit_code == 0
             assert 'Removed' in result.output
@@ -53,7 +107,23 @@ class TestCLIRemoveCommand:
     def test_remove_command_force_skips_confirmation(self) -> None:
         """Test remove command with --force skips confirmation."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(remove_command, [string.octdigits, '--force'])
+            from prosemark.cli import add_command, init_command
+
+            # Initialize project and create a node
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            add_result = self.runner.invoke(add_command, ['Test Chapter'])
+            assert add_result.exit_code == 0
+
+            # Extract the node ID from the output
+            import re
+
+            match = re.search(r'Added "Test Chapter" \(([^)]+)\)', add_result.output)
+            assert match is not None
+            node_id = match.group(1)
+
+            result = self.runner.invoke(remove_command, [node_id, '--force'])
 
             assert result.exit_code == 0
             # Should not prompt for confirmation
@@ -62,7 +132,23 @@ class TestCLIRemoveCommand:
     def test_remove_command_delete_files_and_force(self) -> None:
         """Test remove command with both --delete-files and --force."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(remove_command, [string.octdigits, '--delete-files', '--force'])
+            from prosemark.cli import add_command, init_command
+
+            # Initialize project and create a node
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            add_result = self.runner.invoke(add_command, ['Test Chapter'])
+            assert add_result.exit_code == 0
+
+            # Extract the node ID from the output
+            import re
+
+            match = re.search(r'Added "Test Chapter" \(([^)]+)\)', add_result.output)
+            assert match is not None
+            node_id = match.group(1)
+
+            result = self.runner.invoke(remove_command, [node_id, '--delete-files', '--force'])
 
             assert result.exit_code == 0
             assert 'Removed' in result.output
@@ -89,7 +175,8 @@ class TestCLIRemoveCommand:
         """Test remove command fails when user cancels operation."""
         with self.runner.isolated_filesystem():
             # Simulate user answering 'no' to confirmation prompt
-            result = self.runner.invoke(remove_command, [string.octdigits], input='n\n')
+            node_id, _parent_id = self._create_test_node()
+            result = self.runner.invoke(remove_command, [node_id, '--delete-files'], input='n\n')
 
             assert result.exit_code == 2  # User cancelled operation
 
@@ -98,7 +185,8 @@ class TestCLIRemoveCommand:
         """Test remove command succeeds when user confirms operation."""
         with self.runner.isolated_filesystem():
             # Simulate user answering 'yes' to confirmation prompt
-            result = self.runner.invoke(remove_command, [string.octdigits], input='y\n')
+            node_id, _parent_id = self._create_test_node()
+            result = self.runner.invoke(remove_command, [node_id, '--delete-files'], input='y\n')
 
             assert result.exit_code == 0
 
@@ -106,7 +194,8 @@ class TestCLIRemoveCommand:
     def test_remove_command_file_deletion_failure(self) -> None:
         """Test remove command handles file deletion failures."""
         with self.runner.isolated_filesystem():
-            self.runner.invoke(remove_command, [string.octdigits, '--delete-files', '--force'])
+            node_id, _parent_id = self._create_test_node()
+            self.runner.invoke(remove_command, [node_id, '--delete-files', '--force'])
 
             # If file deletion fails, should return exit code 3
             # Exact scenario depends on implementation (permissions, etc.)
@@ -126,10 +215,12 @@ class TestCLIRemoveCommand:
     def test_remove_command_confirmation_prompt_content(self) -> None:
         """Test remove command shows appropriate confirmation prompt."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(remove_command, [string.octdigits], input='n\n')
+            node_id, _parent_id = self._create_test_node()
+            result = self.runner.invoke(remove_command, [node_id, '--delete-files'], input='n\n')
 
             # Should show meaningful confirmation prompt
-            assert 'Are you sure' in result.output or 'Confirm' in result.output
+            assert 'Really delete' in result.output
+            assert '[y/N]:' in result.output
 
     @pytest.mark.skipif(not CLI_AVAILABLE, reason='CLI module not implemented')
     def test_remove_command_help_shows_usage(self) -> None:

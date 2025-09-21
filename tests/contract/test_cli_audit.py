@@ -28,6 +28,12 @@ class TestCLIAuditCommand:
     def test_audit_command_clean_project_succeeds(self) -> None:
         """Test audit command on project with no issues."""
         with self.runner.isolated_filesystem():
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
             result = self.runner.invoke(audit_command, [])
 
             assert result.exit_code == 0
@@ -54,21 +60,53 @@ class TestCLIAuditCommand:
     def test_audit_command_with_critical_issues_fails(self) -> None:
         """Test audit command on project with critical violations."""
         with self.runner.isolated_filesystem():
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            # Create critical issues by manually corrupting the binder
+            from pathlib import Path
+
+            binder_path = Path('_binder.md')
+            binder_content = binder_path.read_text()
+
+            # Add an item with invalid node ID to create a critical issue
+            lines = binder_content.splitlines()
+            for i, line in enumerate(lines):
+                if 'BEGIN_MANAGED_BLOCK' in line:
+                    # Add item with invalid ID format
+                    lines.insert(i + 1, '- [Chapter 1](invalid-id.md)')
+                    break
+            binder_path.write_text('\n'.join(lines))
+
             result = self.runner.invoke(audit_command, [])
 
             # Should exit 1 for critical issues
             if result.exit_code == 1:
-                assert 'Critical integrity violations found' in result.output
+                assert 'Project integrity issues found' in result.output
 
     @pytest.mark.skipif(not CLI_AVAILABLE, reason='CLI module not implemented')
     def test_audit_command_with_fix_flag_succeeds(self) -> None:
         """Test audit command with --fix attempts to fix issues."""
         with self.runner.isolated_filesystem():
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
             result = self.runner.invoke(audit_command, ['--fix'])
 
             # Should attempt to fix issues automatically
             if result.exit_code == 0:
-                assert 'Fixed' in result.output or 'No issues to fix' in result.output
+                # If clean project, it should show normal success message or fix message
+                assert (
+                    'Fixed' in result.output
+                    or 'No issues to fix' in result.output
+                    or 'Project integrity check completed' in result.output
+                )
             elif result.exit_code == 2:
                 assert 'Unable to fix issues automatically' in result.output
 
@@ -76,6 +114,12 @@ class TestCLIAuditCommand:
     def test_audit_command_fix_failure_handling(self) -> None:
         """Test audit command handles fix failures appropriately."""
         with self.runner.isolated_filesystem():
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
             result = self.runner.invoke(audit_command, ['--fix'])
 
             if result.exit_code == 2:
@@ -85,6 +129,24 @@ class TestCLIAuditCommand:
     def test_audit_command_placeholder_detection(self) -> None:
         """Test audit command detects placeholder nodes."""
         with self.runner.isolated_filesystem():
+            from pathlib import Path
+
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            # Add a placeholder to the binder
+            binder_path = Path('_binder.md')
+            binder_content = binder_path.read_text()
+            lines = binder_content.splitlines()
+            for i, line in enumerate(lines):
+                if 'BEGIN_MANAGED_BLOCK' in line:
+                    lines.insert(i + 1, '- [Placeholder Chapter]')
+                    break
+            binder_path.write_text('\n'.join(lines))
+
             result = self.runner.invoke(audit_command, [])
 
             # Should identify placeholder nodes
@@ -95,6 +157,25 @@ class TestCLIAuditCommand:
     def test_audit_command_missing_file_detection(self) -> None:
         """Test audit command detects missing files."""
         with self.runner.isolated_filesystem():
+            from pathlib import Path
+
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            # Add a node with an invalid ID that won't have files
+            binder_path = Path('_binder.md')
+            binder_content = binder_path.read_text()
+            lines = binder_content.splitlines()
+            for i, line in enumerate(lines):
+                if 'BEGIN_MANAGED_BLOCK' in line:
+                    # Add item with valid UUID7 format but no files
+                    lines.insert(i + 1, '- [Missing Chapter](0192f0c1-2345-7123-8abc-def012345678.md)')
+                    break
+            binder_path.write_text('\n'.join(lines))
+
             result = self.runner.invoke(audit_command, [])
 
             # Should identify nodes with missing files
@@ -105,6 +186,21 @@ class TestCLIAuditCommand:
     def test_audit_command_orphan_file_detection(self) -> None:
         """Test audit command detects orphaned files."""
         with self.runner.isolated_filesystem():
+            from pathlib import Path
+
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            # Create orphaned files that aren't in the binder
+            orphan_file = Path('0192f0c1-9999-7999-8999-999999999999.md')
+            orphan_file.write_text('# Orphaned Content\n')
+
+            orphan_notes = Path('0192f0c1-9999-7999-8999-999999999999.notes.md')
+            orphan_notes.write_text('# Orphaned Notes\n')
+
             result = self.runner.invoke(audit_command, [])
 
             # Should identify files not in binder

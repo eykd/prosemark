@@ -4,8 +4,6 @@ Tests the `pmk add` command interface and validation.
 These tests will fail with import errors until the CLI module is implemented.
 """
 
-import string
-
 import pytest
 from click.testing import CliRunner
 
@@ -43,7 +41,20 @@ class TestCLIAddCommand:
     def test_add_command_with_parent_succeeds(self) -> None:
         """Test add command with parent node ID."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(add_command, ['Section 1.1', '--parent', string.octdigits])
+            # First create a parent node
+            parent_result = self.runner.invoke(add_command, ['Chapter 1'])
+            assert parent_result.exit_code == 0
+
+            # Extract the parent node ID from the output
+            # Output format: Added "Chapter 1" (uuid)
+            import re
+
+            match = re.search(r'Added "Chapter 1" \(([^)]+)\)', parent_result.output)
+            assert match is not None
+            parent_id = match.group(1)
+
+            # Now add a child node with the parent ID
+            result = self.runner.invoke(add_command, ['Section 1.1', '--parent', parent_id])
 
             assert result.exit_code == 0
             assert 'Added "Section 1.1"' in result.output
@@ -61,7 +72,22 @@ class TestCLIAddCommand:
     def test_add_command_with_parent_and_position(self) -> None:
         """Test add command with both parent and position."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(add_command, ['Subsection', '--parent', '89abcdef', '--position', '0'])
+            # First create a parent node
+            parent_result = self.runner.invoke(add_command, ['Chapter 1'])
+            assert parent_result.exit_code == 0
+
+            # Extract the parent node ID from the output
+            import re
+
+            match = re.search(r'Added "Chapter 1" \(([^)]+)\)', parent_result.output)
+            assert match is not None
+            parent_id = match.group(1)
+
+            # Add another child to the same parent (so we can test position)
+            self.runner.invoke(add_command, ['Section 1.1', '--parent', parent_id])
+
+            # Now add a new child at position 0
+            result = self.runner.invoke(add_command, ['Subsection', '--parent', parent_id, '--position', '0'])
 
             assert result.exit_code == 0
             assert 'Added "Subsection"' in result.output

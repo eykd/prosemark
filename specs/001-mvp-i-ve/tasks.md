@@ -110,16 +110,16 @@
 - [ ] **T050** AuditProject use case in src/prosemark/app/audit_project.py
 
 ### CLI Commands
-- [ ] **T051** CLI main entry point in src/prosemark/cli/main.py
-- [ ] **T052** `pmk init` command in src/prosemark/cli/init.py
-- [ ] **T053** `pmk add` command in src/prosemark/cli/add.py
-- [ ] **T054** `pmk edit` command in src/prosemark/cli/edit.py
-- [ ] **T055** `pmk structure` command in src/prosemark/cli/structure.py
-- [ ] **T056** `pmk write` command in src/prosemark/cli/write.py
-- [ ] **T057** `pmk materialize` command in src/prosemark/cli/materialize.py
-- [ ] **T058** `pmk move` command in src/prosemark/cli/move.py
-- [ ] **T059** `pmk remove` command in src/prosemark/cli/remove.py
-- [ ] **T060** `pmk audit` command in src/prosemark/cli/audit.py
+- [X] **T051** CLI main entry point in src/prosemark/cli/main.py
+- [X] **T052** `pmk init` command in src/prosemark/cli/init.py
+- [X] **T053** `pmk add` command in src/prosemark/cli/add.py
+- [X] **T054** `pmk edit` command in src/prosemark/cli/edit.py
+- [X] **T055** `pmk structure` command in src/prosemark/cli/structure.py
+- [X] **T056** `pmk write` command in src/prosemark/cli/write.py
+- [X] **T057** `pmk materialize` command in src/prosemark/cli/materialize.py
+- [X] **T058** `pmk move` command in src/prosemark/cli/move.py
+- [X] **T059** `pmk remove` command in src/prosemark/cli/remove.py
+- [X] **T060** `pmk audit` command in src/prosemark/cli/audit.py
 
 ## Phase 3.6: Integration Tests
 **Based on quickstart.md scenarios**
