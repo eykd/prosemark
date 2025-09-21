@@ -21,7 +21,7 @@ if ! docker-compose ps -q claude-container 2>/dev/null | xargs docker inspect --
 fi
 
 log_info "Syncing Python dependencies..."
-docker-compose exec claude-container uv sync
+docker-compose exec claude-container uv sync --all-groups
 
 log_info "Opening shell in container..."
 docker-compose exec claude-container zsh
