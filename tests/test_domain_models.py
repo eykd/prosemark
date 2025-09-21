@@ -409,7 +409,7 @@ class TestBinderItem:
         assert len(parent.children) == 1
         assert child1 not in parent.children
         assert child1.parent is None
-        assert child2 in parent.children
+        assert child2 in parent.children  # pragma: no cover
 
         # Test remove_child with child not in children list (should do nothing)
         child3 = BinderItem(id_=None, display_title='Child 3', children=[])

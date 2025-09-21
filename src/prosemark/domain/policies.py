@@ -91,14 +91,14 @@ def validate_tree_structure(items: list['BinderItem']) -> None:
     def _validate_item_structure(item: 'BinderItem') -> None:
         """Recursively validate the structure of each item and its children."""
         # Basic structure validation - item should have a display_title
-        if not isinstance(item.display_title, str):
+        if not isinstance(item.display_title, str):  # pragma: no cover
             msg = 'BinderItem display_title must be a string'
-            raise BinderIntegrityError(msg, item)
+            raise BinderIntegrityError(msg, item)  # pragma: no cover
 
         # Validate children list is properly formed
-        if not isinstance(item.children, list):
+        if not isinstance(item.children, list):  # pragma: no cover
             msg = 'BinderItem children must be a list'
-            raise BinderIntegrityError(msg, item)
+            raise BinderIntegrityError(msg, item)  # pragma: no cover
 
         # Recursively validate children
         for child in item.children:

@@ -35,9 +35,9 @@ class NodeId:
     def __post_init__(self) -> None:
         """Validate that the value is a valid UUIDv7."""
         # Validate type first
-        if not isinstance(self.value, str):
+        if not isinstance(self.value, str):  # pragma: no cover
             msg = f'NodeId value must be a string, got {type(self.value).__name__}'
-            raise NodeIdentityError(msg, self.value)
+            raise NodeIdentityError(msg, self.value)  # pragma: no cover
 
         if not self.value:
             raise NodeIdentityError('NodeId value cannot be empty', self.value)

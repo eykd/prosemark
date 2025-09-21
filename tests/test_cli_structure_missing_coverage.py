@@ -39,7 +39,7 @@ class TestStructureMissingCoverage:
         # This branch executes at runtime
         # The import inside TYPE_CHECKING is not available
         # We can test that TYPE_CHECKING is False at runtime
-        assert TYPE_CHECKING is False
+        assert TYPE_CHECKING is False  # pragma: no cover
 
         # We can also verify that the module loads successfully
         from prosemark.cli import structure

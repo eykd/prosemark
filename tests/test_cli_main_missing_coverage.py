@@ -159,7 +159,7 @@ class TestMainMissingCoverage:
         # and that main() would be called in that context
 
         # Read the main.py file to verify the pattern exists
-        main_file = Path('/workspace/src/prosemark/cli/main.py')
+        main_file = Path(__file__).parent.parent / 'src' / 'prosemark' / 'cli' / 'main.py'
         content = main_file.read_text()
 
         assert "if __name__ == '__main__':" in content

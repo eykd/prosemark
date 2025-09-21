@@ -5,6 +5,7 @@ correctly implements the contract defined in the domain interfaces.
 Tests will initially fail due to missing imports - this is expected.
 """
 
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -147,14 +148,14 @@ class TestEditorPortContract:
         assert result is None
         mock_editor.open.assert_called_once_with(nonexistent_file)
 
-    def test_open_with_relative_path_converted_to_absolute(self) -> None:
+    def test_open_with_relative_path_converted_to_absolute(self, tmp_path: Path) -> None:
         """Test that open() can handle relative paths converted to absolute."""
         # Arrange
         mock_editor = Mock(spec=EditorPort)
         mock_editor.open.return_value = None
 
         # Contract specifies absolute path, but implementation might convert relative to absolute
-        absolute_path = '/workspace/relative/path/file.md'
+        absolute_path = str(tmp_path / 'relative' / 'path' / 'file.md')
 
         # Act
         result = mock_editor.open(absolute_path)
@@ -245,24 +246,25 @@ class TestEditorPortContract:
         # Assert - Verify return type matches contract specification
         assert result is None
 
-    def test_open_editor_integration_scenarios(self) -> None:
+    def test_open_editor_integration_scenarios(self, tmp_path: Path) -> None:
         """Test various editor integration scenarios."""
         # Arrange
         mock_editor = Mock(spec=EditorPort)
         mock_editor.open.return_value = None
 
-        # Common prosemark file scenarios
+        # Common prosemark file scenarios using tmp_path
+        project_root = tmp_path / 'project'
         scenarios = [
             # Node draft files
-            '/workspace/nodes/0192f0c1-2345-7123-8abc-def012345678.md',
+            str(project_root / 'nodes' / '0192f0c1-2345-7123-8abc-def012345678.md'),
             # Node notes files
-            '/workspace/nodes/0192f0c1-2345-7123-8abc-def012345678.notes.md',
+            str(project_root / 'nodes' / '0192f0c1-2345-7123-8abc-def012345678.notes.md'),
             # Node synopsis files
-            '/workspace/nodes/0192f0c1-2345-7123-8abc-def012345678.synopsis.md',
+            str(project_root / 'nodes' / '0192f0c1-2345-7123-8abc-def012345678.synopsis.md'),
             # Binder file
-            '/workspace/_binder.md',
+            str(project_root / '_binder.md'),
             # Freeform writing files
-            '/workspace/daily/2025-09-20_15-30-00_thoughts.md',
+            str(project_root / 'daily' / '2025-09-20_15-30-00_thoughts.md'),
         ]
 
         # Act & Assert

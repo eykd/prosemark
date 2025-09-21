@@ -5,6 +5,7 @@ correctly implements the contract defined in the domain interfaces.
 Tests will initially fail due to missing imports - this is expected.
 """
 
+from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
@@ -329,7 +330,7 @@ that spans multiple lines."""
         mock_logger.warning.assert_called_with(message, *args, **kwargs)
         mock_logger.error.assert_called_with(message, *args, **kwargs)
 
-    def test_prosemark_specific_logging_scenarios(self) -> None:
+    def test_prosemark_specific_logging_scenarios(self, tmp_path: Path) -> None:
         """Test logging scenarios specific to prosemark domain."""
         # Arrange
         mock_logger = Mock(spec=Logger)
@@ -339,10 +340,11 @@ that spans multiple lines."""
 
         # Prosemark-specific scenarios
         node_id = '0192f0c1-2345-7123-8abc-def012345678'
+        test_project_path = str(tmp_path / 'test-project')
 
         # Act & Assert - Info scenarios
         mock_logger.info('Created node %s', node_id)
-        mock_logger.info('Project initialized at %s', '/workspace')
+        mock_logger.info('Project initialized at %s', test_project_path)
         mock_logger.info('Binder loaded with %d items', 10)
 
         # Warning scenarios
