@@ -2,6 +2,7 @@
 
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from prosemark.exceptions import NodeIdentityError
 
@@ -262,6 +263,7 @@ class Binder:
 
     Args:
         roots: List of root-level BinderItem objects
+        project_title: Optional title for the entire project/binder
         original_content: Original file content for round-trip preservation (internal use)
         managed_content: Managed block content (internal use)
 
@@ -274,7 +276,7 @@ class Binder:
 
         >>> # Create binder with items
         >>> item = BinderItem(id=None, display_title='Chapter 1')
-        >>> binder = Binder(roots=[item])
+        >>> binder = Binder(roots=[item], project_title='My Book')
 
         >>> # Find node by ID
         >>> found = binder.find_by_id(node_id)
@@ -285,8 +287,14 @@ class Binder:
     """
 
     roots: list[BinderItem] = field(default_factory=list)
+    project_title: str | None = field(default=None)
     original_content: str | None = field(default=None, repr=False)
     managed_content: str | None = field(default=None, repr=False)
+
+    @property
+    def children(self) -> list[BinderItem]:
+        """Compatibility property to allow iteration over roots."""
+        return self.roots
 
     def __post_init__(self) -> None:
         """Validate tree integrity during initialization."""
@@ -475,8 +483,8 @@ class NodeMetadata:
     id: NodeId
     title: str | None
     synopsis: str | None
-    created: str
-    updated: str
+    created: str | datetime
+    updated: str | datetime
 
     def to_dict(self) -> dict[str, str | None]:
         """Convert NodeMetadata to a dictionary.
@@ -488,10 +496,12 @@ class NodeMetadata:
             Dictionary with metadata fields, excluding None values
 
         """
+        from datetime import datetime
+
         result: dict[str, str | None] = {
             'id': str(self.id),
-            'created': self.created,
-            'updated': self.updated,
+            'created': self.created.isoformat() if isinstance(self.created, datetime) else self.created,
+            'updated': self.updated.isoformat() if isinstance(self.updated, datetime) else self.updated,
         }
 
         # Only include title and synopsis if they are not None

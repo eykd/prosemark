@@ -374,7 +374,7 @@ Key themes: identity, belonging, discovery."""
 
         # Should not be able to modify created timestamp directly
         with pytest.raises(AttributeError):
-            node.created = datetime.fromisoformat('2025-09-20T14:00:00+00:00')  # type: ignore[assignment,misc]
+            node.created = datetime.fromisoformat('2025-09-20T14:00:00+00:00')  # type: ignore[misc]
 
     def test_node_equality_semantics(self) -> None:
         """Contract: Node equality should be based on node ID."""

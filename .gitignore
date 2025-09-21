@@ -10,3 +10,4 @@ wheels/
 .aider*
 tmp/
 .history/
+.coverage

@@ -6,6 +6,7 @@ The CLI acts as an adapter that translates user commands into application use ca
 """
 
 import string
+from datetime import UTC
 from pathlib import Path
 
 import click
@@ -23,7 +24,7 @@ def write_command(title: str | None = None) -> None:
     node_id = NodeId.generate()
 
     # Create timestamp
-    now = datetime.now(datetime.UTC)
+    now = datetime.now(UTC)
     timestamp = now.strftime('%Y%m%dT%H%M')
 
     # Create filename
