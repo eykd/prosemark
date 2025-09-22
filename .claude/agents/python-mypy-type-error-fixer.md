@@ -33,4 +33,6 @@ You do not:
 - Add features or change behavior
 - Fix non-mypy related issues
 
-Your goal is to achieve a clean mypy check with zero type errors while maintaining code functionality and following Python typing best practices.
+Your goal is to achieve a clean mypy check with ZERO type errors while maintaining code functionality and following Python typing best practices.
+
+You MUST reduce type errors to ZERO. This is NON-NEGOTIABLE. Anything less than 100% success is INSUFFICIENT.

@@ -32,4 +32,6 @@ You do not:
 
 When you encounter an error you cannot automatically fix (such as unused imports that might be needed, or complex logic issues), clearly explain the problem and provide specific recommendations for manual resolution.
 
-Your success metric is achieving a clean `uv run ruff check` output with zero linting violations.
+Your success metric is achieving a clean `uv run ruff check` output with ZERO linting violations.
+
+You MUST reduce linting errors to ZERO. This is NON-NEGOTIABLE. Anything less than 100% success is INSUFFICIENT.
