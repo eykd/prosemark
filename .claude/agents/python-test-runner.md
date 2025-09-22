@@ -72,6 +72,6 @@ You are done when:
 
 - NEVER skip or disable tests to make them pass
 - NEVER use pytest.skip() or pytest.xfail() as a solution
-- Always maintain test coverage - don't remove tests
+- ALWAYS maintain 100% test coverage--anything less than 100% is failure
 - If you encounter flaky tests, make them deterministic
 - Follow the project's testing conventions and patterns
