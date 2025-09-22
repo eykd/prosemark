@@ -121,10 +121,17 @@ class TestAuditBinder:
         result = audit_binder.execute()
 
         # Then: Reports MISSING issues with node IDs and expected paths
-        assert len(result.missing) == 1
-        missing_issue = result.missing[0]
-        assert missing_issue.node_id == node_id2
-        assert missing_issue.expected_path == f'{node_id2}.md'
+        # Now checks for both main file and notes file
+        assert len(result.missing) == 2
+        missing_issues = sorted(result.missing, key=lambda x: x.expected_path)
+
+        # Should detect missing main file
+        assert missing_issues[0].node_id == node_id2
+        assert missing_issues[0].expected_path == f'{node_id2}.md'
+
+        # Should detect missing notes file
+        assert missing_issues[1].node_id == node_id2
+        assert missing_issues[1].expected_path == f'{node_id2}.notes.md'
 
     def test_orphaned_file_detection(
         self,
@@ -217,8 +224,9 @@ class TestAuditBinder:
         assert len(result.placeholders) == 1
         assert result.placeholders[0].display_title == 'Placeholder Chapter'
 
-        assert len(result.missing) == 1
-        assert result.missing[0].node_id == node_id2
+        assert len(result.missing) == 2
+        # Both main file and notes file should be missing for node_id2
+        assert all(issue.node_id == node_id2 for issue in result.missing)
 
         assert len(result.orphans) == 1
         assert result.orphans[0].node_id == orphan_id
@@ -285,7 +293,7 @@ class TestAuditBinder:
         assert 'Issues Found:' in report
         assert 'PLACEHOLDERS (1):' in report
         assert 'Chapter 3' in report
-        assert 'MISSING (1):' in report
+        assert 'MISSING (2):' in report
         assert str(missing_id) in report
         assert 'ORPHANS (1):' in report
         assert str(orphan_id) in report
@@ -346,7 +354,7 @@ class TestAuditBinder:
         result2 = audit_binder.execute()
         report2 = result2.format_report()
 
-        assert 'MISSING (1):' in report2
+        assert 'MISSING (2):' in report2
         assert 'referenced in binder but file missing' in report2
 
         # Test orphan section separately
@@ -419,8 +427,11 @@ class TestAuditBinder:
         # When: Execute audit
         result = audit_binder.execute()
 
-        # Then: Invalid frontmatter ID is skipped and no mismatch is reported
-        assert len(result.mismatches) == 0
+        # Then: Invalid frontmatter ID is reported as a mismatch
+        assert len(result.mismatches) == 1
+        mismatch = result.mismatches[0]
+        assert mismatch.expected_id == node_id
+        assert 'invalid-frontmatter-id' in mismatch.file_path
 
     def test_file_read_error_handling(
         self,

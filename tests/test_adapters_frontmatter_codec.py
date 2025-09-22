@@ -38,7 +38,7 @@ This is the content."""
         frontmatter, remaining = self.codec.parse(content)
 
         assert frontmatter == {'title': 'Test Document', 'author': 'Test Author', 'draft': True}
-        assert remaining == '# Hello World'
+        assert remaining == '# Hello World\n\nThis is the content.'
 
     def test_parse_content_with_empty_frontmatter(self) -> None:
         """Test parsing content with empty frontmatter block."""
@@ -66,7 +66,7 @@ This is the content."""
         frontmatter, remaining = self.codec.parse(content)
 
         assert frontmatter == {}
-        assert remaining == '# Hello World'
+        assert remaining == '# Hello World\n\nThis is the content.'
 
     def test_parse_content_with_non_dict_frontmatter_raises_error(self) -> None:
         """Test parsing content with non-dictionary frontmatter raises error."""
@@ -195,7 +195,9 @@ author: Test Author
 draft: true
 title: New Title
 ---
-# Hello World"""
+# Hello World
+
+This is content."""
         assert result == expected
 
     def test_update_frontmatter_with_empty_updates(self) -> None:

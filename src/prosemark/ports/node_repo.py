@@ -130,3 +130,34 @@ class NodeRepo(ABC):
             FilesystemError: If files cannot be deleted (when delete_files=True)
 
         """
+
+    @abstractmethod
+    def get_existing_files(self) -> set['NodeId']:
+        """Get all existing node files from the filesystem.
+
+        Scans the project directory for node files ({id}.md) and returns
+        the set of NodeIds that have existing files.
+
+        Returns:
+            Set of NodeIds for files that exist on disk
+
+        Raises:
+            FileSystemError: If directory cannot be scanned
+
+        """
+
+    @abstractmethod
+    def file_exists(self, node_id: 'NodeId', file_type: str) -> bool:
+        """Check if a specific node file exists.
+
+        Args:
+            node_id: NodeId to check
+            file_type: Type of file to check ('draft' for {id}.md, 'notes' for {id}.notes.md)
+
+        Returns:
+            True if the file exists, False otherwise
+
+        Raises:
+            ValueError: If file_type is not valid
+
+        """

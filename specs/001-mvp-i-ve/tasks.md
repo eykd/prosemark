@@ -102,12 +102,12 @@
 ## Phase 3.5: Use Cases & CLI
 
 ### Use Case Implementation
-- [ ] **T045** InitProject use case in src/prosemark/app/init_project.py
-- [ ] **T046** AddNode use case in src/prosemark/app/add_node.py
-- [ ] **T047** MaterializeNode use case in src/prosemark/app/materialize_node.py
-- [ ] **T048** MoveNode use case in src/prosemark/app/move_node.py
-- [ ] **T049** RemoveNode use case in src/prosemark/app/remove_node.py
-- [ ] **T050** AuditProject use case in src/prosemark/app/audit_project.py
+- [X] **T045** InitProject use case in src/prosemark/app/init_project.py
+- [X] **T046** AddNode use case in src/prosemark/app/add_node.py
+- [X] **T047** MaterializeNode use case in src/prosemark/app/materialize_node.py
+- [X] **T048** MoveNode use case in src/prosemark/app/move_node.py
+- [X] **T049** RemoveNode use case in src/prosemark/app/remove_node.py
+- [X] **T050** AuditProject use case in src/prosemark/app/audit_project.py
 
 ### CLI Commands
 - [X] **T051** CLI main entry point in src/prosemark/cli/main.py
@@ -124,26 +124,26 @@
 ## Phase 3.6: Integration Tests
 **Based on quickstart.md scenarios**
 
-- [ ] **T061** [P] Integration test: Complete project lifecycle in tests/integration/test_project_lifecycle.py
-- [ ] **T062** [P] Integration test: Node content editing workflow in tests/integration/test_editing_workflow.py
-- [ ] **T063** [P] Integration test: Binder structure management in tests/integration/test_structure_management.py
-- [ ] **T064** [P] Integration test: Placeholder materialization in tests/integration/test_placeholder_workflow.py
-- [ ] **T065** [P] Integration test: Freeform writing in tests/integration/test_freeform_writing.py
-- [ ] **T066** [P] Integration test: Project audit and integrity in tests/integration/test_audit_integrity.py
-- [ ] **T067** [P] Integration test: File system safety in tests/integration/test_file_safety.py
-- [ ] **T068** [P] Integration test: Cross-platform compatibility in tests/integration/test_cross_platform.py
+- [X] **T061** [P] Integration test: Complete project lifecycle in tests/integration/test_project_lifecycle.py
+- [X] **T062** [P] Integration test: Node content editing workflow in tests/integration/test_editing_workflow.py
+- [X] **T063** [P] Integration test: Binder structure management in tests/integration/test_structure_management.py
+- [X] **T064** [P] Integration test: Placeholder materialization in tests/integration/test_placeholder_workflow.py
+- [X] **T065** [P] Integration test: Freeform writing in tests/integration/test_freeform_writing.py
+- [X] **T066** [P] Integration test: Project audit and integrity in tests/integration/test_audit_integrity.py
+- [X] **T067** [P] Integration test: File system safety in tests/integration/test_file_safety.py
+- [X] **T068** [P] Integration test: Cross-platform compatibility in tests/integration/test_cross_platform.py
 
 ## Phase 3.7: Polish & Validation
 
 ### Unit Tests
-- [ ] **T069** [P] Unit tests for NodeId validation in tests/unit/test_node_id_validation.py
-- [ ] **T070** [P] Unit tests for YAML frontmatter parsing in tests/unit/test_frontmatter_parsing.py
-- [ ] **T071** [P] Unit tests for markdown parsing in tests/unit/test_markdown_parsing.py
-- [ ] **T072** [P] Unit tests for UUIDv7 generation in tests/unit/test_uuid7_generation.py
+- [X] **T069** [P] Unit tests for NodeId validation in tests/unit/test_node_id_validation.py
+- [X] **T070** [P] Unit tests for YAML frontmatter parsing in tests/unit/test_frontmatter_parsing.py
+- [X] **T071** [P] Unit tests for markdown parsing in tests/unit/test_markdown_parsing.py
+- [X] **T072** [P] Unit tests for UUIDv7 generation in tests/unit/test_uuid7_generation.py
 
 ### Performance & Quality
-- [ ] **T073** Performance tests: Large binder parsing (<1s) in tests/performance/test_large_binder.py
-- [ ] **T074** Performance tests: File I/O operations (<100ms) in tests/performance/test_file_operations.py
+- [X] **T073** Performance tests: Large binder parsing (<1s) in tests/performance/test_large_binder.py
+- [X] **T074** Performance tests: File I/O operations (<100ms) in tests/performance/test_file_operations.py
 - [ ] **T075** [P] Documentation: Update README.md with installation and usage
 - [ ] **T076** [P] Documentation: Create API documentation from docstrings
 - [ ] **T077** Code quality: Remove duplication and optimize imports

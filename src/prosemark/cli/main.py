@@ -120,10 +120,11 @@ def add(
     title: Annotated[str, typer.Argument(help='Display title for the new node')],
     parent: Annotated[str | None, typer.Option('--parent', help='Parent node ID')] = None,
     position: Annotated[int | None, typer.Option('--position', help="Position in parent's children")] = None,
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Add a new node to the binder hierarchy."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
@@ -170,10 +171,11 @@ def add(
 def edit(
     node_id: Annotated[str, typer.Argument(help='Node identifier')],
     part: Annotated[str, typer.Option('--part', help='Content part to edit')] = 'draft',
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Open node content in your preferred editor."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
@@ -216,10 +218,11 @@ def edit(
 @app.command()
 def structure(
     output_format: Annotated[str, typer.Option('--format', '-f', help='Output format')] = 'tree',
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Display project hierarchy."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
@@ -269,10 +272,11 @@ def structure(
 @app.command()
 def write(
     title: Annotated[str | None, typer.Argument(help='Optional title for freeform content')] = None,
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Create a timestamped freeform writing file."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Wire up dependencies
         clock = ClockSystem()
@@ -307,10 +311,11 @@ def write(
 def materialize(
     title: Annotated[str, typer.Argument(help='Display title of placeholder to materialize')],
     _parent: Annotated[str | None, typer.Option('--parent', help='Parent node ID to search within')] = None,
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Convert a placeholder to an actual node."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
@@ -351,10 +356,11 @@ def move(
     node_id: Annotated[str, typer.Argument(help='Node to move')],
     parent: Annotated[str | None, typer.Option('--parent', help='New parent node')] = None,
     position: Annotated[int | None, typer.Option('--position', help="Position in new parent's children")] = None,
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Reorganize binder hierarchy."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
@@ -395,10 +401,11 @@ def remove(
     node_id: Annotated[str, typer.Argument(help='Node to remove')],
     delete_files: Annotated[bool, typer.Option('--delete-files', help='Also delete node files')] = False,  # noqa: FBT002
     force: Annotated[bool, typer.Option('--force', '-f', help='Skip confirmation prompt')] = False,  # noqa: FBT002
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Remove a node from the binder."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Confirmation prompt if not forced
         if not force and delete_files:
@@ -446,10 +453,11 @@ def remove(
 @app.command()
 def audit(  # noqa: C901
     fix: Annotated[bool, typer.Option('--fix', help='Attempt to fix discovered issues')] = False,  # noqa: FBT002
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Check project integrity."""
     try:
-        project_root = _get_project_root()
+        project_root = path or _get_project_root()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
@@ -467,17 +475,17 @@ def audit(  # noqa: C901
 
         report = interactor.execute()
 
-        if report.is_clean():
-            typer.echo('Project integrity check completed')
-            typer.echo('✓ All nodes have valid files')
-            typer.echo('✓ All references are consistent')
-            typer.echo('✓ No orphaned files found')
-        else:
-            typer.echo('Project integrity issues found:')
+        # Always report placeholders if they exist (informational)
+        if report.placeholders:
+            for placeholder in report.placeholders:
+                typer.echo(f'⚠ PLACEHOLDER: "{placeholder.display_title}" (no associated files)')
 
+        # Report actual issues if they exist
+        has_real_issues = report.missing or report.orphans or report.mismatches
+        if has_real_issues:
             if report.placeholders:
-                for placeholder in report.placeholders:
-                    typer.echo(f'⚠ PLACEHOLDER: "{placeholder.display_title}" (no associated files)')
+                typer.echo('')  # Add spacing after placeholders
+            typer.echo('Project integrity issues found:')
 
             if report.missing:
                 for missing in report.missing:
@@ -490,10 +498,21 @@ def audit(  # noqa: C901
             if report.mismatches:
                 for mismatch in report.mismatches:
                     typer.echo(f'⚠ MISMATCH: File {mismatch.file_path} ID mismatch')
+        else:
+            # Show success messages for real issues when none exist
+            if report.placeholders:
+                typer.echo('')  # Add spacing after placeholders
+            typer.echo('Project integrity check completed')
+            typer.echo('✓ All nodes have valid files')
+            typer.echo('✓ All references are consistent')
+            typer.echo('✓ No orphaned files found')
 
+        # Only exit with error code for real issues, not placeholders
+        if has_real_issues:
             if fix:
                 typer.echo('\nNote: Auto-fix not implemented in MVP')
                 raise typer.Exit(2)
+            # Exit with code 1 when issues are found (standard audit behavior)
             raise typer.Exit(1)
 
     except FileSystemError as e:

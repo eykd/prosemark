@@ -1,23 +1,22 @@
 """File system implementation of NodeRepo for node file operations."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 from prosemark.adapters.frontmatter_codec import FrontmatterCodec
+from prosemark.domain.models import NodeId
 from prosemark.exceptions import (
     EditorError,
     FileSystemError,
     FrontmatterFormatError,
     InvalidPartError,
     NodeAlreadyExistsError,
+    NodeIdentityError,
     NodeNotFoundError,
 )
 from prosemark.ports.clock import Clock
 from prosemark.ports.editor_port import EditorPort
 from prosemark.ports.node_repo import NodeRepo
-
-if TYPE_CHECKING:  # pragma: no cover
-    from prosemark.domain.models import NodeId
 
 
 class NodeRepoFs(NodeRepo):
@@ -253,3 +252,123 @@ class NodeRepoFs(NodeRepo):
         except OSError as exc:
             msg = f'Cannot delete node files: {exc}'
             raise FileSystemError(msg) from exc
+
+    def get_existing_files(self) -> set['NodeId']:
+        """Get all existing node files from the filesystem.
+
+        Scans the project directory for node files ({id}.md) and returns
+        the set of NodeIds that have existing files.
+
+        Returns:
+            Set of NodeIds for files that exist on disk
+
+        Raises:
+            FileSystemError: If directory cannot be scanned
+
+        """
+        try:
+            existing_files = set()
+            for md_file in self.project_path.glob('*.md'):
+                # Skip non-node files like _binder.md and README.md
+                if md_file.stem.startswith('_') or not self._is_valid_node_id(md_file.stem):
+                    continue
+
+                # Skip .notes.md files as they are secondary files
+                if md_file.stem.endswith('.notes'):
+                    continue
+
+                # The filename should be the NodeId
+                try:
+                    node_id = NodeId(md_file.stem)
+                    existing_files.add(node_id)
+                except NodeIdentityError:
+                    # Skip files that aren't valid NodeIds
+                    continue
+
+        except OSError as exc:
+            msg = f'Cannot scan directory for node files: {exc}'
+            raise FileSystemError(msg) from exc
+        else:
+            return existing_files
+
+    def _is_valid_node_id(self, filename: str) -> bool:
+        """Check if a filename looks like a valid NodeId.
+
+        A valid NodeId should be a UUID7 format string, but we'll also
+        accept any reasonable identifier for audit purposes.
+
+        Args:
+            filename: The filename (without extension) to check
+
+        Returns:
+            True if the filename appears to be a valid NodeId
+
+        """
+        # Skip empty filenames
+        if not filename:
+            return False
+
+        # Check for UUID7 format first
+        if self._is_uuid7_format(filename):
+            return True
+
+        # Also accept other reasonable node IDs for audit purposes
+        return self._is_reasonable_node_id(filename)
+
+    def _is_uuid7_format(self, filename: str) -> bool:
+        """Check if filename matches UUID7 format (8-4-4-4-12)."""
+        if len(filename) != 36:
+            return False
+
+        parts = filename.split('-')
+        if len(parts) != 5:
+            return False
+
+        expected_lengths = [8, 4, 4, 4, 12]
+        if not all(
+            len(part) == expected_length for part, expected_length in zip(parts, expected_lengths, strict=False)
+        ):
+            return False
+
+        # Check if all characters are valid hex
+        try:
+            for part in parts:
+                int(part, 16)
+        except ValueError:
+            return False
+        else:
+            return True
+
+    def _is_reasonable_node_id(self, filename: str) -> bool:
+        """Check if filename is a reasonable node ID for audit purposes."""
+        # Must be at least 3 characters, alphanumeric plus hyphens/underscores
+        if len(filename) < 3 or not all(c.isalnum() or c in '-_' for c in filename):
+            return False
+
+        # Must not be a reserved name
+        reserved_names = {'readme', 'license', 'changelog', 'todo', 'notes'}
+        return filename.lower() not in reserved_names
+
+    def file_exists(self, node_id: 'NodeId', file_type: str) -> bool:
+        """Check if a specific node file exists.
+
+        Args:
+            node_id: NodeId to check
+            file_type: Type of file to check ('draft' for {id}.md, 'notes' for {id}.notes.md)
+
+        Returns:
+            True if the file exists, False otherwise
+
+        Raises:
+            ValueError: If file_type is not valid
+
+        """
+        if file_type == 'draft':
+            file_path = self.project_path / f'{node_id}.md'
+        elif file_type == 'notes':
+            file_path = self.project_path / f'{node_id}.notes.md'
+        else:
+            msg = f'Invalid file_type: {file_type}. Must be "draft" or "notes"'
+            raise ValueError(msg)
+
+        return file_path.exists()

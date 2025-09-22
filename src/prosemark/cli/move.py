@@ -15,10 +15,11 @@ from prosemark.exceptions import BinderIntegrityError, NodeNotFoundError
 @click.argument('node_id')
 @click.option('--parent', help='New parent node')
 @click.option('--position', type=int, help="Position in new parent's children")
-def move_command(node_id: str, parent: str | None, position: int | None) -> None:
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def move_command(node_id: str, parent: str | None, position: int | None, path: Path | None) -> None:
     """Reorganize binder hierarchy."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)

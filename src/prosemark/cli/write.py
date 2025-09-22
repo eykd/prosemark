@@ -15,10 +15,11 @@ from prosemark.exceptions import EditorLaunchError, FileSystemError
 
 @click.command()
 @click.argument('title', required=False)
-def write_command(title: str | None) -> None:
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def write_command(title: str | None, path: Path | None) -> None:
     """Create a timestamped freeform writing file."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Wire up dependencies
         clock = ClockSystem()
@@ -26,7 +27,6 @@ def write_command(title: str | None) -> None:
         daily_repo = DailyRepoFs(project_root, id_generator=id_generator, clock=clock)
         editor_port = EditorLauncherSystem()
         logger = LoggerStdout()
-        clock = ClockSystem()
 
         # Execute use case
         interactor = WriteFreeform(

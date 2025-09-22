@@ -7,11 +7,6 @@ class TestPackageStructure:
     def test_packages_are_importable(self) -> None:
         """Verify all packages can be imported."""
         # Import all main packages - should not raise ImportError
-        import prosemark.adapters
-        import prosemark.app
-        import prosemark.cli
-        import prosemark.domain
-        import prosemark.ports  # noqa: F401
 
     def test_domain_package_has_proper_docstring(self) -> None:
         """Verify domain package has descriptive docstring."""

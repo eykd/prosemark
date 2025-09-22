@@ -17,10 +17,11 @@ from prosemark.exceptions import EditorLaunchError, FileSystemError, NodeNotFoun
 @click.command()
 @click.argument('node_id')
 @click.option('--part', required=True, help='Content part to edit (draft/notes/synopsis)')
-def edit_command(node_id: str, part: str) -> None:
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def edit_command(node_id: str, part: str, path: Path | None) -> None:
     """Open node content in your preferred editor."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)

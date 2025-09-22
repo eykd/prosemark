@@ -20,10 +20,11 @@ if TYPE_CHECKING:  # pragma: no cover
 @click.option(
     '--format', '-f', 'output_format', default='tree', type=click.Choice(['tree', 'json']), help='Output format'
 )
-def structure_command(output_format: str) -> None:
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def structure_command(output_format: str, path: Path | None) -> None:
     """Display project hierarchy."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)

@@ -1,7 +1,6 @@
 """Coverage tests for CLI audit command uncovered lines."""
 
 from dataclasses import dataclass
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -190,22 +189,27 @@ class TestCLIAuditCoverage:
             init_result = runner.invoke(init_command, ['--title', 'Test Project'])
             assert init_result.exit_code == 0
 
-            # Create some issues by adding invalid content to binder
-            binder_path = Path('_binder.md')
-            binder_content = binder_path.read_text()
-            lines = binder_content.splitlines()
-            for i, line in enumerate(lines):
-                if 'BEGIN_MANAGED_BLOCK' in line:
-                    lines.insert(i + 1, '- [Missing Chapter](missing-id.md)')
-                    break
-            binder_path.write_text('\n'.join(lines))
+            # Mock audit report with real issues to trigger fix behavior
+            mock_missing = Mock()
+            mock_missing.node_id = 'missing123'
 
-            # Run audit with --fix flag
-            result = runner.invoke(audit_command, ['--fix'])
+            mock_report = Mock()
+            mock_report.is_clean.return_value = False
+            mock_report.placeholders = []
+            mock_report.missing = [mock_missing]
+            mock_report.orphans = []
+            mock_report.mismatches = []
 
-            # Should exit with code 2 and show not implemented message
-            assert result.exit_code == 2
-            assert 'Note: Auto-fix not implemented in MVP' in result.output
+            with patch('prosemark.cli.audit.AuditBinder') as mock_audit_class:
+                mock_audit_instance = mock_audit_class.return_value
+                mock_audit_instance.execute.return_value = mock_report
+
+                # Run audit with --fix flag
+                result = runner.invoke(audit_command, ['--fix'])
+
+                # Should exit with code 2 and show not implemented message
+                assert result.exit_code == 2
+                assert 'Note: Auto-fix not implemented in MVP' in result.output
 
     def test_audit_command_filesystem_error(self) -> None:
         """Test audit command handles FileSystemError properly."""
@@ -238,6 +242,10 @@ class TestCLIAuditCoverage:
             # Mock a clean audit report
             mock_clean_report = Mock()
             mock_clean_report.is_clean.return_value = True
+            mock_clean_report.placeholders = []
+            mock_clean_report.missing = []
+            mock_clean_report.orphans = []
+            mock_clean_report.mismatches = []
 
             with patch('prosemark.cli.audit.AuditBinder') as mock_audit_class:
                 mock_audit_instance = mock_audit_class.return_value
@@ -262,11 +270,14 @@ class TestCLIAuditCoverage:
             init_result = runner.invoke(init_command, ['--title', 'Test Project'])
             assert init_result.exit_code == 0
 
-            # Mock a dirty audit report
+            # Mock a dirty audit report with real issues
+            mock_missing = Mock()
+            mock_missing.node_id = 'missing123'
+
             mock_dirty_report = Mock()
             mock_dirty_report.is_clean.return_value = False
             mock_dirty_report.placeholders = []
-            mock_dirty_report.missing = []
+            mock_dirty_report.missing = [mock_missing]
             mock_dirty_report.orphans = []
             mock_dirty_report.mismatches = []
 

@@ -20,10 +20,11 @@ from prosemark.exceptions import FileSystemError, NodeNotFoundError
 @click.argument('title')
 @click.option('--parent', help='Parent node ID')
 @click.option('--position', type=int, help="Position in parent's children")
-def add_command(title: str, parent: str | None, position: int | None) -> None:
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def add_command(title: str, parent: str | None, position: int | None, path: Path | None) -> None:
     """Add a new node to the binder hierarchy."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Auto-initialize project if it doesn't exist
         binder_path = project_root / '_binder.md'

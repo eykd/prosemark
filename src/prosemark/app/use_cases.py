@@ -73,11 +73,14 @@ class AuditReport:
     def is_clean(self) -> bool:
         """Check if the audit found no issues.
 
+        Placeholders are not considered errors - they are informational items
+        that indicate planned content without actual implementation.
+
         Returns:
             True if no issues were found, False otherwise
 
         """
-        return not self.placeholders and not self.missing and not self.orphans and not self.mismatches
+        return not self.missing and not self.orphans and not self.mismatches
 
     def format_report(self) -> str:
         """Format the audit results as a human-readable report.
@@ -86,10 +89,10 @@ class AuditReport:
             Formatted string report with issues organized by type
 
         """
-        if self.is_clean():
+        if self.is_clean() and not self.placeholders:
             return 'Audit Results:\n============\n✓ Clean (no issues found)'
 
-        lines = ['Issues Found:', '============']
+        lines = ['Issues Found:' if not self.is_clean() else 'Audit Results:', '============']
 
         if self.placeholders:
             lines.append(f'PLACEHOLDERS ({len(self.placeholders)}):')
@@ -1649,7 +1652,9 @@ class AuditBinder:
 
         # Cross-reference binder with file system
         self._scan_missing_files(binder_node_ids, existing_files, report)
+        self._scan_missing_notes_files(binder_node_ids, report)
         self._scan_orphaned_files(binder_node_ids, existing_files, report)
+        self._scan_orphaned_invalid_files(binder_node_ids, report)
         self._scan_id_mismatches(existing_files, report)
 
         # Log summary
@@ -1701,25 +1706,7 @@ class AuditBinder:
             Set of NodeIds for files that exist on disk
 
         """
-        # In the fake implementation, this uses the set_existing_files method
-        # In a real implementation, this would scan the filesystem for *.md files
-        # and parse their filenames to extract NodeIds
-        if hasattr(self._node_repo, 'get_existing_files'):
-            # Fake implementation for testing
-            existing_file_ids = self._node_repo.get_existing_files()
-            node_ids = set()
-            for file_id in existing_file_ids:
-                try:
-                    node_ids.add(NodeId(file_id))
-                except NodeIdentityError as e:
-                    # Log and skip invalid node IDs
-                    self._logger.debug('Skipping invalid node ID %s: %s', file_id, e)
-                    continue
-            return node_ids
-
-        # Real implementation would scan filesystem here
-        # This is a placeholder that would be replaced in production
-        return set()  # pragma: no cover
+        return self._node_repo.get_existing_files()
 
     def _scan_missing_files(
         self,
@@ -1748,6 +1735,32 @@ class AuditBinder:
 
         self._logger.debug('Found %d missing files', len(report.missing))
 
+    def _scan_missing_notes_files(
+        self,
+        binder_node_ids: set[NodeId],
+        report: AuditReport,
+    ) -> None:
+        """Scan for node IDs that are missing their .notes.md files.
+
+        Args:
+            binder_node_ids: Set of NodeIds referenced in binder
+            report: AuditReport to populate with findings
+
+        """
+        self._logger.debug('Scanning for missing notes files')
+
+        for node_id in binder_node_ids:
+            if not self._node_repo.file_exists(node_id, 'notes'):
+                missing_issue = MissingIssue(
+                    node_id=node_id,
+                    expected_path=f'{node_id}.notes.md',
+                )
+                report.missing.append(missing_issue)
+                self._logger.debug('Found missing notes file: %s.notes.md', node_id)
+
+        notes_missing_count = sum(1 for m in report.missing if m.expected_path.endswith('.notes.md'))
+        self._logger.debug('Found %d missing notes files', notes_missing_count)
+
     def _scan_orphaned_files(
         self,
         binder_node_ids: set[NodeId],
@@ -1774,6 +1787,80 @@ class AuditBinder:
             self._logger.debug('Found orphaned file: %s.md', node_id)
 
         self._logger.debug('Found %d orphaned files', len(report.orphans))
+
+    def _scan_orphaned_invalid_files(
+        self,
+        _binder_node_ids: set[NodeId],
+        report: AuditReport,
+    ) -> None:
+        """Scan for files that look like node files but have invalid NodeIds.
+
+        Args:
+            _binder_node_ids: Set of NodeIds referenced in binder (currently unused)
+            report: AuditReport to populate with findings
+
+        """
+        self._logger.debug('Scanning for orphaned files with invalid NodeIds')
+
+        # Get all potential node files, including those with invalid NodeIds
+        try:
+            # Scan project directory for .md files that look like node files
+            project_path = getattr(self._node_repo, 'project_path', None)
+            if project_path is None:
+                # For fake implementations, we can't scan the filesystem
+                return
+
+            from pathlib import Path
+
+            project_path = Path(project_path)
+
+            for md_file in project_path.glob('*.md'):
+                # Skip system files
+                if md_file.stem.startswith('_'):
+                    continue
+
+                # Skip .notes.md files
+                if md_file.stem.endswith('.notes'):
+                    continue
+
+                # Skip freeform files (pattern: YYYYMMDDTHHMM_<uuid>.md)
+                import re
+
+                if re.match(r'^\d{8}T\d{4}_[0-9a-f-]+$', md_file.stem):
+                    continue
+
+                # Try to create a NodeId from the filename
+                try:
+                    NodeId(md_file.stem)
+                    # If successful, this is handled by regular orphan scanning
+                    continue
+                except NodeIdentityError:
+                    # This file has an invalid NodeId but looks like a node file
+                    pass
+
+                # Check if this file might be a node file based on content
+                try:
+                    content = md_file.read_text()
+                    if content.startswith('---') and '\nid:' in content:
+                        # This looks like a node file with frontmatter
+                        # Create a dummy NodeId for reporting purposes
+                        dummy_node_id = NodeId('00000000-0000-7000-8000-000000000000')  # UUIDv7 format
+                        orphan_issue = OrphanIssue(
+                            node_id=dummy_node_id,
+                            file_path=md_file.name,
+                        )
+                        report.orphans.append(orphan_issue)
+                        self._logger.debug('Found orphaned file with invalid NodeId: %s', md_file.name)
+                except (OSError, UnicodeDecodeError):
+                    # Couldn't read the file or doesn't look like a node file
+                    self._logger.debug('Could not read file %s, skipping', md_file.name)
+                    continue
+
+        except (OSError, AttributeError) as exc:
+            self._logger.warning('Could not scan for orphaned invalid files: %s', exc)
+
+        invalid_orphan_count = sum(1 for o in report.orphans if o.file_path != f'{o.node_id}.md')
+        self._logger.debug('Found %d orphaned files with invalid NodeIds', invalid_orphan_count)
 
     def _scan_id_mismatches(self, existing_files: set[NodeId], report: AuditReport) -> None:
         """Scan for files where frontmatter ID doesn't match filename.
@@ -1806,9 +1893,22 @@ class AuditBinder:
                             actual_id,
                         )
                     except NodeIdentityError as e:
-                        # Log and skip invalid frontmatter IDs
-                        self._logger.debug('Skipping invalid frontmatter ID %s: %s', frontmatter_id_str, e)
-                        continue
+                        # Handle invalid frontmatter IDs as mismatches
+                        self._logger.debug('Found invalid frontmatter ID %s: %s', frontmatter_id_str, e)
+                        # Create a dummy NodeId for reporting purposes
+                        dummy_actual_id = NodeId('00000000-0000-7000-8000-000000000001')  # UUIDv7 format
+                        mismatch_issue = MismatchIssue(
+                            file_path=f'{node_id}.md (frontmatter id: {frontmatter_id_str})',
+                            expected_id=node_id,
+                            actual_id=dummy_actual_id,
+                        )
+                        report.mismatches.append(mismatch_issue)
+                        self._logger.debug(
+                            'Found ID mismatch in %s.md: expected %s, found invalid %s',
+                            node_id,
+                            node_id,
+                            frontmatter_id_str,
+                        )
             except (OSError, KeyError, NodeNotFoundError) as e:
                 # Log and skip files that can't be read
                 self._logger.debug('Could not read file for node %s: %s', node_id, e)

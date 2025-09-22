@@ -321,6 +321,10 @@ class TestMainAppIntegration:
         # Mock clean audit report
         mock_report = Mock()
         mock_report.is_clean.return_value = True
+        mock_report.placeholders = []
+        mock_report.missing = []
+        mock_report.orphans = []
+        mock_report.mismatches = []
         mock_interactor.execute.return_value = mock_report
 
         result = self.runner.invoke(app, ['audit'])
@@ -344,12 +348,12 @@ class TestMainAppIntegration:
         mock_interactor = Mock()
         mock_audit.return_value = mock_interactor
 
-        # Mock audit report with issues
+        # Mock audit report with placeholders only (should not cause failure)
         mock_placeholder = Mock()
         mock_placeholder.display_title = 'Missing Placeholder'
 
         mock_report = Mock()
-        mock_report.is_clean.return_value = False
+        mock_report.is_clean.return_value = True  # Clean with my new logic (no real issues)
         mock_report.placeholders = [mock_placeholder]
         mock_report.missing = []
         mock_report.orphans = []
@@ -358,9 +362,9 @@ class TestMainAppIntegration:
 
         result = self.runner.invoke(app, ['audit'])
 
-        assert result.exit_code == 1
-        assert 'Project integrity issues found:' in result.stdout
+        assert result.exit_code == 0  # Placeholders don't cause failure
         assert 'PLACEHOLDER: "Missing Placeholder"' in result.stdout
+        assert 'Project integrity check completed' in result.stdout
 
     @patch('prosemark.cli.main.AuditBinder')
     @patch('prosemark.cli.main._get_project_root')
@@ -378,11 +382,14 @@ class TestMainAppIntegration:
         mock_interactor = Mock()
         mock_audit.return_value = mock_interactor
 
-        # Mock audit report with issues
+        # Mock audit report with real issues to trigger fix behavior
+        mock_missing = Mock()
+        mock_missing.node_id = 'missing123'
+
         mock_report = Mock()
         mock_report.is_clean.return_value = False
         mock_report.placeholders = []
-        mock_report.missing = []
+        mock_report.missing = [mock_missing]
         mock_report.orphans = []
         mock_report.mismatches = []
         mock_interactor.execute.return_value = mock_report
@@ -1163,8 +1170,10 @@ class TestAuditCommandExtended:
         result = self.runner.invoke(app, ['audit'])
 
         assert result.exit_code == 1
-        assert 'Project integrity issues found:' in result.stdout
+        # Placeholders are shown first (informational)
         assert '⚠ PLACEHOLDER: "Missing Placeholder"' in result.stdout
+        # Then real issues
+        assert 'Project integrity issues found:' in result.stdout
         assert '⚠ MISSING: Node missing-node-id referenced but files not found' in result.stdout
         assert '⚠ ORPHAN: File /test/orphan.md exists but not in binder' in result.stdout
         assert '⚠ MISMATCH: File /test/mismatch.md ID mismatch' in result.stdout

@@ -18,10 +18,11 @@ from prosemark.exceptions import FileSystemError, NodeNotFoundError
 @click.argument('node_id')
 @click.option('--delete-files', is_flag=True, help='Also delete node files')
 @click.option('--force', '-f', is_flag=True, help='Skip confirmation prompt')
-def remove_command(node_id: str, delete_files: bool, force: bool) -> None:  # noqa: FBT001
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def remove_command(node_id: str, delete_files: bool, force: bool, path: Path | None) -> None:  # noqa: FBT001
     """Remove a node from the binder."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Confirmation prompt if not forced
         if not force and delete_files and not click.confirm(f'Really delete node {node_id} and its files?'):

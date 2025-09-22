@@ -55,6 +55,42 @@ class ConsolePort(ABC):
         """
         raise NotImplementedError('Subclasses must implement the print() method')  # pragma: no cover
 
+    def print_info(self, msg: str) -> None:
+        """Display an informational message.
+
+        Args:
+            msg: The informational message content to display
+
+        """
+        self.print(f'INFO: {msg}')
+
+    def print_success(self, msg: str) -> None:
+        """Display a success message.
+
+        Args:
+            msg: The success message content to display
+
+        """
+        self.print(f'SUCCESS: {msg}')
+
+    def print_warning(self, msg: str) -> None:
+        """Display a warning message.
+
+        Args:
+            msg: The warning message content to display
+
+        """
+        self.print(f'WARNING: {msg}')
+
+    def print_error(self, msg: str) -> None:
+        """Display an error message.
+
+        Args:
+            msg: The error message content to display
+
+        """
+        self.print(f'ERROR: {msg}')
+
     def print_tree(self, binder: 'Binder') -> None:
         """Display a formatted tree representation of a binder structure.
 

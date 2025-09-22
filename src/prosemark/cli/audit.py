@@ -1,7 +1,6 @@
 """CLI command for auditing project integrity."""
 
 from pathlib import Path
-from typing import Any, Protocol
 
 import click
 
@@ -10,26 +9,8 @@ from prosemark.adapters.clock_system import ClockSystem
 from prosemark.adapters.editor_launcher_system import EditorLauncherSystem
 from prosemark.adapters.logger_stdout import LoggerStdout
 from prosemark.adapters.node_repo_fs import NodeRepoFs
-from prosemark.app.use_cases import AuditBinder
+from prosemark.app.use_cases import AuditBinder, AuditReport
 from prosemark.exceptions import FileSystemError
-
-
-class AuditReport(Protocol):
-    """A protocol representing the audit report with various node integrity checks."""
-
-    placeholders: list[Any]
-    missing: list[Any]
-    orphans: list[Any]
-    mismatches: list[Any]
-
-    def is_clean(self) -> bool:
-        """Determine if the audit report indicates no integrity issues.
-
-        Returns:
-            bool: True if no integrity issues found, False otherwise.
-
-        """
-        ...  # pragma: no cover
 
 
 def _report_placeholders(report: AuditReport) -> None:
@@ -66,10 +47,11 @@ def _report_mismatches(report: AuditReport) -> None:
 
 @click.command()
 @click.option('--fix/--no-fix', default=False, help='Attempt to fix discovered issues')
-def audit_command(*, fix: bool) -> None:
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def audit_command(*, fix: bool, path: Path | None) -> None:
     """Check project integrity."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
@@ -87,22 +69,35 @@ def audit_command(*, fix: bool) -> None:
 
         report = interactor.execute()
 
-        if report.is_clean():
-            click.echo('Project integrity check completed')
-            click.echo('✓ All nodes have valid files')
-            click.echo('✓ All references are consistent')
-            click.echo('✓ No orphaned files found')
-        else:
-            click.echo('Project integrity issues found:')
-
+        # Always report placeholders if they exist (informational)
+        if report.placeholders:
             _report_placeholders(report)
+
+        # Report actual issues if they exist
+        has_real_issues = report.missing or report.orphans or report.mismatches
+        if has_real_issues:
+            if report.placeholders:
+                click.echo('')  # Add spacing after placeholders
+            click.echo('Project integrity issues found:')
             _report_missing_nodes(report)
             _report_orphans(report)
             _report_mismatches(report)
+        else:
+            # Show success messages for real issues when none exist
+            if report.placeholders:
+                click.echo('')  # Add spacing after placeholders
+            click.echo('✓ All nodes have valid files')
+            click.echo('✓ All references are consistent')
+            click.echo('✓ No orphaned files found')
 
+        click.echo('\nProject integrity check completed')
+
+        # Only exit with error code for real issues, not placeholders
+        if has_real_issues:
             if fix:
                 click.echo('\nNote: Auto-fix not implemented in MVP')
                 raise SystemExit(2)
+            # Exit with code 1 when issues are found (standard audit behavior)
             raise SystemExit(1)
 
     except FileSystemError as err:

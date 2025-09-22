@@ -1,12 +1,8 @@
 """In-memory fake implementation of NodeRepo for testing."""
 
-from typing import TYPE_CHECKING
-
+from prosemark.domain.models import NodeId
 from prosemark.exceptions import NodeIdentityError, NodeNotFoundError
 from prosemark.ports.node_repo import NodeRepo
-
-if TYPE_CHECKING:  # pragma: no cover
-    from prosemark.domain.models import NodeId
 
 
 class FakeNodeRepo(NodeRepo):
@@ -38,6 +34,7 @@ class FakeNodeRepo(NodeRepo):
         self._delete_calls: list[tuple[str, bool]] = []
         self._open_in_editor_exception: Exception | None = None
         self._existing_files: set[str] = set()
+        self._existing_notes_files: set[str] = set()
         self._frontmatter_mismatches: dict[str, str] = {}
 
     def create(self, node_id: 'NodeId', title: str | None, synopsis: str | None) -> None:
@@ -65,6 +62,10 @@ class FakeNodeRepo(NodeRepo):
             'created': '2025-09-14T12:00:00Z',  # Placeholder timestamp
             'updated': '2025-09-14T12:00:00Z',  # Placeholder timestamp
         }
+
+        # Auto-add to existing files for audit testing
+        self._existing_files.add(node_key)
+        self._existing_notes_files.add(node_key)
 
     def read_frontmatter(self, node_id: 'NodeId') -> dict[str, str | None]:
         """Read frontmatter from node draft file.
@@ -268,14 +269,57 @@ class FakeNodeRepo(NodeRepo):
         """
         self._existing_files = set(file_ids)
 
-    def get_existing_files(self) -> set[str]:
+    def set_existing_notes_files(self, file_ids: list[str]) -> None:
+        """Set which node notes files exist for audit testing.
+
+        Args:
+            file_ids: List of node ID strings that should be considered as having existing notes files
+
+        """
+        self._existing_notes_files = set(file_ids)
+
+    def get_existing_files(self) -> set['NodeId']:
         """Get all existing node file IDs for audit testing.
 
         Returns:
-            Set of node ID strings that exist as files
+            Set of NodeIds that exist as files
 
         """
-        return self._existing_files.copy()
+        # Filter out invalid node IDs to match real file system behavior
+        valid_node_ids = set()
+        for file_id in self._existing_files:
+            try:
+                valid_node_ids.add(NodeId(file_id))
+            except (ValueError, NodeIdentityError):
+                # Skip invalid node IDs (similar to real file system behavior)
+                continue
+        return valid_node_ids
+
+    def file_exists(self, node_id: 'NodeId', file_type: str) -> bool:
+        """Check if a specific node file exists.
+
+        Args:
+            node_id: NodeId to check
+            file_type: Type of file to check ('draft' for {id}.md, 'notes' for {id}.notes.md)
+
+        Returns:
+            True if the file exists, False otherwise
+
+        Raises:
+            ValueError: If file_type is not valid
+
+        """
+        if file_type not in ('draft', 'notes'):
+            msg = f'Invalid file_type: {file_type}. Must be "draft" or "notes"'
+            raise ValueError(msg)
+
+        node_key = str(node_id)
+
+        if file_type == 'draft':
+            # Check if the main .md file exists (tracked in _existing_files)
+            return node_key in self._existing_files
+        # Check if the notes file exists (tracked in _existing_notes_files)
+        return node_key in self._existing_notes_files
 
     def set_frontmatter_mismatch(self, file_id: str, frontmatter_id: str) -> None:
         """Set a frontmatter ID mismatch for audit testing.

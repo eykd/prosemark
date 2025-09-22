@@ -17,10 +17,11 @@ from prosemark.exceptions import AlreadyMaterializedError, FileSystemError, Plac
 @click.command()
 @click.argument('title')
 @click.option('--parent', '_parent', help='Parent node ID to search within')
-def materialize_command(title: str, _parent: str | None) -> None:
+@click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
+def materialize_command(title: str, _parent: str | None, path: Path | None) -> None:
     """Convert a placeholder to an actual node."""
     try:
-        project_root = Path.cwd()
+        project_root = path or Path.cwd()
 
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
