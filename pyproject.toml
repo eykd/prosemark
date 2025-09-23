@@ -1,8 +1,26 @@
 [project]
 name = "prosemark"
-version = "0.1.0"
 description = "A command-line tool for planning, organizing, and writing stories using a hierarchical document structure"
 readme = "README.md"
+
+dynamic = ["version"]
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Artistic Software",
+    "Topic :: Office/Business",
+    "Topic :: Text Editors",
+    "Topic :: Text Editors :: Integrated Development Environments (IDE)",
+    "Topic :: Text Editors :: Text Processing",
+    "Topic :: Text Processing",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+
 requires-python = ">=3.13"
 dependencies = [
     "click>=8.1.8",
@@ -22,9 +40,25 @@ pmk = "prosemark.cli:main"
 
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.hooks.version]
+path = "src/prosemark/_version.py"
+template = """
+version = '{version}'
+"""
+
+[tool]
+[tool.uv-dynamic-versioning]
+vcs = "git"
+dirty = true
+style = "pep440"
+pattern = "default-unprefixed"
+fallback-version = "0.0.0"
 
 [dependency-groups]
 dev = [
@@ -246,6 +280,7 @@ branch = true
 source = ['src']
 omit = [
      'tests/*.py',
+     'src/prosemark/_version.py',
      ]
 [tool.coverage.report]
 show_missing = true

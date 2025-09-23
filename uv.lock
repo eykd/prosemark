@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.13"
 resolution-markers = [
     "platform_python_implementation != 'PyPy'",
@@ -635,7 +635,6 @@ wheels = [
 
 [[package]]
 name = "prosemark"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
