@@ -74,3 +74,49 @@ class TestFakeNodeRepo:
             repo.delete(node_id, delete_files=False)
 
         assert str(node_id) in str(exc_info.value)
+
+    def test_set_existing_notes_files(self) -> None:
+        """Test set_existing_notes_files method."""
+        repo = FakeNodeRepo()
+
+        # Test setting notes files
+        file_ids = ['node1', 'node2', 'node3']
+        repo.set_existing_notes_files(file_ids)
+
+        # Verify internal state (testing line 279)
+        assert repo.get_existing_notes_files() == {'node1', 'node2', 'node3'}
+
+    def test_file_exists_invalid_file_type(self) -> None:
+        """Test file_exists method with invalid file_type parameter."""
+        repo = FakeNodeRepo()
+        node_id = NodeId.generate()
+
+        # Test invalid file_type raises ValueError (lines 313-314)
+        with pytest.raises(ValueError, match=r'Invalid file_type: invalid_type\. Must be "draft" or "notes"'):
+            repo.file_exists(node_id, 'invalid_type')
+
+    def test_file_exists_draft_type(self) -> None:
+        """Test file_exists method for draft file type."""
+        repo = FakeNodeRepo()
+        node_id = NodeId.generate()
+
+        # Test draft file existence check (line 320)
+        # File doesn't exist by default
+        assert not repo.file_exists(node_id, 'draft')
+
+        # Set the file to exist
+        repo.set_existing_files([str(node_id)])
+        assert repo.file_exists(node_id, 'draft')
+
+    def test_file_exists_notes_type(self) -> None:
+        """Test file_exists method for notes file type."""
+        repo = FakeNodeRepo()
+        node_id = NodeId.generate()
+
+        # Test notes file existence check
+        # File doesn't exist by default
+        assert not repo.file_exists(node_id, 'notes')
+
+        # Set the notes file to exist
+        repo.set_existing_notes_files([str(node_id)])
+        assert repo.file_exists(node_id, 'notes')

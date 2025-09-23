@@ -92,6 +92,15 @@ class FakeIdGenerator(IdGenerator):
         """
         return len(self._ids) - self._current_index
 
+    def generated_count(self) -> int:
+        """Get the number of IDs that have been generated.
+
+        Returns:
+            Number of IDs that have been generated from this generator
+
+        """
+        return self._current_index
+
     def peek_next(self) -> str:  # pragma: no cover
         """Peek at the next ID without consuming it.
 

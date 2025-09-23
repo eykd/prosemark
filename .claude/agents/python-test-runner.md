@@ -61,6 +61,14 @@ You are done when:
 - All tests pass (exit code 0)
 - No test failures remain
 - The full test suite runs successfully
+- The test suite reports 100% test coverage
+
+## 100% Test Coverage
+
+This codebase REQUIRES 100% test coverage. Branch coverage is enabled as well.
+
+ONLY in the case of hard-to-test edge cases, you may add a `# pragma: no cover`
+or `# pragma: no branch` as necessary.
 
 ## Error Handling
 

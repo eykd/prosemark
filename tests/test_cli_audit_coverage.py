@@ -385,3 +385,42 @@ class TestCLIAuditCoverage:
 
         real_clean_report = UseCaseAuditReport(placeholders=[], missing=[], orphans=[], mismatches=[])
         assert real_clean_report.is_clean() is True
+
+    @patch('prosemark.cli.audit.AuditBinder')
+    def test_audit_command_spacing_after_placeholders(self, mock_audit_binder: Mock) -> None:
+        """Test audit command adds spacing after placeholders when real issues exist (line 80)."""
+        runner = CliRunner()
+
+        # Mock the audit use case to return a report with both placeholders and real issues
+        mock_audit = Mock()
+        mock_audit_binder.return_value = mock_audit
+
+        # Create a report with placeholders AND real issues to trigger line 80
+        placeholder = PlaceholderIssue(display_title='Test Placeholder', position='[0]')
+        missing = MissingIssue(node_id=NodeId('0192f0c1-2345-7123-8abc-def012345678'), expected_path='test.md')
+
+        report = AuditReport(placeholders=[placeholder], missing=[missing], orphans=[], mismatches=[])
+        mock_audit.execute.return_value = report
+
+        # Execute the command
+        result = runner.invoke(audit_command, [])
+
+        # Should succeed and show spacing after placeholders
+        assert result.exit_code == 1  # Exit code 1 because there are real issues
+        output = result.output
+        assert '⚠ PLACEHOLDER: "Test Placeholder" (no associated files)' in output
+        assert 'Project integrity issues found:' in output
+        # The spacing line should be between placeholders and real issues sections
+        assert '\n\nProject integrity issues found:' in output  # Double newline shows spacing was added
+
+    def test_report_placeholders_with_empty_list(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Test _report_placeholders with empty placeholders list (line 18->exit)."""
+        # Arrange - Report with no placeholders
+        report = AuditReport(placeholders=[], missing=[], orphans=[], mismatches=[])
+
+        # Act - This should hit the exit branch (18->exit) when placeholders is empty
+        _report_placeholders(report)
+
+        # Assert - No output should be produced
+        captured = capsys.readouterr()
+        assert captured.out == ''

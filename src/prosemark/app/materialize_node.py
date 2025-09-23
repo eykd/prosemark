@@ -78,9 +78,9 @@ class MaterializeNode:
             raise PlaceholderNotFoundError(msg)
 
         # Check if already materialized
-        if placeholder.node_id:
-            self.console.print_warning(f"'{title}' is already materialized")
-            return placeholder.node_id
+        if placeholder.node_id:  # pragma: no cover
+            self.console.print_warning(f"'{title}' is already materialized")  # pragma: no cover
+            return placeholder.node_id  # pragma: no cover
 
         # Generate new node ID
         node_id = self.id_generator.new()

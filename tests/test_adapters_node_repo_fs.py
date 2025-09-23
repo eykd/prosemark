@@ -305,3 +305,110 @@ class TestNodeRepoFs:
 
         with pytest.raises(FileSystemError, match='Cannot delete node files'):
             repo.delete(self.test_node_id, delete_files=True)
+
+    def test_get_existing_files_handles_notes_files(self, tmp_path: Path) -> None:
+        """Test get_existing_files skips .notes.md files (line 278)."""
+        test_dir = tmp_path / 'test_project'
+        test_dir.mkdir()
+
+        # Create a file that would pass _is_valid_node_id but has .notes suffix
+        # "some-reasonable-id.notes" should pass _is_reasonable_node_id
+        # (alphanumeric+hyphens, >3 chars, not reserved) and trigger the .notes check
+        valid_notes_file = test_dir / 'some-reasonable-id.notes.md'
+        valid_notes_file.write_text('notes content')
+
+        # Create a regular file that should be included
+        regular_file = test_dir / '0192f0c1-2345-7123-8abc-def012345678.md'
+        regular_file.write_text('content')
+
+        repo = self._create_repo(test_dir)
+        existing_files = repo.get_existing_files()
+
+        # Only the regular file should be included, not the notes file
+        assert len(existing_files) == 1
+        assert NodeId('0192f0c1-2345-7123-8abc-def012345678') in existing_files
+
+    @patch('pathlib.Path.glob')
+    def test_get_existing_files_handles_os_error(self, mock_glob: Mock, tmp_path: Path) -> None:
+        """Test get_existing_files handles OSError (lines 288-290)."""
+        repo = self._create_repo(tmp_path / 'test_project')
+        mock_glob.side_effect = OSError('Permission denied')
+
+        with pytest.raises(FileSystemError, match='Cannot scan directory for node files'):
+            repo.get_existing_files()
+
+    def test_is_valid_node_id_empty_filename(self, tmp_path: Path) -> None:
+        """Test _is_valid_node_id handles empty filename (line 309)."""
+        repo = self._create_repo(tmp_path)
+
+        # Test _is_valid_node_id directly with empty string
+        # This should return False due to line 309
+        assert not repo._is_valid_node_id('')  # noqa: SLF001
+
+    def test_is_uuid7_format_invalid_dash_count(self, tmp_path: Path) -> None:
+        """Test _is_uuid7_format with wrong number of dashes (line 325)."""
+        repo = self._create_repo(tmp_path)
+
+        # Test with 36 chars but wrong number of dashes (should have 5 parts when split by '-')
+        # This has 36 chars but only 3 dashes (4 parts) instead of 4 dashes (5 parts)
+        invalid_uuid = '0192f0c1-2345-7123-8abcdef0123456789'  # 36 chars, wrong dash pattern
+        assert len(invalid_uuid) == 36
+        assert len(invalid_uuid.split('-')) == 4  # Should be 5 for valid UUID
+
+        # Test _is_uuid7_format directly - should return False due to line 325
+        assert not repo._is_uuid7_format(invalid_uuid)  # noqa: SLF001
+
+        # This should be excluded from get_existing_files
+        existing = repo.get_existing_files()
+        assert len(existing) == 0  # Invalid format should be excluded
+
+    def test_is_uuid7_format_wrong_part_lengths(self, tmp_path: Path) -> None:
+        """Test _is_uuid7_format with wrong part lengths (line 331)."""
+        repo = self._create_repo(tmp_path)
+
+        # Create file with wrong part lengths (second part too long, third too short)
+        invalid_filename = '0192f0c1-23456-123-8abc-def012345678'
+        (tmp_path / f'{invalid_filename}.md').write_text('content')
+
+        # This should be excluded from get_existing_files
+        existing = repo.get_existing_files()
+        assert len(existing) == 0  # Invalid format should be excluded
+
+    def test_is_uuid7_format_invalid_hex(self, tmp_path: Path) -> None:
+        """Test _is_uuid7_format with invalid hex characters (lines 337-338)."""
+        repo = self._create_repo(tmp_path)
+
+        # Create file with invalid hex characters
+        invalid_filename = '0192f0g1-2345-7123-8abc-def012345678'  # 'g' is not hex
+        (tmp_path / f'{invalid_filename}.md').write_text('content')
+
+        # This should be excluded from get_existing_files
+        existing = repo.get_existing_files()
+        assert len(existing) == 0  # Invalid format should be excluded
+
+    def test_file_exists_notes_type(self, tmp_path: Path) -> None:
+        """Test file_exists with notes file type (line 367)."""
+        test_dir = tmp_path / 'test_project'
+        test_dir.mkdir()
+        notes_file = test_dir / f'{self.test_node_id}.notes.md'
+        notes_file.write_text('notes content')
+
+        repo = self._create_repo(test_dir)
+        assert repo.file_exists(self.test_node_id, 'notes')
+
+    def test_file_exists_draft_type(self, tmp_path: Path) -> None:
+        """Test file_exists with draft file type (line 367)."""
+        test_dir = tmp_path / 'test_project'
+        test_dir.mkdir()
+        draft_file = test_dir / f'{self.test_node_id}.md'
+        draft_file.write_text('draft content')
+
+        repo = self._create_repo(test_dir)
+        assert repo.file_exists(self.test_node_id, 'draft')
+
+    def test_file_exists_invalid_type(self, tmp_path: Path) -> None:
+        """Test file_exists with invalid file type (lines 371-372)."""
+        repo = self._create_repo(tmp_path)
+
+        with pytest.raises(ValueError, match=r'Invalid file_type: invalid\. Must be "draft" or "notes"'):
+            repo.file_exists(self.test_node_id, 'invalid')

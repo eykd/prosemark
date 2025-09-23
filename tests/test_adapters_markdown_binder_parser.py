@@ -76,3 +76,24 @@ class TestMarkdownBinderParser:
         # Assert
         assert len(lines) == 1
         assert lines[0] == '- [Placeholder Item]()'
+
+    def test_check_bracket_patterns_unclosed_bracket_error(self, parser: MarkdownBinderParser) -> None:
+        """Test _check_bracket_patterns raises error for unclosed bracket."""
+        # Line with equal bracket counts but unclosed pattern (line 97)
+        # Has equal [ and ] counts, but ends with text instead of ], and no parentheses
+        markdown_content = '- [Text] more text'
+
+        # Should raise malformed error for unclosed bracket when parsed
+        with pytest.raises(BinderFormatError, match='unclosed bracket'):
+            parser.parse_to_binder(markdown_content)
+
+    def test_extract_node_id_invalid_uuid_format(self, parser: MarkdownBinderParser) -> None:
+        """Test _extract_node_id handles content with no UUID pattern match."""
+        # Content with link that doesn't match the NODE_ID_PATTERN regex
+        markdown_content = '- [text](invalid-uuid-format)'
+
+        # Should successfully parse but the binder item won't have a valid node_id
+        binder = parser.parse_to_binder(markdown_content)
+        assert len(binder.roots) == 1
+        assert binder.roots[0].display_title == 'text'
+        assert binder.roots[0].node_id is None

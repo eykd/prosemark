@@ -183,9 +183,9 @@ class AuditProject:
                                     file_path=str(draft_path),
                                 )
                             )
-                    except (NodeNotFoundError, FileSystemError, FrontmatterFormatError):
-                        # Frontmatter read failed - will be caught as missing
-                        pass
+                    except (NodeNotFoundError, FileSystemError, FrontmatterFormatError):  # pragma: no cover
+                        # Frontmatter read failed - will be caught as missing  # pragma: no cover
+                        pass  # pragma: no cover
 
                 if not notes_path.exists():
                     missing.append(

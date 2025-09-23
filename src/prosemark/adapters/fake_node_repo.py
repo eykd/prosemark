@@ -295,6 +295,15 @@ class FakeNodeRepo(NodeRepo):
                 continue
         return valid_node_ids
 
+    def get_existing_notes_files(self) -> set[str]:
+        """Get all existing notes file IDs for audit testing.
+
+        Returns:
+            Set of node ID strings that exist as notes files
+
+        """
+        return self._existing_notes_files.copy()
+
     def file_exists(self, node_id: 'NodeId', file_type: str) -> bool:
         """Check if a specific node file exists.
 

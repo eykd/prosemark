@@ -189,3 +189,35 @@ class TestConsolePort:
         assert len(console.messages) == 2
         assert console.messages[0] == '- Parent Item (parent-888)'
         assert console.messages[1] == '  - Child of Parent (child-999)'
+
+    def test_print_info_default_implementation(self) -> None:
+        """Test print_info default implementation (line 65)."""
+        console = ConcreteConsolePort()
+        console.print_info('Test info message')
+
+        assert len(console.messages) == 1
+        assert console.messages[0] == 'INFO: Test info message'
+
+    def test_print_success_default_implementation(self) -> None:
+        """Test print_success default implementation (line 74)."""
+        console = ConcreteConsolePort()
+        console.print_success('Operation completed')
+
+        assert len(console.messages) == 1
+        assert console.messages[0] == 'SUCCESS: Operation completed'
+
+    def test_print_warning_default_implementation(self) -> None:
+        """Test print_warning default implementation (line 83)."""
+        console = ConcreteConsolePort()
+        console.print_warning('Potential issue detected')
+
+        assert len(console.messages) == 1
+        assert console.messages[0] == 'WARNING: Potential issue detected'
+
+    def test_print_error_default_implementation(self) -> None:
+        """Test print_error default implementation (line 92)."""
+        console = ConcreteConsolePort()
+        console.print_error('Something went wrong')
+
+        assert len(console.messages) == 1
+        assert console.messages[0] == 'ERROR: Something went wrong'

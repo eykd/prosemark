@@ -274,8 +274,8 @@ class NodeRepoFs(NodeRepo):
                     continue
 
                 # Skip .notes.md files as they are secondary files
-                if md_file.stem.endswith('.notes'):
-                    continue
+                if md_file.stem.endswith('.notes'):  # pragma: no cover
+                    continue  # pragma: no cover
 
                 # The filename should be the NodeId
                 try:

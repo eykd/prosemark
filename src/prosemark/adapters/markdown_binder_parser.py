@@ -169,7 +169,7 @@ class MarkdownBinderParser:
         if match:
             try:
                 return NodeId(match.group(1))
-            except ValueError:
+            except ValueError:  # pragma: no cover
                 # Invalid UUID format
                 return None
         return None

@@ -278,3 +278,38 @@ This is some content with **bold** text."""
         # Should match original parsed data
         assert parsed_frontmatter == frontmatter
         assert parsed_content == content
+
+    def test_check_misplaced_frontmatter_with_valid_divider(self) -> None:
+        """Test _check_misplaced_frontmatter when content has valid divider."""
+        # Content with --- in middle but no frontmatter-like content before it
+        # This should hit line 134 (break) without raising errors
+        content = 'Some content\n---\nMore content'
+
+        # This should not raise an error and should complete normally
+        # Test through the public parse method
+        frontmatter, remaining = self.codec.parse(content)
+        assert frontmatter == {}
+        assert remaining == content
+
+    def test_check_misplaced_frontmatter_with_no_dividers(self) -> None:
+        """Test _check_misplaced_frontmatter when no dividers found."""
+        # Content with no --- lines, should hit the for loop exit (126->exit)
+        content = 'Some content without any dividers\nJust plain text'
+
+        # This should not raise an error and should complete normally
+        # Test through the public parse method
+        frontmatter, remaining = self.codec.parse(content)
+        assert frontmatter == {}
+        assert remaining == content
+
+    def test_check_misplaced_frontmatter_with_embedded_dashes(self) -> None:
+        """Test _check_misplaced_frontmatter when --- appears as part of content but not as separator."""
+        # Content with --- embedded in text but no standalone --- lines
+        # This should hit the for loop exit (126->exit) since no line.strip() == '---'
+        content = 'Some content with embedded --- dashes\nAnother line with ---more dashes'
+
+        # This should not raise an error and should complete normally
+        # Test through the public parse method
+        frontmatter, remaining = self.codec.parse(content)
+        assert frontmatter == {}
+        assert remaining == content
