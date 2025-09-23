@@ -60,7 +60,7 @@ version = '{version}'
 vcs = "git"
 dirty = true
 style = "pep440"
-pattern = "default-unprefixed"
+pattern = "default"
 fallback-version = "0.0.0"
 
 [dependency-groups]
