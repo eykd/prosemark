@@ -13,3 +13,4 @@ tmp/
 .coverage
 _binder.md
 src/prosemark/_version.py
+.hypothesis/
