@@ -645,6 +645,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "typer" },
+    { name = "types-psutil" },
     { name = "uuid-extension" },
 ]
 
@@ -685,6 +686,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.11.4" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "typer", specifier = ">=0.12.0" },
+    { name = "types-psutil", specifier = ">=7.0.0.20250822" },
     { name = "uuid-extension", specifier = ">=0.2.0" },
 ]
 
