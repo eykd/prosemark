@@ -34,7 +34,7 @@ pmk --help
 
 ### System Requirements
 
-- Python 3.9 or higher
+- Python 3.13 or higher
 - Your preferred text editor (set via EDITOR environment variable)
 
 ## Quick Start
@@ -219,7 +219,7 @@ This design ensures the core logic is independent of file systems, editors, or C
 
 ### Tech Stack
 
-- **Python 3.9+** with type hints
+- **Python 3.13+** with type hints
 - **Typer** for CLI framework
 - **PyYAML** for frontmatter parsing
 - **pytest** for testing with 100% coverage
