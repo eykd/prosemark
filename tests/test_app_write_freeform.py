@@ -206,7 +206,8 @@ class TestWriteFreeform:
             write_freeform.execute()
 
         # Assert: Error should be logged
-        assert any('error' in msg.lower() or 'failed' in msg.lower() for msg in fake_logger.error_messages)
+        all_error_msgs = fake_logger.error_messages + fake_logger.exception_messages
+        assert any('error' in msg.lower() or 'failed' in msg.lower() for msg in all_error_msgs)
 
     def test_write_freeform_handles_editor_launch_failure(
         self,

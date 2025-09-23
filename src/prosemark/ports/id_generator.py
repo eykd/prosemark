@@ -45,4 +45,5 @@ class IdGenerator(ABC):
             NotImplementedError: If not implemented by a concrete subclass
 
         """
-        raise NotImplementedError('Subclasses must implement the new() method')  # pragma: no cover
+        msg = 'Subclasses must implement the new() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover

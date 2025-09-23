@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Fake clock adapter for testing time-dependent operations."""
 
 from prosemark.ports.clock import Clock

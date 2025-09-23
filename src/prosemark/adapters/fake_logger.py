@@ -1,7 +1,7 @@
-"""In-memory fake implementation of Logger for testing."""
-# ruff: noqa: ANN401 - Any types intentional for stdlib logging compatibility
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
 
-from typing import Any
+"""In-memory fake implementation of Logger for testing."""
 
 from prosemark.ports.logger import Logger
 
@@ -32,9 +32,9 @@ class FakeLogger(Logger):
 
     def __init__(self) -> None:
         """Initialize empty fake logger."""
-        self._logs: list[tuple[str, Any, tuple[Any, ...], dict[str, Any]]] = []
+        self._logs: list[tuple[str, object, tuple[object, ...], dict[str, object]]] = []
 
-    def debug(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def debug(self, msg: object, *args: object, **kwargs: object) -> None:
         """Store debug message in log buffer.
 
         Args:
@@ -45,7 +45,7 @@ class FakeLogger(Logger):
         """
         self._logs.append(('debug', msg, args, kwargs))
 
-    def info(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def info(self, msg: object, *args: object, **kwargs: object) -> None:
         """Store info message in log buffer.
 
         Args:
@@ -56,7 +56,7 @@ class FakeLogger(Logger):
         """
         self._logs.append(('info', msg, args, kwargs))
 
-    def warning(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def warning(self, msg: object, *args: object, **kwargs: object) -> None:
         """Store warning message in log buffer.
 
         Args:
@@ -67,7 +67,7 @@ class FakeLogger(Logger):
         """
         self._logs.append(('warning', msg, args, kwargs))
 
-    def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def error(self, msg: object, *args: object, **kwargs: object) -> None:
         """Store error message in log buffer.
 
         Args:
@@ -78,7 +78,18 @@ class FakeLogger(Logger):
         """
         self._logs.append(('error', msg, args, kwargs))
 
-    def get_logs(self) -> list[tuple[str, Any, tuple[Any, ...], dict[str, Any]]]:
+    def exception(self, msg: object, *args: object, **kwargs: object) -> None:
+        """Store exception message in log buffer.
+
+        Args:
+            msg: Message to log
+            *args: Positional arguments for message formatting
+            **kwargs: Keyword arguments for structured logging
+
+        """
+        self._logs.append(('exception', msg, args, kwargs))
+
+    def get_logs(self) -> list[tuple[str, object, tuple[object, ...], dict[str, object]]]:
         """Return list of all logged messages.
 
         Returns:
@@ -87,7 +98,7 @@ class FakeLogger(Logger):
         """
         return self._logs.copy()
 
-    def get_logs_by_level(self, level: str) -> list[tuple[str, Any, tuple[Any, ...], dict[str, Any]]]:
+    def get_logs_by_level(self, level: str) -> list[tuple[str, object, tuple[object, ...], dict[str, object]]]:
         """Return list of logged messages for a specific level.
 
         Args:
@@ -158,7 +169,7 @@ class FakeLogger(Logger):
         """
         self._logs.clear()
 
-    def last_log(self) -> tuple[str, Any, tuple[Any, ...], dict[str, Any]]:
+    def last_log(self) -> tuple[str, object, tuple[object, ...], dict[str, object]]:
         """Return the last logged message.
 
         Returns:
@@ -169,7 +180,8 @@ class FakeLogger(Logger):
 
         """
         if not self._logs:  # pragma: no cover
-            raise IndexError('No logs have been recorded')  # pragma: no cover
+            msg = 'No logs have been recorded'
+            raise IndexError(msg)  # pragma: no cover
         return self._logs[-1]  # pragma: no cover
 
     def log_count(self) -> int:
@@ -207,6 +219,11 @@ class FakeLogger(Logger):
     def debug_messages(self) -> list[str]:
         """Get formatted debug messages."""
         return [str(log[1]) % log[2] if log[2] else str(log[1]) for log in self.get_logs_by_level('debug')]
+
+    @property
+    def exception_messages(self) -> list[str]:
+        """Get formatted exception messages."""
+        return [str(log[1]) % log[2] if log[2] else str(log[1]) for log in self.get_logs_by_level('exception')]
 
     def clear(self) -> None:
         """Alias for clear_logs for convenience."""

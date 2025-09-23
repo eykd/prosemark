@@ -399,8 +399,9 @@ def move(
 @app.command()
 def remove(
     node_id: Annotated[str, typer.Argument(help='Node to remove')],
-    delete_files: Annotated[bool, typer.Option('--delete-files', help='Also delete node files')] = False,  # noqa: FBT002
-    force: Annotated[bool, typer.Option('--force', '-f', help='Skip confirmation prompt')] = False,  # noqa: FBT002
+    *,
+    delete_files: Annotated[bool, typer.Option('--delete-files', help='Also delete node files')] = False,
+    force: Annotated[bool, typer.Option('--force', '-f', help='Skip confirmation prompt')] = False,
     path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Remove a node from the binder."""
@@ -452,7 +453,8 @@ def remove(
 
 @app.command()
 def audit(  # noqa: C901
-    fix: Annotated[bool, typer.Option('--fix', help='Attempt to fix discovered issues')] = False,  # noqa: FBT002
+    *,
+    fix: Annotated[bool, typer.Option('--fix', help='Attempt to fix discovered issues')] = False,
     path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
     """Check project integrity."""

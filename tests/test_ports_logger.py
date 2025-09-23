@@ -17,7 +17,7 @@ class TestLogger:
     def test_logger_is_abstract_base_class(self) -> None:
         """Test that Logger is an abstract base class."""
         assert issubclass(Logger, ABC)
-        assert Logger.__abstractmethods__ == frozenset(['debug', 'info', 'warning', 'error'])
+        assert Logger.__abstractmethods__ == frozenset(['debug', 'info', 'warning', 'error', 'exception'])
 
     def test_logger_debug_method_signature(self) -> None:
         """Test that Logger defines debug() method with correct signature."""
@@ -83,6 +83,22 @@ class TestLogger:
         )
         assert return_annotation is None, f'Expected None return type, got {return_annotation}'
 
+    def test_logger_exception_method_signature(self) -> None:
+        """Test that Logger defines exception() method with correct signature."""
+        # Arrange: Logger abstract base class
+        method = Logger.exception
+        signature = inspect.signature(method)
+
+        # Act: Check method signature
+        parameters = list(signature.parameters.keys())
+        return_annotation = signature.return_annotation
+
+        # Assert: exception(self, msg: Any, *args: Any, **kwargs: Any) -> None
+        assert parameters == ['self', 'msg', 'args', 'kwargs'], (
+            f"Expected ['self', 'msg', 'args', 'kwargs'], got {parameters}"
+        )
+        assert return_annotation is None, f'Expected None return type, got {return_annotation}'
+
     def test_logger_method_parameter_type_annotations(self) -> None:
         """Test that Logger methods have correct type annotations for parameters."""
         # Arrange: Logger abstract methods
@@ -90,18 +106,21 @@ class TestLogger:
         info_sig = inspect.signature(Logger.info)
         warning_sig = inspect.signature(Logger.warning)
         error_sig = inspect.signature(Logger.error)
+        exception_sig = inspect.signature(Logger.exception)
 
         # Act: Check msg parameter type annotations
         debug_msg_annotation = debug_sig.parameters['msg'].annotation
         info_msg_annotation = info_sig.parameters['msg'].annotation
         warning_msg_annotation = warning_sig.parameters['msg'].annotation
         error_msg_annotation = error_sig.parameters['msg'].annotation
+        exception_msg_annotation = exception_sig.parameters['msg'].annotation
 
-        # Assert: All methods accept Any for msg parameter
-        assert debug_msg_annotation is Any
-        assert info_msg_annotation is Any
-        assert warning_msg_annotation is Any
-        assert error_msg_annotation is Any
+        # Assert: All methods accept object for msg parameter
+        assert debug_msg_annotation is object
+        assert info_msg_annotation is object
+        assert warning_msg_annotation is object
+        assert error_msg_annotation is object
+        assert exception_msg_annotation is object
 
     def test_logger_cannot_be_instantiated_directly(self) -> None:
         """Test that Logger abstract base class cannot be instantiated directly."""
@@ -123,6 +142,9 @@ class TestLogger:
             def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
                 pass
 
+            def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+                pass
+
             # Missing debug implementation
 
         # Act & Assert: Should raise TypeError when instantiating
@@ -137,12 +159,13 @@ class TestLogger:
         # Act: Count number of required methods
         method_count = len(abstract_methods)
 
-        # Assert: Exactly four methods required (debug, info, warning, error)
-        assert method_count == 4
+        # Assert: Exactly five methods required (debug, info, warning, error, exception)
+        assert method_count == 5
         assert 'debug' in abstract_methods
         assert 'info' in abstract_methods
         assert 'warning' in abstract_methods
         assert 'error' in abstract_methods
+        assert 'exception' in abstract_methods
 
     def test_logger_abstract_base_class_runtime_checkable(self) -> None:
         """Test that Logger abstract base class supports runtime type checking."""
@@ -159,6 +182,9 @@ class TestLogger:
                 pass
 
             def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+                pass
+
+            def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
                 pass
 
         instance = TestLogger()
@@ -179,6 +205,7 @@ class TestLogger:
                 self.info_messages: list[tuple[Any, tuple[Any, ...], dict[str, Any]]] = []
                 self.warning_messages: list[tuple[Any, tuple[Any, ...], dict[str, Any]]] = []
                 self.error_messages: list[tuple[Any, tuple[Any, ...], dict[str, Any]]] = []
+                self.exception_messages: list[tuple[Any, tuple[Any, ...], dict[str, Any]]] = []
 
             def debug(self, msg: Any, *args: Any, **kwargs: Any) -> None:
                 self.debug_messages.append((msg, args, kwargs))
@@ -192,18 +219,23 @@ class TestLogger:
             def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
                 self.error_messages.append((msg, args, kwargs))
 
+            def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+                self.exception_messages.append((msg, args, kwargs))
+
         # Act: Use logger with simple messages
         logger = MockLogger()
         logger.debug('Debug message')
         logger.info('Info message')
         logger.warning('Warning message')
         logger.error('Error message')
+        logger.error('Exception message')
 
         # Assert: All log levels capture simple messages correctly
         assert logger.debug_messages == [('Debug message', (), {})]
         assert logger.info_messages == [('Info message', (), {})]
         assert logger.warning_messages == [('Warning message', (), {})]
-        assert logger.error_messages == [('Error message', (), {})]
+        assert logger.error_messages == [('Error message', (), {}), ('Exception message', (), {})]
+        assert logger.exception_messages == []
 
     def test_logger_concrete_implementation_works_with_formatted_messages(self) -> None:
         """Test that concrete Logger implementation handles formatted messages with args."""
@@ -225,12 +257,16 @@ class TestLogger:
             def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
                 self.messages.append(('error', msg, args, kwargs))
 
+            def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+                self.messages.append(('exception', msg, args, kwargs))
+
         # Act: Use logger with formatted messages
         logger = MockLogger()
         logger.debug('Processing node %s', 'node123')
         logger.info('Created node %s with %d items', 'node456', 5)
         logger.warning('Large binder detected: %d items', 1000)
         logger.error('Failed to create node: %s', 'permission denied')
+        logger.error('Exception during processing: %s', 'timeout error')
 
         # Assert: All formatted messages captured with args
         expected_messages: list[tuple[str, Any, tuple[Any, ...], dict[str, Any]]] = [
@@ -238,6 +274,7 @@ class TestLogger:
             ('info', 'Created node %s with %d items', ('node456', 5), {}),
             ('warning', 'Large binder detected: %d items', (1000,), {}),
             ('error', 'Failed to create node: %s', ('permission denied',), {}),
+            ('error', 'Exception during processing: %s', ('timeout error',), {}),
         ]
         assert logger.messages == expected_messages
 
@@ -261,12 +298,16 @@ class TestLogger:
             def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
                 self.messages.append(('error', msg, args, kwargs))
 
+            def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+                self.messages.append(('exception', msg, args, kwargs))
+
         # Act: Use logger with keyword arguments
         logger = MockLogger()
         logger.debug('Validation result', extra={'node_id': 'node123'})
         logger.info('Node added to binder', extra={'node_id': 'node456', 'parent_id': 'parent789'})
         logger.warning('Deprecated feature used', extra={'feature': 'old_api'})
         logger.error('Node creation failed', extra={'node_id': 'node999', 'error': 'disk full'})
+        logger.error('Exception in handler', extra={'handler': 'auth', 'error_code': 500})
 
         # Assert: All keyword arguments captured correctly
         expected_messages: list[tuple[str, Any, tuple[Any, ...], dict[str, Any]]] = [
@@ -274,6 +315,7 @@ class TestLogger:
             ('info', 'Node added to binder', (), {'extra': {'node_id': 'node456', 'parent_id': 'parent789'}}),
             ('warning', 'Deprecated feature used', (), {'extra': {'feature': 'old_api'}}),
             ('error', 'Node creation failed', (), {'extra': {'node_id': 'node999', 'error': 'disk full'}}),
+            ('error', 'Exception in handler', (), {'extra': {'handler': 'auth', 'error_code': 500}}),
         ]
         assert logger.messages == expected_messages
 
@@ -334,7 +376,7 @@ class TestLogger:
 
         stdlib_logger = logging.getLogger('test')
 
-        # Act: Compare method signatures
+        # Act: Compare method signatures for basic logging methods
         debug_sig = inspect.signature(Logger.debug)
         info_sig = inspect.signature(Logger.info)
         warning_sig = inspect.signature(Logger.warning)
@@ -346,14 +388,15 @@ class TestLogger:
         stdlib_error_sig = inspect.signature(stdlib_logger.error)
 
         # Assert: Parameter names match stdlib logging (excluding 'self' vs first param)
+        # Note: exception method intentionally has simpler signature than stdlib
         assert list(debug_sig.parameters.keys())[1:] == list(stdlib_debug_sig.parameters.keys())
         assert list(info_sig.parameters.keys())[1:] == list(stdlib_info_sig.parameters.keys())
         assert list(warning_sig.parameters.keys())[1:] == list(stdlib_warning_sig.parameters.keys())
         assert list(error_sig.parameters.keys())[1:] == list(stdlib_error_sig.parameters.keys())
 
-    @pytest.mark.parametrize('method_name', ['debug', 'info', 'warning', 'error'])
+    @pytest.mark.parametrize('method_name', ['debug', 'info', 'warning', 'error', 'exception'])
     def test_logger_method_accepts_any_message_type(self, method_name: str) -> None:
-        """Test that all Logger methods accept Any type for message parameter."""
+        """Test that all Logger methods accept object type for message parameter."""
         # Arrange: Get method from Logger class
         method = getattr(Logger, method_name)
         signature = inspect.signature(method)
@@ -362,8 +405,8 @@ class TestLogger:
         msg_param = signature.parameters['msg']
         param_annotation = msg_param.annotation
 
-        # Assert: Accepts Any type for flexible message handling
-        assert param_annotation is Any
+        # Assert: Accepts object type for flexible message handling
+        assert param_annotation is object
 
     def test_logger_enables_dependency_injection_in_hexagonal_architecture(self) -> None:
         """Test that Logger enables dependency injection following hexagonal architecture principles."""
@@ -395,6 +438,9 @@ class TestLogger:
 
             def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
                 self.log_entries.append(('error', msg, args))
+
+            def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+                self.log_entries.append(('exception', msg, args))
 
         # Act: Inject logger dependency into application service
         test_logger = TestLogger()

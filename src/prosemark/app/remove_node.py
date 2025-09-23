@@ -102,7 +102,10 @@ class RemoveNode:
         self.logger.info('Node removed: %s', node_id.value)
 
     def _find_parent_and_position(
-        self, items: list[BinderItem], node_id: NodeId, parent: list[BinderItem] | None = None
+        self,
+        items: list[BinderItem],
+        node_id: NodeId,
+        parent: list[BinderItem] | None = None,
     ) -> tuple[list[BinderItem] | None, int]:
         """Find the parent list and position of a node.
 

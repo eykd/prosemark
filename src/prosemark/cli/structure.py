@@ -18,7 +18,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 @click.command()
 @click.option(
-    '--format', '-f', 'output_format', default='tree', type=click.Choice(['tree', 'json']), help='Output format'
+    '--format',
+    '-f',
+    'output_format',
+    default='tree',
+    type=click.Choice(['tree', 'json']),
+    help='Output format',
 )
 @click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
 def structure_command(output_format: str, path: Path | None) -> None:

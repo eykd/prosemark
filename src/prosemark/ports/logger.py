@@ -1,8 +1,6 @@
 """Logger port for structured logging operations."""
-# ruff: noqa: ANN401 - Any types intentional for stdlib logging compatibility
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 
 class Logger(ABC):
@@ -28,16 +26,16 @@ class Logger(ABC):
 
     Examples:
         >>> class TestLogger(Logger):
-        ...     def debug(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+        ...     def debug(self, msg: object, *args: object, **kwargs: object) -> None:
         ...         print(f'[DEBUG] {msg}', *args)
         ...
-        ...     def info(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+        ...     def info(self, msg: object, *args: object, **kwargs: object) -> None:
         ...         print(f'[INFO] {msg}', *args)
         ...
-        ...     def warning(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+        ...     def warning(self, msg: object, *args: object, **kwargs: object) -> None:
         ...         print(f'[WARNING] {msg}', *args)
         ...
-        ...     def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+        ...     def error(self, msg: object, *args: object, **kwargs: object) -> None:
         ...         print(f'[ERROR] {msg}', *args)
         >>> logger = TestLogger()
         >>> logger.info('Simple message')
@@ -48,7 +46,7 @@ class Logger(ABC):
     """
 
     @abstractmethod
-    def debug(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def debug(self, msg: object, *args: object, **kwargs: object) -> None:
         """Log detailed diagnostic information for troubleshooting.
 
         Use for verbose diagnostic information that is only of interest when
@@ -65,10 +63,11 @@ class Logger(ABC):
             >>> logger.debug('Validation result: %s', result, extra={'node_id': node_id})
 
         """
-        raise NotImplementedError('Subclasses must implement the debug() method')  # pragma: no cover
+        msg = 'Subclasses must implement the debug() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
 
     @abstractmethod
-    def info(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def info(self, msg: object, *args: object, **kwargs: object) -> None:
         """Log general operational information.
 
         Use for tracking normal application flow, successful operations,
@@ -86,10 +85,11 @@ class Logger(ABC):
             >>> logger.info('Node added to binder', extra={'node_id': node_id, 'parent_id': parent_id})
 
         """
-        raise NotImplementedError('Subclasses must implement the info() method')  # pragma: no cover
+        msg = 'Subclasses must implement the info() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
 
     @abstractmethod
-    def warning(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def warning(self, msg: object, *args: object, **kwargs: object) -> None:
         """Log warning messages for important events that don't prevent operation.
 
         Use for conditions that are unexpected but don't prevent the operation
@@ -107,10 +107,11 @@ class Logger(ABC):
             >>> logger.warning('Deprecated feature used', extra={'feature': 'old_api'})
 
         """
-        raise NotImplementedError('Subclasses must implement the warning() method')  # pragma: no cover
+        msg = 'Subclasses must implement the warning() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
 
     @abstractmethod
-    def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def error(self, msg: object, *args: object, **kwargs: object) -> None:
         """Log error conditions that prevent operations from completing.
 
         Use for error conditions, exceptions, and failures that prevent
@@ -128,4 +129,28 @@ class Logger(ABC):
             >>> logger.error('Node creation failed', extra={'node_id': node_id, 'error': str(exc)})
 
         """
-        raise NotImplementedError('Subclasses must implement the error() method')  # pragma: no cover
+        msg = 'Subclasses must implement the error() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
+
+    @abstractmethod
+    def exception(self, msg: object, *args: object, **kwargs: object) -> None:
+        """Log exception information with error level and traceback.
+
+        Use for logging exceptions with their full traceback information.
+        This is typically used in exception handlers to capture both the
+        error message and the complete stack trace for debugging.
+
+        Args:
+            msg: The log message or format string
+            *args: Positional arguments for string formatting
+            **kwargs: Keyword arguments (implementation-specific, e.g., 'extra' for context)
+
+        Examples:
+            >>> try:
+            ...     risky_operation()
+            ... except Exception:
+            ...     logger.exception('Operation failed')
+
+        """
+        msg = 'Subclasses must implement the exception() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover

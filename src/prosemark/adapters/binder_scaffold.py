@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Binder scaffold generator for new prosemark projects.
 
 This module provides functionality to generate initial _binder.md files
@@ -23,8 +26,8 @@ def generate_binder_scaffold(target_path: Path, *, create_dirs: bool = False) ->
         create_dirs: If True, create parent directories if they don't exist
 
     Raises:
-        FileExistsError: If _binder.md already exists in the target directory
-        FilesystemError: If the file cannot be created due to I/O errors,
+        ProsemarkFileExistsError: If _binder.md already exists in the target directory
+        FileSystemError: If the file cannot be created due to I/O errors,
                         permission issues, or missing parent directories
 
     Examples:
@@ -40,20 +43,25 @@ def generate_binder_scaffold(target_path: Path, *, create_dirs: bool = False) ->
         try:
             target_path.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
-            raise FileSystemError('Cannot create target directory', str(target_path)) from exc
+            msg = 'Cannot create target directory'
+            raise FileSystemError(msg, str(target_path)) from exc
     elif not target_path.exists():
-        raise FileSystemError('Target directory does not exist', str(target_path))
+        msg = 'Target directory does not exist'
+        raise FileSystemError(msg, str(target_path))
     elif not target_path.is_dir():
-        raise FileSystemError('Target path is not a directory', str(target_path))
+        msg = 'Target path is not a directory'
+        raise FileSystemError(msg, str(target_path))
 
     # Check for existing binder file
     binder_file = target_path / '_binder.md'
     try:
         if binder_file.exists():
-            raise ProsemarkFileExistsError('Binder file already exists', str(binder_file))
+            msg = 'Binder file already exists'
+            raise ProsemarkFileExistsError(msg, str(binder_file))
     except (OSError, PermissionError) as exc:
         # If we can't even check if the file exists due to permissions, we can't write either
-        raise FileSystemError('Cannot access target directory', str(target_path)) from exc
+        msg = 'Cannot access target directory'
+        raise FileSystemError(msg, str(target_path)) from exc
 
     # Generate scaffold content
     content = _generate_scaffold_content()
@@ -70,7 +78,8 @@ def generate_binder_scaffold(target_path: Path, *, create_dirs: bool = False) ->
             with suppress(OSError):
                 temp_file.unlink()
 
-        raise FileSystemError('Cannot write binder file', str(binder_file)) from exc
+        msg = 'Cannot write binder file'
+        raise FileSystemError(msg, str(binder_file)) from exc
 
 
 def _generate_scaffold_content() -> str:
@@ -87,7 +96,8 @@ def _generate_scaffold_content() -> str:
 
 Welcome to your new prosemark project! This file serves as your project outline and table of contents.
 
-You can write notes, introductions, and other content anywhere in this file. Only the section between the special markers below is managed by prosemark.
+You can write notes, introductions, and other content anywhere in this file.
+Only the section between the special markers below is managed by prosemark.
 
 ## Binder (managed by Prosemark)
 <!-- pmk:begin-binder -->

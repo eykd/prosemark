@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """File system implementation of BinderRepo for _binder.md persistence."""
 
 from pathlib import Path
@@ -64,11 +67,12 @@ class BinderRepoFs(BinderRepo):
         Raises:
             BinderNotFoundError: If binder file doesn't exist
             FileSystemError: If file cannot be read
-            BinderIntegrityError: If binder data is corrupted
+            BinderFormatError: If binder content cannot be parsed
 
         """
         if not self.binder_file.exists():
-            raise BinderNotFoundError('Binder file not found', str(self.binder_file))
+            msg = 'Binder file not found'
+            raise BinderNotFoundError(msg, str(self.binder_file))
 
         try:
             content = self.binder_file.read_text(encoding='utf-8')
@@ -133,6 +137,9 @@ class BinderRepoFs(BinderRepo):
         Returns:
             Content between managed block markers, or empty string if not found
 
+        Raises:
+            BinderFormatError: If managed block start found but no end marker
+
         """
         start_pos = content.find(self.MANAGED_BLOCK_START)
         if start_pos == -1:
@@ -140,7 +147,8 @@ class BinderRepoFs(BinderRepo):
 
         end_pos = content.find(self.MANAGED_BLOCK_END, start_pos)
         if end_pos == -1:
-            raise BinderFormatError('Managed block start found but no end marker')
+            msg = 'Managed block start found but no end marker'
+            raise BinderFormatError(msg)
 
         # Extract content between markers
         start_pos += len(self.MANAGED_BLOCK_START)

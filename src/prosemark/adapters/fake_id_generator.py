@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """In-memory fake implementation of IdGenerator for testing."""
 
 from prosemark.domain.models import NodeId
@@ -69,7 +72,8 @@ class FakeIdGenerator(IdGenerator):
 
         """
         if self._current_index >= len(self._ids):
-            raise IndexError('All predefined IDs have been used')  # pragma: no cover
+            msg = 'All predefined IDs have been used'  # pragma: no cover
+            raise IndexError(msg)  # pragma: no cover
 
         id_string = self._ids[self._current_index]
         self._current_index += 1
@@ -112,6 +116,7 @@ class FakeIdGenerator(IdGenerator):
 
         """
         if self._current_index >= len(self._ids):
-            raise IndexError('No more IDs available')  # pragma: no cover
+            msg = 'No more IDs available'
+            raise IndexError(msg)  # pragma: no cover
 
         return self._ids[self._current_index]

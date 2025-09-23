@@ -53,7 +53,8 @@ class ConsolePort(ABC):
             NotImplementedError: If not implemented by a concrete subclass
 
         """
-        raise NotImplementedError('Subclasses must implement the print() method')  # pragma: no cover
+        msg = 'Subclasses must implement the print() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
 
     def print_info(self, msg: str) -> None:
         """Display an informational message.

@@ -92,12 +92,11 @@ class AddNode:
                 parent_item.children.insert(position, new_item)
             else:
                 parent_item.children.append(new_item)
+        # Add as root item
+        elif position is not None and 0 <= position <= len(binder.roots):
+            binder.roots.insert(position, new_item)
         else:
-            # Add as root item
-            if position is not None and 0 <= position <= len(binder.roots):
-                binder.roots.insert(position, new_item)
-            else:
-                binder.roots.append(new_item)
+            binder.roots.append(new_item)
 
         # Save updated binder
         self.binder_repo.save(binder)

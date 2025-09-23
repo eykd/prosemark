@@ -19,7 +19,7 @@ from prosemark.exceptions import FileSystemError, NodeNotFoundError
 @click.option('--delete-files', is_flag=True, help='Also delete node files')
 @click.option('--force', '-f', is_flag=True, help='Skip confirmation prompt')
 @click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
-def remove_command(node_id: str, delete_files: bool, force: bool, path: Path | None) -> None:  # noqa: FBT001
+def remove_command(node_id: str, *, delete_files: bool, force: bool, path: Path | None) -> None:
     """Remove a node from the binder."""
     try:
         project_root = path or Path.cwd()

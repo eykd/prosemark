@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """File system implementation of NodeRepo for node file operations."""
 
 from pathlib import Path
@@ -49,6 +52,11 @@ class NodeRepoFs(NodeRepo):
     """
 
     VALID_PARTS: ClassVar[set[str]] = {'draft', 'notes', 'synopsis'}
+
+    # UUID7 format constants
+    UUID7_LENGTH = 36  # Total length of UUID7 string (8-4-4-4-12)
+    UUID7_PARTS_COUNT = 5  # Number of hyphen-separated parts
+    MIN_NODE_ID_LENGTH = 3  # Minimum length for reasonable node ID
 
     def __init__(
         self,
@@ -316,12 +324,17 @@ class NodeRepoFs(NodeRepo):
         return self._is_reasonable_node_id(filename)
 
     def _is_uuid7_format(self, filename: str) -> bool:
-        """Check if filename matches UUID7 format (8-4-4-4-12)."""
-        if len(filename) != 36:
+        """Check if filename matches UUID7 format (8-4-4-4-12).
+
+        Returns:
+            True if filename matches UUID7 format, False otherwise
+
+        """
+        if len(filename) != self.UUID7_LENGTH:
             return False
 
         parts = filename.split('-')
-        if len(parts) != 5:
+        if len(parts) != self.UUID7_PARTS_COUNT:
             return False
 
         expected_lengths = [8, 4, 4, 4, 12]
@@ -340,9 +353,14 @@ class NodeRepoFs(NodeRepo):
             return True
 
     def _is_reasonable_node_id(self, filename: str) -> bool:
-        """Check if filename is a reasonable node ID for audit purposes."""
+        """Check if filename is a reasonable node ID for audit purposes.
+
+        Returns:
+            True if filename appears to be a reasonable node ID
+
+        """
         # Must be at least 3 characters, alphanumeric plus hyphens/underscores
-        if len(filename) < 3 or not all(c.isalnum() or c in '-_' for c in filename):
+        if len(filename) < self.MIN_NODE_ID_LENGTH or not all(c.isalnum() or c in '-_' for c in filename):
             return False
 
         # Must not be a reserved name

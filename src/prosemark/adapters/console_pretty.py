@@ -1,5 +1,9 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Pretty console output implementation with colors and formatting."""
 
+import os
 import sys
 from typing import TYPE_CHECKING, TextIO
 
@@ -85,8 +89,6 @@ class ConsolePretty(ConsolePort):
             return False
 
         # Check common environment variables that disable color
-        import os
-
         if os.environ.get('NO_COLOR'):
             return False
 

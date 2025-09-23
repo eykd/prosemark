@@ -247,7 +247,8 @@ class InitProject:
 
         if binder_path.exists():
             self._logger.error('Project initialization failed: project already exists at %s', binder_path)
-            raise BinderIntegrityError('Project already initialized', str(binder_path))
+            msg = 'Project already initialized'
+            raise BinderIntegrityError(msg, str(binder_path))
 
         self._logger.debug('Validation passed: no existing project found')
 
@@ -440,7 +441,8 @@ class AddNode:
             parent_item = binder.find_by_id(parent_id)
             if parent_item is None:
                 self._logger.error('Parent node not found in binder: %s', parent_id)
-                raise NodeNotFoundError('Parent node not found', str(parent_id))
+                msg = 'Parent node not found'
+                raise NodeNotFoundError(msg, str(parent_id))
 
             if position is None:
                 parent_item.children.append(new_item)
@@ -525,7 +527,8 @@ class EditPart:
         target_item = binder.find_by_id(node_id)
         if target_item is None:
             self._logger.error('Node not found in binder: %s', node_id)
-            raise NodeNotFoundError('Node not found in binder', str(node_id))
+            msg = 'Node not found in binder'
+            raise NodeNotFoundError(msg, str(node_id))
 
         # Validation Phase - Check part is valid
         valid_parts = {'draft', 'notes', 'synopsis'}
@@ -630,14 +633,16 @@ class MoveNode:
         source_item = binder.find_by_id(node_id)
         if source_item is None:
             self._logger.error('Source node not found in binder: %s', node_id)
-            raise NodeNotFoundError('Source node not found in binder', str(node_id))
+            msg = 'Source node not found in binder'
+            raise NodeNotFoundError(msg, str(node_id))
 
         # Validate target parent exists (if specified)
         if parent_id is not None:
             target_parent = binder.find_by_id(parent_id)
             if target_parent is None:
                 self._logger.error('Target parent not found in binder: %s', parent_id)
-                raise NodeNotFoundError('Target parent not found in binder', str(parent_id))
+                msg = 'Target parent not found in binder'
+                raise NodeNotFoundError(msg, str(parent_id))
 
         # Check for circular dependencies
         self._logger.debug('Checking for circular dependencies')
@@ -647,8 +652,9 @@ class MoveNode:
                 node_id,
                 parent_id,
             )
+            msg = 'Move would create circular dependency'
             raise BinderIntegrityError(
-                'Move would create circular dependency',
+                msg,
                 str(node_id),
                 str(parent_id),
             )
@@ -774,7 +780,8 @@ class MoveNode:
 
         # Source item must have a valid NodeId to be moved
         if source_item.id is None:
-            raise BinderIntegrityError('Cannot remove item without NodeId', source_item)
+            msg = 'Cannot remove item without NodeId'
+            raise BinderIntegrityError(msg, source_item)
 
         # Find parent and remove from its children list
         parent_item = self._find_parent_of_node(binder, source_item.id)
@@ -811,7 +818,8 @@ class MoveNode:
             # Add under specified parent
             parent_item = binder.find_by_id(parent_id)
             if parent_item is None:
-                raise NodeNotFoundError('Parent item not found', parent_id)
+                msg = 'Parent item not found'
+                raise NodeNotFoundError(msg, parent_id)
             target_list = parent_item.children
 
         # Insert at specified position or append
@@ -908,7 +916,8 @@ class RemoveNode:
         target_item = binder.find_by_id(node_id)
         if target_item is None:
             self._logger.error('Node not found in binder: %s', node_id)
-            raise NodeNotFoundError('Node not found in binder', str(node_id))
+            msg = 'Node not found in binder'
+            raise NodeNotFoundError(msg, str(node_id))
 
         # Find parent for child promotion logic
         parent_item = self._find_parent_of_node(binder, node_id)
@@ -1133,7 +1142,7 @@ class WriteFreeform:
                 return filename
 
         except FileSystemError:
-            self._logger.error('Failed to create freewrite file')  # noqa: TRY400
+            self._logger.exception('Failed to create freewrite file')
             raise  # Re-raise filesystem errors as they're critical
 
 
@@ -1282,13 +1291,18 @@ class ShowStructure:
         target_item = binder.find_by_id(node_id)
         if target_item is None:
             self._logger.error('Node not found for subtree display: %s', node_id)
-            raise NodeNotFoundError('Node not found for subtree display', str(node_id))
+            msg = 'Node not found for subtree display'
+            raise NodeNotFoundError(msg, str(node_id))
 
         self._logger.debug('Found subtree root: %s', target_item.display_title)
 
         # Format the subtree starting from the target node
         result = self._format_single_item(
-            target_item, prefix='', is_last=True, show_children=True, force_connector=False
+            target_item,
+            prefix='',
+            is_last=True,
+            show_children=True,
+            force_connector=False,
         )
 
         self._logger.info('Structure display completed successfully')
@@ -1340,7 +1354,13 @@ class ShowStructure:
         return '\n'.join(lines)
 
     def _format_single_item(
-        self, item: BinderItem, prefix: str, *, is_last: bool, show_children: bool = True, force_connector: bool = False
+        self,
+        item: BinderItem,
+        prefix: str,
+        *,
+        is_last: bool,
+        show_children: bool = True,
+        force_connector: bool = False,
     ) -> str:
         """Format a single BinderItem with proper tree characters.
 
@@ -1376,7 +1396,11 @@ class ShowStructure:
         for i, child in enumerate(item.children):
             child_is_last = i == len(item.children) - 1
             child_line = self._format_single_item(
-                child, child_prefix, is_last=child_is_last, show_children=True, force_connector=False
+                child,
+                child_prefix,
+                is_last=child_is_last,
+                show_children=True,
+                force_connector=False,
             )
             lines.append(child_line)
 
@@ -1501,18 +1525,23 @@ class MaterializeNode:
                 existing_item = self._find_item_by_title_recursive(root_item, display_title)
                 if existing_item is not None and existing_item.id is not None:
                     self._logger.error('Item with display_title already materialized: %s', display_title)
-                    raise AlreadyMaterializedError('Item already materialized', display_title, str(existing_item.id))
+                    msg = 'Item already materialized'
+                    raise AlreadyMaterializedError(msg, display_title, str(existing_item.id))
 
             # No item found at all
             self._logger.error('Placeholder not found with display_title: %s', display_title)
-            raise PlaceholderNotFoundError('Placeholder not found', display_title)
+            msg = 'Placeholder not found'
+            raise PlaceholderNotFoundError(msg, display_title)
 
         # Validation Phase - Ensure it's actually a placeholder
         if placeholder.id is not None:  # pragma: no cover
             # This should never happen as find_placeholder_by_display_title only returns items with id=None
             self._logger.error('Item with display_title already materialized: %s', display_title)  # pragma: no cover
+            msg = 'Item already materialized'
             raise AlreadyMaterializedError(
-                'Item already materialized', display_title, str(placeholder.id)
+                msg,
+                display_title,
+                str(placeholder.id),
             )  # pragma: no cover
 
         # Generation Phase - Create unique identity

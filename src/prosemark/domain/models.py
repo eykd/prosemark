@@ -40,7 +40,8 @@ class NodeId:
             raise NodeIdentityError(msg, self.value)  # pragma: no cover
 
         if not self.value:
-            raise NodeIdentityError('NodeId value cannot be empty', self.value)
+            msg = 'NodeId value cannot be empty'
+            raise NodeIdentityError(msg, self.value)
 
         # Normalize to lowercase (standard UUID format)
         normalized_value = self.value.lower()
@@ -49,11 +50,13 @@ class NodeId:
         try:
             parsed_uuid = uuid.UUID(self.value)
         except ValueError as exc:
-            raise NodeIdentityError('Invalid UUID format', self.value) from exc
+            msg = 'Invalid UUID format'
+            raise NodeIdentityError(msg, self.value) from exc
 
         # Check that it's specifically a version 7 UUID
         if parsed_uuid.version != 7:
-            raise NodeIdentityError('NodeId must be a UUIDv7', self.value, parsed_uuid.version)
+            msg = 'NodeId must be a UUIDv7'
+            raise NodeIdentityError(msg, self.value, parsed_uuid.version)
 
     def __str__(self) -> str:
         """Return the UUID string representation."""
@@ -175,11 +178,13 @@ class BinderItem:
         if id_ is not None and node_id is None:
             node_id = id_
         elif id_ is not None and node_id is not None:
-            raise ValueError("Cannot specify both 'id_' and 'node_id' parameters")
+            msg = "Cannot specify both 'id_' and 'node_id' parameters"
+            raise ValueError(msg)
 
         # Validate display_title is not empty or whitespace-only
         if not display_title or not display_title.strip():
-            raise ValueError('display_title cannot be empty or whitespace-only')
+            msg = 'display_title cannot be empty or whitespace-only'
+            raise ValueError(msg)
 
         self.display_title = display_title
         self.node_id = node_id
@@ -212,7 +217,8 @@ class BinderItem:
         if self.node_id is not None:
             from prosemark.exceptions import BinderIntegrityError
 
-            raise BinderIntegrityError('Cannot materialize item that already has a node_id')
+            msg = 'Cannot materialize item that already has a node_id'
+            raise BinderIntegrityError(msg)
         self.node_id = node_id
 
     def get_depth(self) -> int:
@@ -531,7 +537,8 @@ class NodeMetadata:
         # Get the id and create a NodeId from it
         id_str = data.get('id')
         if not id_str:
-            raise NodeIdentityError('Missing id field in metadata dictionary', None)
+            msg = 'Missing id field in metadata dictionary'
+            raise NodeIdentityError(msg, None)
 
         node_id = NodeId(id_str)
 
@@ -544,9 +551,11 @@ class NodeMetadata:
         updated = data.get('updated')
 
         if not created:
-            raise ValueError('Missing created field in metadata dictionary')
+            msg = 'Missing created field in metadata dictionary'
+            raise ValueError(msg)
         if not updated:
-            raise ValueError('Missing updated field in metadata dictionary')
+            msg = 'Missing updated field in metadata dictionary'
+            raise ValueError(msg)
 
         return cls(
             id=node_id,

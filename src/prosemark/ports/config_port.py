@@ -47,7 +47,8 @@ class ConfigPort(ABC):
             NotImplementedError: If not implemented by a concrete subclass
 
         """
-        raise NotImplementedError('Subclasses must implement create_default_config()')  # pragma: no cover
+        msg = 'Subclasses must implement create_default_config()'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
 
     @abstractmethod
     def config_exists(self, config_path: Path) -> bool:
@@ -67,7 +68,8 @@ class ConfigPort(ABC):
             NotImplementedError: If not implemented by a concrete subclass
 
         """
-        raise NotImplementedError('Subclasses must implement config_exists()')  # pragma: no cover
+        msg = 'Subclasses must implement config_exists()'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
 
     @abstractmethod
     def get_default_config_values(self) -> dict[str, Any]:
@@ -84,4 +86,5 @@ class ConfigPort(ABC):
             NotImplementedError: If not implemented by a concrete subclass
 
         """
-        raise NotImplementedError('Subclasses must implement get_default_config_values()')  # pragma: no cover
+        msg = 'Subclasses must implement get_default_config_values()'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover

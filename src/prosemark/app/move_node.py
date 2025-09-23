@@ -81,7 +81,7 @@ class MoveNode:
                 # Restore item to original position and fail  # pragma: no cover
                 binder.roots.append(item_to_move)  # pragma: no cover
                 self.console.print_error(
-                    f'Cannot move {node_id.value}: would create circular reference'
+                    f'Cannot move {node_id.value}: would create circular reference',
                 )  # pragma: no cover
                 return  # pragma: no cover
 
@@ -89,12 +89,11 @@ class MoveNode:
                 parent_item.children.insert(position, item_to_move)
             else:
                 parent_item.children.append(item_to_move)
+        # Add as root item
+        elif position is not None and 0 <= position <= len(binder.roots):
+            binder.roots.insert(position, item_to_move)
         else:
-            # Add as root item
-            if position is not None and 0 <= position <= len(binder.roots):
-                binder.roots.insert(position, item_to_move)
-            else:
-                binder.roots.append(item_to_move)
+            binder.roots.append(item_to_move)
 
         # Save updated binder
         self.binder_repo.save(binder)

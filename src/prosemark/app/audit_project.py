@@ -156,7 +156,7 @@ class AuditProject:
                     PlaceholderIssue(
                         display_title=item.display_title,
                         position=position,
-                    )
+                    ),
                 )
             else:
                 # Check if node files exist
@@ -168,7 +168,7 @@ class AuditProject:
                         MissingIssue(
                             node_id=item.node_id,
                             expected_path=str(draft_path),
-                        )
+                        ),
                     )
                 else:
                     # Check for ID mismatch
@@ -181,7 +181,7 @@ class AuditProject:
                                     node_id=item.node_id,
                                     file_id=node_id_from_frontmatter or '',
                                     file_path=str(draft_path),
-                                )
+                                ),
                             )
                     except (NodeNotFoundError, FileSystemError, FrontmatterFormatError):  # pragma: no cover
                         # Frontmatter read failed - will be caught as missing  # pragma: no cover
@@ -192,7 +192,7 @@ class AuditProject:
                         MissingIssue(
                             node_id=item.node_id,
                             expected_path=str(notes_path),
-                        )
+                        ),
                     )
 
             # Recursively check children
@@ -235,7 +235,7 @@ class AuditProject:
                     OrphanIssue(
                         node_id=NodeId(file_id),
                         file_path=str(path),
-                    )
+                    ),
                 )
 
         return orphans
@@ -287,6 +287,7 @@ class AuditProject:
         if report.mismatches:
             self.console.print_error(f'Found {len(report.mismatches)} ID mismatch(es):')
             for mismatch_issue in report.mismatches:
-                self.console.print_info(
-                    f'  {mismatch_issue.file_path}: expected {mismatch_issue.node_id.value}, found {mismatch_issue.file_id}'
-                )
+                expected = mismatch_issue.node_id.value
+                found = mismatch_issue.file_id
+                msg = f'  {mismatch_issue.file_path}: expected {expected}, found {found}'
+                self.console.print_info(msg)

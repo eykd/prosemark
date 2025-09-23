@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Adapters layer - External interface implementations.
 
 This package contains concrete implementations of port interfaces,

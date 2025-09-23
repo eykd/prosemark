@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """In-memory fake implementation of NodeRepo for testing."""
 
 from prosemark.domain.models import NodeId
@@ -51,7 +54,8 @@ class FakeNodeRepo(NodeRepo):
         """
         node_key = str(node_id)
         if node_key in self._nodes:  # pragma: no cover
-            raise NodeIdentityError('Node already exists', node_key)
+            msg = 'Node already exists'
+            raise NodeIdentityError(msg, node_key)
 
         # Store frontmatter with current timestamp placeholders
         # In real implementation, these would come from Clock port
@@ -82,7 +86,8 @@ class FakeNodeRepo(NodeRepo):
         """
         node_key = str(node_id)
         if node_key not in self._nodes:  # pragma: no cover
-            raise NodeNotFoundError('Node not found', node_key)
+            msg = 'Node not found'
+            raise NodeNotFoundError(msg, node_key)
 
         frontmatter = self._nodes[node_key].copy()
 
@@ -105,7 +110,8 @@ class FakeNodeRepo(NodeRepo):
         """
         node_key = str(node_id)
         if node_key not in self._nodes:  # pragma: no cover
-            raise NodeNotFoundError('Node not found', node_key)
+            msg = 'Node not found'
+            raise NodeNotFoundError(msg, node_key)
 
         # Update the stored frontmatter
         self._nodes[node_key] = fm.copy()
@@ -124,10 +130,12 @@ class FakeNodeRepo(NodeRepo):
         """
         node_key = str(node_id)
         if node_key not in self._nodes:  # pragma: no cover
-            raise NodeNotFoundError('Node not found', node_key)
+            msg = 'Node not found'
+            raise NodeNotFoundError(msg, node_key)
 
-        if part not in ('draft', 'notes', 'synopsis'):  # pragma: no cover
-            raise ValueError('Invalid part specification', part)
+        if part not in {'draft', 'notes', 'synopsis'}:  # pragma: no cover
+            msg = 'Invalid part specification'
+            raise ValueError(msg, part)
 
         # Track editor calls for test assertions (before potential exception)
         self._editor_calls.append((node_key, part))
@@ -151,7 +159,8 @@ class FakeNodeRepo(NodeRepo):
         """
         node_key = str(node_id)
         if node_key not in self._nodes:  # pragma: no cover
-            raise NodeNotFoundError('Node not found', node_key)
+            msg = 'Node not found'
+            raise NodeNotFoundError(msg, node_key)
 
         # Track delete calls for test assertions
         self._delete_calls.append((node_key, delete_files))
@@ -246,8 +255,6 @@ class FakeNodeRepo(NodeRepo):
             List of tuples containing (node_id, part) for each editor call
 
         """
-        from prosemark.domain.models import NodeId
-
         return [(NodeId(node_key), part) for node_key, part in self._editor_calls]
 
     @open_in_editor_calls.setter
@@ -318,7 +325,7 @@ class FakeNodeRepo(NodeRepo):
             ValueError: If file_type is not valid
 
         """
-        if file_type not in ('draft', 'notes'):
+        if file_type not in {'draft', 'notes'}:
             msg = f'Invalid file_type: {file_type}. Must be "draft" or "notes"'
             raise ValueError(msg)
 

@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Markdown binder parser for converting between binder structures and markdown text."""
 
 import re
@@ -85,9 +88,9 @@ class MarkdownBinderParser:
         """Validate markdown format and raise errors for malformed patterns."""
         lines = markdown_content.strip().split('\n')
         for line in lines:
-            line = line.strip()
-            if line:  # Skip empty lines
-                self._check_bracket_patterns(line)
+            stripped_line = line.strip()
+            if stripped_line:  # Skip empty lines
+                self._check_bracket_patterns(stripped_line)
 
     def _check_bracket_patterns(self, line: str) -> None:
         """Check for malformed bracket patterns in a line."""
@@ -100,15 +103,20 @@ class MarkdownBinderParser:
         """Handle case where no list items were matched."""
         lines = markdown_content.strip().split('\n')
         for line in lines:
-            line = line.strip()
-            if line and ('- ' in line or '* ' in line or line.startswith('  - ')):
+            stripped_line = line.strip()
+            if stripped_line and ('- ' in stripped_line or '* ' in stripped_line or stripped_line.startswith('  - ')):
                 self._raise_malformed_error('invalid list item format')
         # If there's any non-empty content but no valid list items, it might be malformed
         if any(line.strip() for line in lines):
             self._raise_malformed_error('content found but no valid list items')
 
     def _build_binder_tree(self, matches: list[tuple[str, str, str]]) -> Binder:
-        """Build the binder tree structure from matched list items."""
+        """Build the binder tree structure from matched list items.
+
+        Returns:
+            Constructed Binder with hierarchical structure
+
+        """
         root_items = []
         item_stack: list[tuple[int, BinderItem]] = []  # (indent_level, item)
 
@@ -138,13 +146,24 @@ class MarkdownBinderParser:
         return Binder(roots=root_items)
 
     def _raise_malformed_error(self, issue: str) -> NoReturn:
-        """Raise a BinderFormatError with malformed markdown message."""
+        """Raise a BinderFormatError with malformed markdown message.
+
+        Raises:
+            BinderFormatError: Always raised with issue-specific message
+
+        """
         msg = f'Malformed markdown: {issue}'
         raise BinderFormatError(msg)
 
     def _raise_parse_error(self, exc: Exception) -> NoReturn:
-        """Raise a BinderFormatError for parse failures."""
-        raise BinderFormatError('Failed to parse markdown binder content') from exc
+        """Raise a BinderFormatError for parse failures.
+
+        Raises:
+            BinderFormatError: Always raised with exception context
+
+        """
+        msg = 'Failed to parse markdown binder content'
+        raise BinderFormatError(msg) from exc
 
     def _render_item(self, item: BinderItem, depth: int, lines: list[str]) -> None:
         """Render a single binder item and its children to lines."""
@@ -161,7 +180,12 @@ class MarkdownBinderParser:
             self._render_item(child, depth + 1, lines)
 
     def _extract_node_id(self, link: str) -> NodeId | None:
-        """Extract NodeId from markdown link if valid UUID format."""
+        """Extract NodeId from markdown link if valid UUID format.
+
+        Returns:
+            NodeId if link contains valid UUID, None otherwise
+
+        """
         if not link:
             return None
 
@@ -175,7 +199,12 @@ class MarkdownBinderParser:
         return None
 
     def _find_parent(self, item_stack: list[tuple[int, BinderItem]], indent_level: int) -> BinderItem | None:
-        """Find the appropriate parent item based on indentation level."""
+        """Find the appropriate parent item based on indentation level.
+
+        Returns:
+            Parent BinderItem or None if no appropriate parent found
+
+        """
         # Find the item with the largest indent level that's less than current
         parent = None
         for level, item in reversed(item_stack):

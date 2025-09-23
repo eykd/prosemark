@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Fake storage adapter for testing binder persistence."""
 
 from typing import TYPE_CHECKING
@@ -46,7 +49,8 @@ class FakeBinderRepo(BinderRepo):
 
         """
         if self._binder is None:  # pragma: no cover
-            raise BinderNotFoundError('No binder has been saved')  # pragma: no cover
+            msg = 'No binder has been saved'
+            raise BinderNotFoundError(msg)  # pragma: no cover
         return self._binder
 
     def save(self, binder: 'Binder') -> None:

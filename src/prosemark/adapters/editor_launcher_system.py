@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """System editor launcher implementation using environment variables and OS defaults."""
 
 import os
@@ -92,7 +95,8 @@ class EditorLauncherSystem(EditorPort):
             if self._command_exists(editor):
                 return [editor]
 
-        raise EditorNotFoundError('No suitable editor found. Set $EDITOR environment variable.')
+        msg = 'No suitable editor found. Set $EDITOR environment variable.'
+        raise EditorNotFoundError(msg)
 
     def _command_exists(self, command: str) -> bool:
         """Check if a command exists in PATH.
@@ -105,7 +109,7 @@ class EditorLauncherSystem(EditorPort):
 
         """
         try:
-            subprocess.run(['which', command], check=True, capture_output=True)  # noqa: S603, S607
+            subprocess.run(['which', command], check=True, capture_output=True)  # noqa: S603,S607
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
         else:

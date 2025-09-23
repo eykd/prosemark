@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Simple ID generator implementation."""
 
 from prosemark.domain.models import NodeId

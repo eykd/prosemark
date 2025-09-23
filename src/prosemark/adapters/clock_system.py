@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """System clock implementation for timestamp generation."""
 
 from datetime import UTC, datetime

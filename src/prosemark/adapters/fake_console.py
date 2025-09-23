@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Fake console adapter for testing output operations."""
 
 from typing import TYPE_CHECKING
@@ -75,7 +78,8 @@ class FakeConsolePort(ConsolePort):
 
         """
         if not self._output:  # pragma: no cover
-            raise IndexError('No output has been printed')  # pragma: no cover
+            msg = 'No output has been printed'
+            raise IndexError(msg)  # pragma: no cover
         return self._output[-1]  # pragma: no cover
 
     def output_contains(self, text: str) -> bool:

@@ -47,11 +47,14 @@ class Node:
     ) -> None:
         # Validate required fields
         if node_id is None:
-            raise NodeValidationError('node_id cannot be None')
+            msg = 'node_id cannot be None'
+            raise NodeValidationError(msg)
         if draft_path is None:
-            raise NodeValidationError('draft_path cannot be None')
+            msg = 'draft_path cannot be None'
+            raise NodeValidationError(msg)
         if notes_path is None:
-            raise NodeValidationError('notes_path cannot be None')
+            msg = 'notes_path cannot be None'
+            raise NodeValidationError(msg)
 
         # Convert string timestamps to datetime objects
         created_datetime = datetime.fromisoformat(created) if isinstance(created, str) else created
@@ -59,7 +62,8 @@ class Node:
 
         # Validate timestamp ordering
         if updated_datetime < created_datetime:
-            raise NodeValidationError('Updated timestamp must be >= created timestamp')
+            msg = 'Updated timestamp must be >= created timestamp'
+            raise NodeValidationError(msg)
 
         object.__setattr__(self, 'id', node_id)
         object.__setattr__(self, 'title', title)
@@ -95,7 +99,10 @@ class Node:
         object.__setattr__(self, 'updated', new_time_datetime)
 
     def update_metadata(
-        self, title: str | None = None, synopsis: str | None = None, updated: datetime | str | None = None
+        self,
+        title: str | None = None,
+        synopsis: str | None = None,
+        updated: datetime | str | None = None,
     ) -> None:
         """Update the node's metadata and optionally its timestamp.
 
@@ -203,9 +210,11 @@ class FreeformContent:
     def _validate_required_fields(self) -> None:
         """Validate that required fields are not None."""
         if self.created is None:
-            raise FreeformContentValidationError('created timestamp cannot be None')
+            msg = 'created timestamp cannot be None'
+            raise FreeformContentValidationError(msg)
         if self.id is None:
-            raise FreeformContentValidationError('id cannot be None')
+            msg = 'id cannot be None'
+            raise FreeformContentValidationError(msg)
 
     def _validate_uuid_format(self) -> None:
         """Validate that ID is a properly formatted UUIDv7."""

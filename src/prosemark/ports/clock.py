@@ -45,4 +45,5 @@ class Clock(ABC):
             NotImplementedError: If not implemented by a concrete subclass
 
         """
-        raise NotImplementedError('Subclasses must implement the now_iso() method')  # pragma: no cover
+        msg = 'Subclasses must implement the now_iso() method'  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover

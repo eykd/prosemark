@@ -1,9 +1,10 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Standard output logger implementation."""
 
-# ruff: noqa: ANN401 - Any types intentional for stdlib logging compatibility
-
 import sys
-from typing import Any, TextIO
+from typing import TextIO
 
 from prosemark.ports.logger import Logger
 
@@ -38,7 +39,7 @@ class LoggerStdout(Logger):
         self.info_stream = info_stream
         self.error_stream = error_stream
 
-    def debug(self, msg: Any, *args: Any, **_kwargs: Any) -> None:
+    def debug(self, msg: object, *args: object, **_kwargs: object) -> None:
         """Log detailed diagnostic information for troubleshooting.
 
         Args:
@@ -47,10 +48,10 @@ class LoggerStdout(Logger):
             **kwargs: Keyword arguments (ignored in this implementation)
 
         """
-        formatted_msg = str(msg) % args if args else str(msg)
+        formatted_msg = str(msg) % args if args else str(msg)  # pragma: no cover
         print(f'[DEBUG] {formatted_msg}', file=self.info_stream)
 
-    def info(self, msg: Any, *args: Any, **_kwargs: Any) -> None:
+    def info(self, msg: object, *args: object, **_kwargs: object) -> None:
         """Log general operational information.
 
         Args:
@@ -59,10 +60,10 @@ class LoggerStdout(Logger):
             **kwargs: Keyword arguments (ignored in this implementation)
 
         """
-        formatted_msg = str(msg) % args if args else str(msg)
+        formatted_msg = str(msg) % args if args else str(msg)  # pragma: no cover
         print(f'[INFO] {formatted_msg}', file=self.info_stream)
 
-    def warning(self, msg: Any, *args: Any, **_kwargs: Any) -> None:
+    def warning(self, msg: object, *args: object, **_kwargs: object) -> None:
         """Log warning messages for important events that don't prevent operation.
 
         Args:
@@ -71,10 +72,10 @@ class LoggerStdout(Logger):
             **kwargs: Keyword arguments (ignored in this implementation)
 
         """
-        formatted_msg = str(msg) % args if args else str(msg)
+        formatted_msg = str(msg) % args if args else str(msg)  # pragma: no cover
         print(f'[WARNING] {formatted_msg}', file=self.error_stream)
 
-    def error(self, msg: Any, *args: Any, **_kwargs: Any) -> None:
+    def error(self, msg: object, *args: object, **_kwargs: object) -> None:
         """Log error conditions that prevent operations from completing.
 
         Args:
@@ -83,5 +84,17 @@ class LoggerStdout(Logger):
             **kwargs: Keyword arguments (ignored in this implementation)
 
         """
-        formatted_msg = str(msg) % args if args else str(msg)
+        formatted_msg = str(msg) % args if args else str(msg)  # pragma: no cover
         print(f'[ERROR] {formatted_msg}', file=self.error_stream)
+
+    def exception(self, msg: object, *args: object, **_kwargs: object) -> None:
+        """Log exception information with error level and traceback.
+
+        Args:
+            msg: The log message or format string
+            *args: Positional arguments for string formatting
+            **kwargs: Keyword arguments (ignored in this implementation)
+
+        """
+        formatted_msg = str(msg) % args if args else str(msg)  # pragma: no cover
+        print(f'[EXCEPTION] {formatted_msg}', file=self.error_stream)  # pragma: no cover

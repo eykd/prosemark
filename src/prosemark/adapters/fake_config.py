@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """Fake configuration adapter for testing config management."""
 
 from pathlib import Path

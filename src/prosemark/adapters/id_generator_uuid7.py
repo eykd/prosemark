@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """UUIDv7-based ID generator implementation."""
 
 from prosemark.domain.models import NodeId

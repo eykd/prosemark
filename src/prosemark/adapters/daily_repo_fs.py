@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """File system implementation of DailyRepo for freeform writing files."""
 
 from datetime import datetime

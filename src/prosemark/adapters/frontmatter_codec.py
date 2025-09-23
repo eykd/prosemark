@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Prosemark Contributors
+# This software is licensed under the MIT License
+
 """YAML frontmatter codec for parsing and generating frontmatter blocks."""
 
 import re
@@ -78,6 +81,9 @@ class FrontmatterCodec:
         Returns:
             Complete markdown content with frontmatter block
 
+        Raises:
+            FrontmatterFormatError: If YAML serialization fails
+
         """
         if not frontmatter:
             return content
@@ -85,10 +91,15 @@ class FrontmatterCodec:
         try:
             # Generate YAML with consistent formatting
             yaml_content = yaml.safe_dump(
-                frontmatter, default_flow_style=False, allow_unicode=True, sort_keys=True, default_style=''
+                frontmatter,
+                default_flow_style=False,
+                allow_unicode=True,
+                sort_keys=True,
+                default_style='',
             ).strip()
         except yaml.YAMLError as exc:
-            raise FrontmatterFormatError('Failed to serialize frontmatter to YAML') from exc
+            msg = 'Failed to serialize frontmatter to YAML'
+            raise FrontmatterFormatError(msg) from exc
         else:
             return f'---\n{yaml_content}\n---\n{content}'
 
@@ -113,28 +124,49 @@ class FrontmatterCodec:
         return self.generate(updated_frontmatter, remaining_content)
 
     def _validate_frontmatter_format(self, content: str) -> None:
-        """Validate frontmatter format and raise errors for malformed patterns."""
+        """Validate frontmatter format and raise errors for malformed patterns.
+
+        Raises:
+            FrontmatterFormatError: If frontmatter delimiters are malformed
+
+        """
         if content.startswith('---') and not self.FRONTMATTER_PATTERN.match(content):
             if '---' not in content[3:]:
-                raise FrontmatterFormatError('Frontmatter block missing closing delimiter')
+                msg = 'Frontmatter block missing closing delimiter'
+                raise FrontmatterFormatError(msg)
         elif '---' in content and not content.startswith('---'):
             self._check_misplaced_frontmatter(content)
 
     def _check_misplaced_frontmatter(self, content: str) -> None:
-        """Check for frontmatter that is not at the document start."""
+        """Check for frontmatter that is not at the document start.
+
+        Raises:
+            FrontmatterFormatError: If frontmatter delimiters found in wrong position
+
+        """
         lines = content.split('\n')
         for i, line in enumerate(lines):
             if line.strip() == '---':
                 if i > 0 and any(
                     'id:' in prev_line or 'title:' in prev_line or 'created:' in prev_line for prev_line in lines[:i]
                 ):
-                    raise FrontmatterFormatError('Frontmatter block missing opening delimiter')
+                    msg = 'Frontmatter block missing opening delimiter'
+                    raise FrontmatterFormatError(msg)
                 if i < len(lines) - 1 and lines[i + 1].strip() == '---':
-                    raise FrontmatterFormatError('Frontmatter block not at document start')
+                    msg = 'Frontmatter block not at document start'
+                    raise FrontmatterFormatError(msg)
                 break
 
     def _parse_yaml_content(self, yaml_content: str) -> dict[str, Any]:
-        """Parse YAML content and return processed frontmatter data."""
+        """Parse YAML content and return processed frontmatter data.
+
+        Returns:
+            Parsed frontmatter data as dictionary
+
+        Raises:
+            FrontmatterFormatError: If YAML parsing fails or data is invalid
+
+        """
         try:
             frontmatter_data = yaml.safe_load(yaml_content)
 
@@ -142,12 +174,14 @@ class FrontmatterCodec:
                 frontmatter_data = {}
 
             if not isinstance(frontmatter_data, dict):
-                raise FrontmatterFormatError('Frontmatter must be a YAML mapping/dictionary')
+                msg = 'Frontmatter must be a YAML mapping/dictionary'
+                raise FrontmatterFormatError(msg)
 
             return self._convert_datetimes_to_strings(frontmatter_data)
 
         except yaml.YAMLError as exc:
-            raise FrontmatterFormatError('Invalid YAML in frontmatter block') from exc
+            msg = 'Invalid YAML in frontmatter block'
+            raise FrontmatterFormatError(msg) from exc
 
     def _convert_datetimes_to_strings(self, data: dict[str, Any]) -> dict[str, Any]:
         """Convert datetime objects to ISO format strings to preserve original format.
