@@ -696,7 +696,7 @@ class TestMaterializeCommand:
         """Set up test environment."""
         self.runner = CliRunner()
 
-    @patch('prosemark.cli.main.MaterializeNode')
+    @patch('prosemark.cli.main.MaterializeNodeUseCase')
     @patch('prosemark.cli.main._get_project_root')
     @patch('prosemark.cli.main.BinderRepoFs')
     @patch('prosemark.cli.main.NodeRepoFs')
@@ -729,7 +729,7 @@ class TestMaterializeCommand:
         assert f'Created files: {valid_node_id}.md, {valid_node_id}.notes.md' in result.stdout
         assert 'Updated binder structure' in result.stdout
 
-    @patch('prosemark.cli.main.MaterializeNode')
+    @patch('prosemark.cli.main.MaterializeNodeUseCase')
     @patch('prosemark.cli.main._get_project_root')
     @patch('prosemark.cli.main.BinderRepoFs')
     @patch('prosemark.cli.main.NodeRepoFs')
@@ -759,7 +759,7 @@ class TestMaterializeCommand:
         assert result.exit_code == 1
         assert 'Error: Placeholder not found' in result.stdout
 
-    @patch('prosemark.cli.main.MaterializeNode')
+    @patch('prosemark.cli.main.MaterializeNodeUseCase')
     @patch('prosemark.cli.main._get_project_root')
     @patch('prosemark.cli.main.BinderRepoFs')
     @patch('prosemark.cli.main.NodeRepoFs')
@@ -789,7 +789,7 @@ class TestMaterializeCommand:
         assert result.exit_code == 1
         assert "Error: 'Test Node' is already materialized" in result.stdout
 
-    @patch('prosemark.cli.main.MaterializeNode')
+    @patch('prosemark.cli.main.MaterializeNodeUseCase')
     @patch('prosemark.cli.main._get_project_root')
     @patch('prosemark.cli.main.BinderRepoFs')
     @patch('prosemark.cli.main.NodeRepoFs')
@@ -816,7 +816,7 @@ class TestMaterializeCommand:
 
         result = self.runner.invoke(app, ['materialize', 'Test Node'])
 
-        assert result.exit_code == 2
+        assert result.exit_code == 2, f'Expected exit code 2, got {result.exit_code}. Output: {result.output}'
         assert 'Error: File creation failed' in result.stdout
 
 

@@ -1,0 +1,317 @@
+# CLI Contract: pmk materialize --all
+
+openapi: 3.0.3
+info:
+  title: PMK Materialize All CLI Contract
+  description: Contract specification for the enhanced materialize command with --all option
+  version: 1.0.0
+
+paths:
+  /cli/materialize:
+    post:
+      summary: Materialize placeholder(s) in binder
+      description: |
+        Enhanced materialize command that can process individual placeholders
+        or all placeholders in the binder when --all flag is provided.
+
+      parameters:
+        - name: title
+          in: query
+          description: Display title of specific placeholder to materialize (mutually exclusive with --all)
+          required: false
+          schema:
+            type: string
+            example: "Chapter Introduction"
+
+        - name: all
+          in: query
+          description: Flag to materialize all placeholders in the binder
+          required: false
+          schema:
+            type: boolean
+            default: false
+
+        - name: parent
+          in: query
+          description: Parent node ID to search within (not yet implemented)
+          required: false
+          schema:
+            type: string
+            format: uuid
+
+        - name: path
+          in: query
+          description: Project directory path
+          required: false
+          schema:
+            type: string
+            format: path
+            default: "."
+
+      responses:
+        '200':
+          description: Materialization completed successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SingleMaterializeSuccess'
+                  - $ref: '#/components/schemas/BatchMaterializeSuccess'
+              examples:
+                single_success:
+                  summary: Single placeholder materialized
+                  value:
+                    type: "single"
+                    placeholder_title: "Chapter Introduction"
+                    node_id: "01923f0c-1234-7123-8abc-def012345678"
+                    file_paths:
+                      - "01923f0c-1234-7123-8abc-def012345678.md"
+                      - "01923f0c-1234-7123-8abc-def012345678.notes.md"
+                    message: "Materialized 'Chapter Introduction' → 01923f0c-1234-7123-8abc-def012345678"
+
+                batch_success:
+                  summary: All placeholders materialized
+                  value:
+                    type: "batch"
+                    total_placeholders: 5
+                    successful_materializations: 5
+                    failed_materializations: 0
+                    execution_time: 1.234
+                    message: "Successfully materialized all 5 placeholders"
+                    details:
+                      - placeholder_title: "Chapter 1"
+                        node_id: "01923f0c-1234-7123-8abc-def012345678"
+                      - placeholder_title: "Chapter 2"
+                        node_id: "01923f0c-1234-7123-8abc-def012345679"
+
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                mutual_exclusion:
+                  summary: Both title and --all provided
+                  value:
+                    error: "validation_error"
+                    message: "Cannot specify both 'title' and '--all' options"
+                    code: "EXCLUSIVE_OPTIONS"
+
+                no_parameters:
+                  summary: Neither title nor --all provided
+                  value:
+                    error: "validation_error"
+                    message: "Must specify either placeholder 'title' or '--all' flag"
+                    code: "MISSING_REQUIRED_OPTION"
+
+        '404':
+          description: Placeholder or binder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                placeholder_not_found:
+                  summary: Specific placeholder not found
+                  value:
+                    error: "placeholder_not_found"
+                    message: "Placeholder 'Invalid Title' not found in binder"
+                    code: "PLACEHOLDER_NOT_FOUND"
+
+                no_placeholders:
+                  summary: No placeholders in binder
+                  value:
+                    error: "no_placeholders"
+                    message: "No placeholders found in binder"
+                    code: "NO_PLACEHOLDERS_FOUND"
+
+                no_binder:
+                  summary: No binder file found
+                  value:
+                    error: "binder_not_found"
+                    message: "No _binder.md file found in current directory"
+                    code: "BINDER_NOT_FOUND"
+
+        '409':
+          description: Placeholder already materialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                already_materialized:
+                  summary: Placeholder already has node_id
+                  value:
+                    error: "already_materialized"
+                    message: "'Chapter Title' is already materialized"
+                    code: "ALREADY_MATERIALIZED"
+
+        '422':
+          description: Partial failure in batch operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchMaterializePartialFailure'
+              examples:
+                partial_failure:
+                  summary: Some placeholders failed to materialize
+                  value:
+                    type: "batch_partial"
+                    total_placeholders: 5
+                    successful_materializations: 3
+                    failed_materializations: 2
+                    execution_time: 2.145
+                    message: "Materialized 3 of 5 placeholders (2 failures)"
+                    successes:
+                      - placeholder_title: "Chapter 1"
+                        node_id: "01923f0c-1234-7123-8abc-def012345678"
+                    failures:
+                      - placeholder_title: "Chapter 2"
+                        error_type: "filesystem"
+                        error_message: "Permission denied creating file"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                filesystem_error:
+                  summary: Critical filesystem error
+                  value:
+                    error: "filesystem_error"
+                    message: "Failed to save binder: disk full"
+                    code: "FILESYSTEM_ERROR"
+
+components:
+  schemas:
+    SingleMaterializeSuccess:
+      type: object
+      required: [type, placeholder_title, node_id, file_paths, message]
+      properties:
+        type:
+          type: string
+          enum: [single]
+        placeholder_title:
+          type: string
+          description: Title of the materialized placeholder
+        node_id:
+          type: string
+          format: uuid
+          description: Generated UUIDv7 for the materialized node
+        file_paths:
+          type: array
+          items:
+            type: string
+          description: Created file paths
+          minItems: 2
+          maxItems: 2
+        message:
+          type: string
+          description: Human-readable success message
+
+    BatchMaterializeSuccess:
+      type: object
+      required: [type, total_placeholders, successful_materializations, failed_materializations, execution_time, message]
+      properties:
+        type:
+          type: string
+          enum: [batch]
+        total_placeholders:
+          type: integer
+          minimum: 0
+        successful_materializations:
+          type: integer
+          minimum: 0
+        failed_materializations:
+          type: integer
+          minimum: 0
+        execution_time:
+          type: number
+          minimum: 0
+          description: Total execution time in seconds
+        message:
+          type: string
+          description: Summary message
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterializationDetail'
+
+    BatchMaterializePartialFailure:
+      type: object
+      required: [type, total_placeholders, successful_materializations, failed_materializations, execution_time, message]
+      properties:
+        type:
+          type: string
+          enum: [batch_partial]
+        total_placeholders:
+          type: integer
+          minimum: 1
+        successful_materializations:
+          type: integer
+          minimum: 0
+        failed_materializations:
+          type: integer
+          minimum: 1
+        execution_time:
+          type: number
+          minimum: 0
+        message:
+          type: string
+        successes:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterializationDetail'
+        failures:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterializationFailure'
+
+    MaterializationDetail:
+      type: object
+      required: [placeholder_title, node_id]
+      properties:
+        placeholder_title:
+          type: string
+        node_id:
+          type: string
+          format: uuid
+        position:
+          type: string
+          description: Position in binder hierarchy
+          pattern: '^(\[[0-9]+\])+$'
+
+    MaterializationFailure:
+      type: object
+      required: [placeholder_title, error_type, error_message]
+      properties:
+        placeholder_title:
+          type: string
+        error_type:
+          type: string
+          enum: [filesystem, validation, already_materialized, binder_integrity, id_generation]
+        error_message:
+          type: string
+        position:
+          type: string
+          pattern: '^(\[[0-9]+\])+$'
+
+    ErrorResponse:
+      type: object
+      required: [error, message, code]
+      properties:
+        error:
+          type: string
+          description: Error category
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+        details:
+          type: object
+          description: Additional error context

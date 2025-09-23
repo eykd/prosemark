@@ -1,0 +1,230 @@
+# Use Case Contract: MaterializeAllPlaceholders
+
+openapi: 3.0.3
+info:
+  title: MaterializeAllPlaceholders Use Case Contract
+  description: Application layer contract for bulk placeholder materialization
+  version: 1.0.0
+
+paths:
+  /use-cases/materialize-all-placeholders:
+    post:
+      summary: Execute bulk placeholder materialization
+      description: |
+        Application use case that discovers all placeholders in a binder
+        and materializes them in batch, with individual error handling.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterializeAllPlaceholdersRequest'
+
+      responses:
+        '200':
+          description: Batch materialization completed (with possible partial failures)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterializeAllPlaceholdersResponse'
+
+        '400':
+          description: Invalid request or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UseCaseError'
+
+        '404':
+          description: Binder not found or no placeholders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UseCaseError'
+
+        '500':
+          description: Critical system error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UseCaseError'
+
+components:
+  schemas:
+    MaterializeAllPlaceholdersRequest:
+      type: object
+      required: [project_path]
+      properties:
+        project_path:
+          type: string
+          format: path
+          description: Path to project directory containing _binder.md
+          example: "/workspace/project"
+        parent_node_id:
+          type: string
+          format: uuid
+          description: Optional parent node to limit scope (future feature)
+          nullable: true
+        dry_run:
+          type: boolean
+          default: false
+          description: If true, discover placeholders but don't materialize
+        progress_callback:
+          type: string
+          description: Callback identifier for progress reporting
+          nullable: true
+
+    MaterializeAllPlaceholdersResponse:
+      type: object
+      required: [execution_result, discovered_placeholders, materialization_results, execution_metadata]
+      properties:
+        execution_result:
+          type: string
+          enum: [complete_success, partial_failure, complete_failure, no_placeholders]
+          description: Overall result status
+        discovered_placeholders:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscoveredPlaceholder'
+          description: All placeholders found in binder
+        materialization_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterializationResult'
+          description: Results of materialization attempts
+        execution_metadata:
+          $ref: '#/components/schemas/ExecutionMetadata'
+
+    DiscoveredPlaceholder:
+      type: object
+      required: [display_title, position, depth]
+      properties:
+        display_title:
+          type: string
+          description: Title of the placeholder
+          example: "Chapter Introduction"
+        position:
+          type: string
+          pattern: '^(\[[0-9]+\])+$'
+          description: Hierarchical position in binder
+          example: "[0][1]"
+        depth:
+          type: integer
+          minimum: 0
+          description: Nesting level in binder hierarchy
+        parent_title:
+          type: string
+          nullable: true
+          description: Title of parent item if applicable
+        binder_item_ref:
+          type: string
+          description: Internal reference to BinderItem (for use case processing)
+
+    MaterializationResult:
+      type: object
+      required: [placeholder_title, status]
+      properties:
+        placeholder_title:
+          type: string
+          description: Title of placeholder that was processed
+        status:
+          type: string
+          enum: [success, failure]
+        node_id:
+          type: string
+          format: uuid
+          description: Generated node ID (only present for successful materializations)
+          nullable: true
+        created_files:
+          type: array
+          items:
+            type: string
+          description: File paths created during materialization
+        error_details:
+          $ref: '#/components/schemas/MaterializationError'
+          nullable: true
+
+    MaterializationError:
+      type: object
+      required: [error_type, error_message]
+      properties:
+        error_type:
+          type: string
+          enum: [filesystem_error, id_generation_error, validation_error, binder_integrity_error, already_materialized]
+        error_message:
+          type: string
+          description: Human-readable error message
+        technical_details:
+          type: string
+          description: Technical error details for logging
+          nullable: true
+        retry_possible:
+          type: boolean
+          description: Whether this error might be resolved by retrying
+
+    ExecutionMetadata:
+      type: object
+      required: [start_time, end_time, execution_duration, total_discovered, total_processed]
+      properties:
+        start_time:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when execution began
+        end_time:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when execution completed
+        execution_duration:
+          type: number
+          minimum: 0
+          description: Total execution time in seconds
+        total_discovered:
+          type: integer
+          minimum: 0
+          description: Total number of placeholders discovered
+        total_processed:
+          type: integer
+          minimum: 0
+          description: Number of placeholders that were processed
+        successful_materializations:
+          type: integer
+          minimum: 0
+          description: Number of successful materializations
+        failed_materializations:
+          type: integer
+          minimum: 0
+          description: Number of failed materialization attempts
+        binder_file_path:
+          type: string
+          description: Absolute path to binder file that was processed
+
+    UseCaseError:
+      type: object
+      required: [error_code, error_message, error_category]
+      properties:
+        error_code:
+          type: string
+          enum: [
+            BINDER_NOT_FOUND,
+            INVALID_PROJECT_PATH,
+            NO_PLACEHOLDERS_FOUND,
+            BINDER_PARSE_ERROR,
+            FILESYSTEM_ACCESS_ERROR,
+            CRITICAL_SYSTEM_ERROR
+          ]
+        error_message:
+          type: string
+          description: Human-readable error message
+        error_category:
+          type: string
+          enum: [validation, not_found, filesystem, system]
+        technical_details:
+          type: string
+          description: Technical error information for debugging
+          nullable: true
+        suggested_actions:
+          type: array
+          items:
+            type: string
+          description: Suggested actions user can take to resolve the error

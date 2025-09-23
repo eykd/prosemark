@@ -77,18 +77,29 @@ class TestInitProjectCoverage:
         fake_binder_repo: FakeBinderRepo,
         fake_console: FakeConsolePort,
         fake_logger: FakeLogger,
+        tmp_path: Path,
     ) -> None:
         """Test InitProject uses current directory when no project_path provided."""
         # Arrange
         project_title = 'Current Dir Project'
-        current_dir = Path.cwd()
+        import os
 
-        # Act
-        init_project.execute(project_title=project_title, project_path=None)
+        original_cwd = Path.cwd()
 
-        # Assert - Used current directory
-        assert fake_logger.has_logged('info', f'Initializing project: {project_title} at {current_dir}')
-        assert fake_console.output_contains(f'INFO: Created {current_dir / "_binder.md"}')
+        try:
+            # Change to temporary directory
+            os.chdir(tmp_path)
+            current_dir = Path.cwd()
+
+            # Act
+            init_project.execute(project_title=project_title, project_path=None)
+
+            # Assert - Used current directory
+            assert fake_logger.has_logged('info', f'Initializing project: {project_title} at {current_dir}')
+            assert fake_console.output_contains(f'INFO: Created {current_dir / "_binder.md"}')
+        finally:
+            # Restore original working directory
+            os.chdir(original_cwd)
 
     def test_init_project_handles_existing_binder(
         self,
@@ -156,6 +167,7 @@ class TestInitProjectCoverage:
         fake_binder_repo: FakeBinderRepo,
         fake_console: FakeConsolePort,
         fake_logger: FakeLogger,
+        tmp_path: Path,
     ) -> None:
         """Test InitProject uses all injected dependencies correctly."""
         # Arrange
@@ -172,7 +184,7 @@ class TestInitProjectCoverage:
 
         # Act
         project_title = 'Dependency Test'
-        init_project.execute(project_title=project_title)
+        init_project.execute(project_title=project_title, project_path=tmp_path)
 
         # Assert all dependencies were used
         # BinderRepo was used to save
