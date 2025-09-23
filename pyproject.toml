@@ -2,6 +2,9 @@
 name = "prosemark"
 description = "A command-line tool for planning, organizing, and writing stories using a hierarchical document structure"
 readme = "README.md"
+authors = [
+    { name = "David Eyk", email = "david@worldsenoughstudios.com" }
+]
 
 dynamic = ["version"]
 license = "MIT"
