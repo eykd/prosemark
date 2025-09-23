@@ -134,7 +134,8 @@ class TestIdGeneratorContract:
         """Test that new() generates UUIDv7 with timestamp component."""
         # Arrange
         mock_generator = Mock(spec=IdGenerator)
-        # UUIDv7 format: timestamp (48 bits) + version (4 bits) + sequence (12 bits) + variant (2 bits) + random (62 bits)
+        # UUIDv7 format: timestamp (48 bits) + version (4 bits) + sequence (12 bits)
+        # + variant (2 bits) + random (62 bits)
         valid_uuidv7 = '0192f0c1-2345-7123-8abc-def012345678'
         expected_node_id = NodeId(valid_uuidv7)
         mock_generator.new.return_value = expected_node_id

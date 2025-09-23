@@ -195,7 +195,8 @@ Final notes here.
         # Add custom content below frontmatter
         custom_node_content = (
             original_content
-            + '\n\n## Custom Section\n\nThis is my custom content that should be preserved.\n\n### Research Notes\n- Important point 1\n- Important point 2\n'
+            + '\n\n## Custom Section\n\nThis is my custom content that should be preserved.\n\n'
+            + '### Research Notes\n- Important point 1\n- Important point 2\n'
         )
         node_file.write_text(custom_node_content)
 
