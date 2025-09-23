@@ -6,15 +6,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ruff format ."
+            "command": "uv run ruff format --check"
           },
           {
             "type": "command",
-            "command": "uv run ruff check --fix --unsafe-fixes ."
+            "command": "uv run ruff check"
           },
           {
             "type": "command",
-            "command": "uv run mypy src tests ."
+            "command": "uv run mypy src tests"
           }
 
         ]
