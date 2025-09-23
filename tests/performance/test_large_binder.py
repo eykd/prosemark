@@ -245,7 +245,7 @@ Notes content.
         import os
 
         try:
-            import psutil  # type: ignore[import-untyped]
+            import psutil
         except ImportError:
             pytest.skip('psutil not available for memory testing')
 

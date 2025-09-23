@@ -1,5 +1,7 @@
 """Final tests to reach 100% coverage for specific edge cases."""
 
+from typing import cast
+
 import pytest
 
 from prosemark.domain.batch_materialize_result import BatchMaterializeResult
@@ -74,16 +76,18 @@ class TestFinalCoverageBoost:
 
         # Let's test by creating a MaterializeResult with a valid UUID6 instead
         # First create a valid UUID6 in NodeId format
+        from dataclasses import dataclass
+
+        @dataclass
         class MockNodeId:
-            def __init__(self, value: str) -> None:
-                self.value = value
+            value: str
 
         mock_node_id = MockNodeId('01234567-89ab-6def-8123-456789abcdef')  # Version 6, not 7
 
         with pytest.raises(ValueError, match='Node ID must be valid UUIDv7'):
             MaterializeResult(
                 display_title='Test',
-                node_id=mock_node_id,
+                node_id=cast('NodeId', mock_node_id),
                 file_paths=['01234567-89ab-6def-8123-456789abcdef.md', '01234567-89ab-6def-8123-456789abcdef.notes.md'],
                 position='[0]',
             )
@@ -150,8 +154,7 @@ class TestCLIMainEdgeCases:
             with patch('prosemark.cli.main.BinderRepoFs'):
                 with patch('prosemark.cli.main.NodeRepoFs'):
                     with patch('prosemark.cli.main.IdGeneratorUuid7'):
-
-                with patch('prosemark.cli.main.ClockSystem'):
+                        with patch('prosemark.cli.main.ClockSystem'):
                             with patch('prosemark.cli.main.LoggerStdout'):
                                 with pytest.raises(typer.Exit) as exc_info:
                                     materialize(

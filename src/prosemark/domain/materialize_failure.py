@@ -25,7 +25,7 @@ class MaterializeFailure:
     display_title: str
     error_type: str
     error_message: str
-    position: str
+    position: str | None
 
     # Valid error types
     VALID_ERROR_TYPES: ClassVar[set[str]] = {

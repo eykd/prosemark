@@ -1,13 +1,14 @@
 """Test coverage for CLI main.py missing lines."""
 
 from pathlib import Path
-from typing import Never
+from typing import Never, cast
 from unittest.mock import Mock, patch
 
 import pytest
 import typer
 
 from prosemark.cli.main import (
+    MaterializationResult,
     _check_result_failure_status,
     _get_safe_attribute,
     _get_summary_message,
@@ -53,8 +54,8 @@ class TestCliMainCoverage:
         class MockResult:
             def __init__(self) -> None:
                 self.total_placeholders = 5
-                self.successful_materializations = []
-                self.failed_materializations = []
+                self.successful_materializations: list[MaterializeResult] = []
+                self.failed_materializations: list[MaterializeFailure] = []
                 self.type = 'batch_interrupted'
                 self.execution_time = 1.0
 
@@ -63,10 +64,7 @@ class TestCliMainCoverage:
         with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_use_case.return_value.execute.return_value = mock_result
             with patch('prosemark.cli.main.BinderRepoFs'), patch('prosemark.cli.main.NodeRepoFs'):  # noqa: SIM117
-                with patch('prosemark.cli.main.BinderRepoFs'):
-                with patch('prosemark.cli.main.NodeRepoFs'):
-                    with patch('prosemark.cli.main.IdGeneratorUuid7'):
-
+                with patch('prosemark.cli.main.IdGeneratorUuid7'):
                     with patch('prosemark.cli.main.ClockSystem'):
                         with patch('prosemark.cli.main.LoggerStdout'):
                             with pytest.raises(typer.Exit) as exc_info:
@@ -91,7 +89,7 @@ class TestCliMainCoverage:
                 raise ValueError('Intentional error')
 
         obj = BadAttribute()
-        result = _get_safe_attribute(obj, 'bad_prop', 'default_value')
+        result = _get_safe_attribute(cast('MaterializationResult', obj), 'bad_prop', 'default_value')
         assert result == 'default_value'
 
     def test_get_summary_message_plural_failures(self) -> None:
@@ -138,8 +136,7 @@ class TestCliMainCoverage:
             with patch('prosemark.cli.main.BinderRepoFs'):
                 with patch('prosemark.cli.main.NodeRepoFs'):
                     with patch('prosemark.cli.main.IdGeneratorUuid7'):
-
-                with patch('prosemark.cli.main.ClockSystem'):
+                        with patch('prosemark.cli.main.ClockSystem'):
                             with patch('prosemark.cli.main.LoggerStdout'):
                                 with pytest.raises(typer.Exit) as exc_info:
                                     materialize(
@@ -158,8 +155,7 @@ class TestCliMainCoverage:
             with patch('prosemark.cli.main.BinderRepoFs'):
                 with patch('prosemark.cli.main.NodeRepoFs'):
                     with patch('prosemark.cli.main.IdGeneratorUuid7'):
-
-                with patch('prosemark.cli.main.ClockSystem'):
+                        with patch('prosemark.cli.main.ClockSystem'):
                             with patch('prosemark.cli.main.LoggerStdout'):
                                 with patch(
                                     'prosemark.cli.main._materialize_single_placeholder',
@@ -189,9 +185,12 @@ class TestCliMainCoverage:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            with patch('prosemark.cli.main._get_project_root', return_value=temp_path), patch(
-                'prosemark.cli.main._execute_materialize_all',
-                side_effect=PlaceholderNotFoundError('No placeholders'),
+            with (
+                patch('prosemark.cli.main._get_project_root', return_value=temp_path),
+                patch(
+                    'prosemark.cli.main._execute_materialize_all',
+                    side_effect=PlaceholderNotFoundError('No placeholders'),
+                ),
             ):
                 result = runner.invoke(app, ['materialize-all'])
                 assert result.exit_code == 1
@@ -308,7 +307,7 @@ class TestMaterializeAllPlaceholdersCoverage:
             position='[0]',
         )
 
-        with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case_class:  # noqa: SIM117
+        with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case_class:
             mock_use_case = Mock()
             mock_use_case_class.return_value = mock_use_case
 

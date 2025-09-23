@@ -1,7 +1,7 @@
 """Test coverage for MaterializeAllPlaceholders use case missing lines."""
 
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from prosemark.app.materialize_all_placeholders import MaterializeAllPlaceholders
 from prosemark.domain.models import Binder, BinderItem, NodeId
@@ -164,9 +164,8 @@ class TestMaterializeAllPlaceholdersCoverage:
         def mock_categorize_error(error: Exception) -> str:
             return 'binder_integrity'  # Critical error type
 
-        use_case._categorize_error = mock_categorize_error  # noqa: SLF001
-
-        result = use_case.execute(binder=binder, project_path=Path('/test'))
+        with patch.object(use_case, '_categorize_error', side_effect=mock_categorize_error):
+            result = use_case.execute(binder=binder, project_path=Path('/test'))
 
         # Verify the critical error caused a batch stop
         assert len(result.failed_materializations) == 1
@@ -203,6 +202,73 @@ class TestMaterializeAllPlaceholdersCoverage:
         assert expected_main in result.file_paths
         assert expected_notes in result.file_paths
         assert len(result.file_paths) == 2
+
+    def test_progress_callback_success_branch_coverage(self) -> None:
+        """Test specific branch coverage for progress callback success reporting (line 110->113)."""
+        # This test specifically targets the missing branch coverage for lines 110->113
+        progress_called = False
+        captured_message = ''
+
+        def test_progress_callback(message: str) -> None:
+            nonlocal progress_called, captured_message
+            progress_called = True
+            captured_message = message
+
+        # Create binder with one placeholder
+        placeholder_item = BinderItem(display_title='Branch Test', node_id=None, children=[])
+        binder = Binder(roots=[placeholder_item])
+
+        # Mock successful materialization with specific node ID
+        mock_materialize_use_case = Mock()
+        test_node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
+        mock_materialize_use_case.execute.return_value = test_node_id
+
+        use_case = MaterializeAllPlaceholders(
+            materialize_node_use_case=mock_materialize_use_case,
+            binder_repo=Mock(),
+            node_repo=Mock(),
+            id_generator=Mock(),
+            clock=Mock(),
+            logger=Mock(),
+        )
+
+        # Execute with progress callback to trigger the specific branch
+        result = use_case.execute(binder=binder, project_path=Path('/test'), progress_callback=test_progress_callback)
+
+        # Verify the specific success branch was executed
+        assert progress_called
+        assert "✓ Materialized 'Branch Test'" in captured_message
+        assert test_node_id.value in captured_message
+        assert result.total_placeholders == 1
+        assert len(result.successful_materializations) == 1
+
+    def test_progress_callback_none_branch_coverage(self) -> None:
+        """Test branch coverage when progress_callback is None (line 110->113)."""
+        # This test targets the missing branch coverage for when progress_callback is None
+        # Create binder with one placeholder
+        placeholder_item = BinderItem(display_title='No Callback Test', node_id=None, children=[])
+        binder = Binder(roots=[placeholder_item])
+
+        # Mock successful materialization
+        mock_materialize_use_case = Mock()
+        test_node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
+        mock_materialize_use_case.execute.return_value = test_node_id
+
+        use_case = MaterializeAllPlaceholders(
+            materialize_node_use_case=mock_materialize_use_case,
+            binder_repo=Mock(),
+            node_repo=Mock(),
+            id_generator=Mock(),
+            clock=Mock(),
+            logger=Mock(),
+        )
+
+        # Execute without progress callback (should skip the if block and go to line 113)
+        result = use_case.execute(binder=binder, project_path=Path('/test'), progress_callback=None)
+
+        # Verify the materialization succeeded without callback
+        assert result.total_placeholders == 1
+        assert len(result.successful_materializations) == 1
 
     def test_categorize_error_various_types(self) -> None:
         """Test error categorization for different exception types."""
