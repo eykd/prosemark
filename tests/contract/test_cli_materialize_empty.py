@@ -73,7 +73,7 @@ class TestCLIMaterializeEmptyContract:
             result = runner.invoke(cli, ['materialize', '--all', '--path', str(tmp_path)])
 
             assert result.exit_code == 0
-            assert 'No placeholders found in binder' in result.output
+            assert 'No placeholders found to materialize' in result.output
 
     def test_all_already_materialized(self, tmp_path: Path) -> None:
         """Test --all flag when all nodes are already materialized."""
@@ -162,6 +162,6 @@ class TestCLIMaterializeEmptyContract:
             assert result.exit_code == 1
             assert (
                 'No _binder.md file found' in result.output
-                or 'binder not found' in result.output.lower()
+                or 'binder file not found' in result.output.lower()
                 or 'No binder found' in result.output
             )

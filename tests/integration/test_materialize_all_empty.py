@@ -26,15 +26,15 @@ class TestMaterializeAllEmpty:
         placeholder_count = count_placeholders_in_binder(empty_binder)
         assert placeholder_count == 0, f'Expected empty binder, found {placeholder_count} placeholders'
 
-        with patch('prosemark.app.materialize_all_placeholders.MaterializeAllPlaceholders') as mock_use_case:
+        with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
             # Mock result for empty binder
             mock_result = MagicMock()
             mock_result.type = 'batch'
             mock_result.total_placeholders = 0
-            mock_result.successful_materializations = 0
-            mock_result.failed_materializations = 0
+            mock_result.successful_materializations = []
+            mock_result.failed_materializations = []
             mock_result.execution_time = 0.05
             mock_result.message = 'No placeholders found to materialize'
             mock_result.successes = []
@@ -68,14 +68,14 @@ class TestMaterializeAllEmpty:
 
     def test_empty_binder_with_verbose_output(self, runner: CliRunner, empty_binder: Path) -> None:
         """Test empty binder handling with verbose output enabled."""
-        with patch('prosemark.app.materialize_all_placeholders.MaterializeAllPlaceholders') as mock_use_case:
+        with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
             mock_result = MagicMock()
             mock_result.type = 'batch'
             mock_result.total_placeholders = 0
-            mock_result.successful_materializations = 0
-            mock_result.failed_materializations = 0
+            mock_result.successful_materializations = []
+            mock_result.failed_materializations = []
             mock_result.execution_time = 0.03
             mock_result.message = 'No placeholders found to materialize'
 
@@ -91,7 +91,7 @@ class TestMaterializeAllEmpty:
 
     def test_empty_binder_dry_run(self, runner: CliRunner, empty_binder: Path) -> None:
         """Test dry run on empty binder."""
-        with patch('prosemark.app.materialize_all_placeholders.MaterializeAllPlaceholders') as mock_use_case:
+        with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
             mock_result = MagicMock()
@@ -161,9 +161,9 @@ Just regular markdown content.
         # Execute command
         result = runner.invoke(app, ['materialize-all', '--path', str(project_dir)])
 
-        # Should fail or handle gracefully
-        assert result.exit_code != 0
-        assert 'managed block' in result.output.lower() or 'no placeholders' in result.output.lower()
+        # Should handle gracefully (no placeholders is not an error)
+        assert result.exit_code == 0
+        assert 'found 0 placeholders to materialize' in result.output.lower()
 
     def test_binder_with_only_materialized_nodes(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test binder where all nodes are already materialized."""
@@ -195,14 +195,14 @@ Just regular markdown content.
             notes_file = project_dir / f'{node_id}.notes.md'
             notes_file.write_text(f'# Notes for Chapter {i + 1}\n')
 
-        with patch('prosemark.app.materialize_all_placeholders.MaterializeAllPlaceholders') as mock_use_case:
+        with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
             mock_result = MagicMock()
             mock_result.type = 'batch'
             mock_result.total_placeholders = 0
-            mock_result.successful_materializations = 0
-            mock_result.failed_materializations = 0
+            mock_result.successful_materializations = []
+            mock_result.failed_materializations = []
             mock_result.execution_time = 0.02
             mock_result.message = 'All nodes already materialized'
 

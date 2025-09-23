@@ -1,5 +1,6 @@
 """Integration test for partial failure resilience in bulk materialization."""
 
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -29,7 +30,12 @@ class TestMaterializeAllPartial:
         with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
-            def mock_execute_with_failures(*, binder=None, project_path=None, progress_callback=None) -> MagicMock:
+            def mock_execute_with_failures(
+                *,
+                binder: Path | None = None,
+                project_path: Path | None = None,
+                progress_callback: Callable[[str], None] | None = None,
+            ) -> MagicMock:
                 """Mock execution that creates some files but fails on others."""
                 # Simulate creating some successful nodes
                 successful_node_ids = [
@@ -151,7 +157,12 @@ class TestMaterializeAllPartial:
         with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
-            def mock_execute_mixed(*, binder=None, project_path=None, progress_callback=None) -> MagicMock:
+            def mock_execute_mixed(
+                *,
+                binder: Path | None = None,
+                project_path: Path | None = None,
+                progress_callback: Callable[[str], None] | None = None,
+            ) -> MagicMock:
                 """Mock execution for mixed binder with partial success."""
                 # Simulate partial success on remaining placeholders
                 new_node_id = '01923f0c-1234-7004-8abc-def012345681'
@@ -227,7 +238,12 @@ class TestMaterializeAllPartial:
         with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
-            def mock_execute_invalid_names(*, binder=None, project_path=None, progress_callback=None) -> MagicMock:
+            def mock_execute_invalid_names(
+                *,
+                binder: Path | None = None,
+                project_path: Path | None = None,
+                progress_callback: Callable[[str], None] | None = None,
+            ) -> MagicMock:
                 """Mock execution that handles invalid placeholder names."""
                 # Successfully create node for valid placeholder
                 valid_node_id = '01923f0c-1234-7001-8abc-def012345678'

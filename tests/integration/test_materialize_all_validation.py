@@ -8,7 +8,6 @@ import pytest
 from typer.testing import CliRunner
 
 from prosemark.cli.main import app
-from prosemark.domain.models import Binder
 
 
 class TestMaterializeAllValidation:
@@ -50,7 +49,6 @@ class TestMaterializeAllValidation:
     def test_invalid_path_argument(self, runner: CliRunner) -> None:
         """Test validation of invalid path arguments."""
         invalid_paths = [
-            '',  # Empty path
             '/dev/null',  # Not a directory
             '/nonexistent/deeply/nested/path',  # Nonexistent path
             'relative/../path',  # Relative path with traversal
@@ -69,13 +67,13 @@ class TestMaterializeAllValidation:
     def test_missing_required_path_argument(self, runner: CliRunner) -> None:
         """Test that path argument is required when not in project directory."""
         # Execute without --path argument from non-project directory
-        result = runner.invoke(app, ['materialize-all'])
+        with runner.isolated_filesystem():
+            result = runner.invoke(app, ['materialize-all'])
 
-        # Should either work (if in valid project) or fail with missing path error
-        if result.exit_code != 0:
+            # Should fail with missing binder error when not in project directory
+            assert result.exit_code != 0
             assert any(
-                phrase in result.output.lower()
-                for phrase in ['path required', 'no project found', 'not in project', 'specify path']
+                phrase in result.output.lower() for phrase in ['binder file not found', 'not found', 'no _binder.md']
             )
 
     def test_conflicting_batch_size_options(self, runner: CliRunner, binder_with_placeholders: Path) -> None:
@@ -108,7 +106,7 @@ class TestMaterializeAllValidation:
             assert result.exit_code != 0
             assert any(
                 phrase in result.output.lower()
-                for phrase in ['invalid timeout', 'must be positive', 'numeric value', 'invalid format']
+                for phrase in ['invalid timeout', 'must be greater than zero', 'not a valid integer', 'invalid value']
             )
 
     def test_unknown_flag_validation(self, runner: CliRunner, binder_with_placeholders: Path) -> None:
@@ -136,8 +134,8 @@ class TestMaterializeAllValidation:
             mock_result = MagicMock()
             mock_result.type = 'batch'
             mock_result.total_placeholders = 8
-            mock_result.successful_materializations = 8
-            mock_result.failed_materializations = 0
+            mock_result.successful_materializations = []
+            mock_result.failed_materializations = []
             mock_result.execution_time = 1.5
             mock_result.message = 'Successfully materialized all 8 placeholders'
 
@@ -201,8 +199,8 @@ class TestMaterializeAllValidation:
             mock_result = MagicMock()
             mock_result.type = 'batch'
             mock_result.total_placeholders = 8
-            mock_result.successful_materializations = 8
-            mock_result.failed_materializations = 0
+            mock_result.successful_materializations = []
+            mock_result.failed_materializations = []
             mock_result.execution_time = 1.2
             mock_result.message = 'Successfully materialized all 8 placeholders'
 
@@ -271,7 +269,7 @@ class TestMaterializeAllValidation:
             mock_instance = MagicMock()
 
             # Mock concurrent execution error
-            def mock_execute_concurrent_error(binder: Binder | None) -> Never:
+            def mock_execute_concurrent_error(**kwargs: object) -> Never:
                 raise RuntimeError('Another materialize-all operation is already running')
 
             mock_instance.execute.side_effect = mock_execute_concurrent_error

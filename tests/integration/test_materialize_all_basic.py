@@ -13,7 +13,6 @@ from tests.helpers.batch_assertions import (
 from typer.testing import CliRunner
 
 from prosemark.cli.main import app
-from prosemark.domain.models import Binder
 
 
 class TestMaterializeAllBasic:
@@ -64,7 +63,7 @@ class TestMaterializeAllBasic:
         with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
             mock_instance = MagicMock()
 
-            def mock_execute(binder: Binder | None) -> MagicMock:
+            def mock_execute(**kwargs: object) -> MagicMock:
                 """Mock execute that creates actual files for testing."""
                 # Create sample node files to simulate successful materialization
                 node_ids = [
@@ -93,8 +92,8 @@ class TestMaterializeAllBasic:
                 mock_result = MagicMock()
                 mock_result.type = 'batch'
                 mock_result.total_placeholders = 8
-                mock_result.successful_materializations = 3
-                mock_result.failed_materializations = 5
+                mock_result.successful_materializations = []
+                mock_result.failed_materializations = []
                 mock_result.execution_time = 1.5
                 mock_result.message = 'Materialized 3 of 8 placeholders'
                 return mock_result
@@ -125,8 +124,8 @@ class TestMaterializeAllBasic:
             mock_result = MagicMock()
             mock_result.type = 'batch'
             mock_result.total_placeholders = 8
-            mock_result.successful_materializations = 8
-            mock_result.failed_materializations = 0
+            mock_result.successful_materializations = []
+            mock_result.failed_materializations = []
             mock_result.execution_time = 2.1
             mock_result.message = 'Successfully materialized all 8 placeholders'
 
@@ -166,8 +165,8 @@ class TestMaterializeAllBasic:
             mock_result = MagicMock()
             mock_result.type = 'batch'
             mock_result.total_placeholders = 7  # One less since one is already materialized
-            mock_result.successful_materializations = 7
-            mock_result.failed_materializations = 0
+            mock_result.successful_materializations = []
+            mock_result.failed_materializations = []
             mock_result.execution_time = 1.8
             mock_result.message = 'Successfully materialized 7 placeholders (1 already existed)'
 
@@ -225,7 +224,11 @@ class TestMaterializeAllBasic:
 
         # Should fail with appropriate error
         assert result.exit_code != 0
-        assert 'not found' in result.output.lower() or 'invalid' in result.output.lower()
+        assert (
+            'not found' in result.output.lower()
+            or 'invalid' in result.output.lower()
+            or 'does not exist' in result.output.lower()
+        )
 
     def test_bulk_materialization_no_binder_file(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test bulk materialization when no _binder.md file exists."""

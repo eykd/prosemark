@@ -89,7 +89,7 @@ class TestCLIMaterializeAllContract:
 
             # Should exit with appropriate code
             assert result.exit_code == 0
-            assert 'No placeholders found in binder' in result.output
+            assert 'Found 0 placeholders to materialize' in result.output
 
     def test_materialize_mutual_exclusion_error(self, tmp_path: Path) -> None:
         """Test that title and --all are mutually exclusive."""
@@ -125,4 +125,4 @@ class TestCLIMaterializeAllContract:
 
             # Should fail with not found error
             assert result.exit_code == 1
-            assert 'No _binder.md file found' in result.output or 'binder not found' in result.output.lower()
+            assert 'No _binder.md file found' in result.output or 'binder file not found' in result.output.lower()

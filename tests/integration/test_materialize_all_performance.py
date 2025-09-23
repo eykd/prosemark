@@ -1,7 +1,7 @@
 """Integration test for performance with 100+ placeholders in bulk materialization."""
 
-from typing import Any
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Never
 from unittest.mock import MagicMock, patch
@@ -35,7 +35,10 @@ class TestMaterializeAllPerformance:
             mock_instance = MagicMock()
 
             def mock_execute_large_scale(
-                *, binder: Any = None, project_path: Any = None, progress_callback: Any = None
+                *,
+                binder: Path | None = None,
+                project_path: Path | None = None,
+                progress_callback: Callable[[str], None] | None = None,
             ) -> MagicMock:
                 """Mock execution that simulates creating 120 node files."""
                 start_time = time.time()
@@ -162,7 +165,10 @@ class TestMaterializeAllPerformance:
             mock_instance = MagicMock()
 
             def mock_execute_memory_efficient(
-                *, binder: Any = None, project_path: Any = None, progress_callback: Any = None
+                *,
+                binder: Path | None = None,
+                project_path: Path | None = None,
+                progress_callback: Callable[[str], None] | None = None,
             ) -> MagicMock:
                 """Mock execution that tests memory patterns."""
                 # Simulate memory-efficient processing
@@ -245,7 +251,10 @@ class TestMaterializeAllPerformance:
 
             # Mock timeout scenario
             def mock_execute_timeout(
-                *, binder: Any = None, project_path: Any = None, progress_callback: Any = None
+                *,
+                binder: Path | None = None,
+                project_path: Path | None = None,
+                progress_callback: Callable[[str], None] | None = None,
             ) -> Never:
                 raise TimeoutError('Operation timed out after processing 45 of 120 placeholders')
 
@@ -352,8 +361,8 @@ class TestMaterializeAllPerformance:
                 mock_result = MagicMock()
                 mock_result.type = 'batch'
                 mock_result.total_placeholders = size
-                mock_result.successful_materializations = size
-                mock_result.failed_materializations = 0
+                mock_result.successful_materializations = []
+                mock_result.failed_materializations = []
                 mock_result.execution_time = size * 0.05  # Linear scaling simulation
                 mock_result.message = f'Successfully materialized {size} placeholders'
 
@@ -384,7 +393,10 @@ class TestMaterializeAllPerformance:
 
             # Mock interruption scenario
             def mock_execute_interrupted(
-                *, binder: Any = None, project_path: Any = None, progress_callback: Any = None
+                *,
+                binder: Path | None = None,
+                project_path: Path | None = None,
+                progress_callback: Callable[[str], None] | None = None,
             ) -> MagicMock:
                 # Simulate interruption after partial completion
                 mock_result = MagicMock()

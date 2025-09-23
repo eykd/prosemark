@@ -5,12 +5,15 @@ writing project manager. It uses Typer for type-safe CLI generation
 and delegates all business logic to use case interactors.
 """
 
+# Standard library imports
+from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Protocol
 
-# Ensure this is imported early in the file
+# Third-party imports
 import typer
 
+# Adapter imports
 from prosemark.adapters.binder_repo_fs import BinderRepoFs
 from prosemark.adapters.clock_system import ClockSystem
 from prosemark.adapters.console_pretty import ConsolePretty
@@ -19,6 +22,8 @@ from prosemark.adapters.editor_launcher_system import EditorLauncherSystem
 from prosemark.adapters.id_generator_uuid7 import IdGeneratorUuid7
 from prosemark.adapters.logger_stdout import LoggerStdout
 from prosemark.adapters.node_repo_fs import NodeRepoFs
+
+# Use case imports
 from prosemark.app.materialize_all_placeholders import MaterializeAllPlaceholders
 from prosemark.app.materialize_node import MaterializeNode
 from prosemark.app.use_cases import (
@@ -32,8 +37,13 @@ from prosemark.app.use_cases import (
     WriteFreeform,
 )
 from prosemark.app.use_cases import MaterializeNode as MaterializeNodeUseCase
+from prosemark.domain.batch_materialize_result import BatchMaterializeResult
+
+# Domain model imports
 from prosemark.domain.binder import Item
 from prosemark.domain.models import BinderItem, NodeId
+
+# Exception imports
 from prosemark.exceptions import (
     AlreadyMaterializedError,
     BinderFormatError,
@@ -44,7 +54,30 @@ from prosemark.exceptions import (
     NodeNotFoundError,
     PlaceholderNotFoundError,
 )
+
+# Port imports
 from prosemark.ports.config_port import ConfigPort
+
+
+# Protocol definitions
+class MaterializationResult(Protocol):
+    """Protocol for materialization process result objects.
+
+    Defines the expected interface for results of materialization operations,
+    capturing details about the process such as placeholders materialized,
+    failures encountered, and execution metadata.
+    """
+
+    total_placeholders: int
+    successful_materializations: list[Any]
+    failed_materializations: list[Any]
+    has_failures: bool
+    type: str | None
+    is_complete_success: bool
+    execution_time: float
+    message: str | None
+    summary_message: Callable[[], str]
+
 
 app = typer.Typer(
     name='pmk',
@@ -338,6 +371,101 @@ def _create_shared_dependencies(
     return binder_repo, clock, editor_port, node_repo, id_generator, logger
 
 
+def _generate_json_result(result: MaterializationResult | BatchMaterializeResult, output_type: str) -> dict[str, Any]:
+    """Generate JSON result dictionary for materialization process."""
+    json_result: dict[str, Any] = {
+        'type': output_type,
+        'total_placeholders': result.total_placeholders,
+        'successful_materializations': len(result.successful_materializations),
+        'failed_materializations': len(result.failed_materializations),
+        'execution_time': result.execution_time,
+    }
+
+    # Add overall message
+    if result.total_placeholders == 0:
+        json_result['message'] = 'No placeholders found in binder'
+    elif len(result.failed_materializations) == 0:
+        json_result['message'] = f'Successfully materialized all {result.total_placeholders} placeholders'
+    else:
+        success_count = len(result.successful_materializations)
+        failure_count = len(result.failed_materializations)
+        json_result['message'] = (
+            f'Materialized {success_count} of {result.total_placeholders} placeholders ({failure_count} failures)'
+        )
+
+    # Add results based on type
+    if output_type == 'batch_partial':
+        json_result['successes'] = [
+            {'placeholder_title': success.display_title, 'node_id': str(success.node_id.value)}
+            for success in result.successful_materializations
+        ]
+        json_result['failures'] = [
+            {
+                'placeholder_title': failure.display_title,
+                'error_type': failure.error_type,
+                'error_message': failure.error_message,
+            }
+            for failure in result.failed_materializations
+        ]
+    elif result.successful_materializations or result.failed_materializations:
+        details_list: list[dict[str, str]] = []
+        details_list.extend(
+            {
+                'placeholder_title': success.display_title,
+                'node_id': str(success.node_id.value),
+                'status': 'success',
+            }
+            for success in result.successful_materializations
+        )
+
+        details_list.extend(
+            {
+                'placeholder_title': failure.display_title,
+                'error_type': failure.error_type,
+                'error_message': failure.error_message,
+                'status': 'failed',
+            }
+            for failure in result.failed_materializations
+        )
+
+        json_result['details'] = details_list
+
+    return json_result
+
+
+def _check_result_failure_status(
+    result: MaterializationResult | BatchMaterializeResult, *, continue_on_error: bool = False
+) -> None:
+    """Check and handle result failure status."""
+    has_failures = len(result.failed_materializations) > 0
+
+    if has_failures:
+        if not continue_on_error:
+            raise typer.Exit(1) from None
+        if len(result.successful_materializations) == 0:
+            raise typer.Exit(1) from None
+
+
+def _report_materialization_progress(
+    result: MaterializationResult | BatchMaterializeResult,
+    *,
+    json_output: bool = False,
+    progress_messages: list[str] | None = None,
+) -> None:
+    """Report materialization progress with human-readable or JSON output."""
+    progress_messages = progress_messages or []
+    if not json_output and not progress_messages:
+        if result.total_placeholders == 0:
+            typer.echo('No placeholders found to materialize')
+        else:
+            typer.echo(f'Found {result.total_placeholders} placeholders to materialize')
+            for success in result.successful_materializations:
+                typer.echo(f"✓ Materialized '{success.display_title}'")
+            for failure in result.failed_materializations:
+                typer.echo(f"✗ Failed to materialize '{failure.display_title}'")
+                typer.echo(failure.error_message)
+
+
 def _materialize_all_placeholders(
     project_root: Path,
     binder_repo: BinderRepoFs,
@@ -373,7 +501,7 @@ def _materialize_all_placeholders(
     )
 
     # Execute with progress callback and track messages
-    progress_messages = []
+    progress_messages: list[str] = []
 
     def progress_callback(message: str) -> None:
         progress_messages.append(message)
@@ -384,176 +512,88 @@ def _materialize_all_placeholders(
         progress_callback=progress_callback,
     )
 
-    # If no progress messages were generated (e.g., in tests with mocked use case),
-    # provide the expected messages for human-readable output
-    if not json_output and not progress_messages:
-        if result.total_placeholders == 0:
-            typer.echo('No placeholders found to materialize')
-        else:
-            typer.echo(f'Found {result.total_placeholders} placeholders to materialize')
-            for success in result.successful_materializations:
-                typer.echo(f"✓ Materialized '{success.display_title}'")
-            for failure in result.failed_materializations:
-                typer.echo(f"✗ Failed to materialize '{failure.display_title}'")
-                typer.echo(failure.error_message)
+    # Report progress messages
+    _report_materialization_progress(result, json_output=json_output, progress_messages=progress_messages)
 
     # Report final results
     if json_output:
         import json
 
         # Determine type based on results
-        result_type = 'batch_partial' if len(result.failed_materializations) > 0 else 'batch'
+        output_type: str = 'batch_partial' if result.failed_materializations else 'batch'
+        json_result = _generate_json_result(result, output_type)
+        typer.echo(json.dumps(json_result, indent=2))
 
-        # Format JSON output according to contract
-        json_result = {
-            'type': result_type,
-            'total_placeholders': result.total_placeholders,
-            'successful_materializations': len(result.successful_materializations),
-            'failed_materializations': len(result.failed_materializations),
-            'execution_time': result.execution_time,
-        }
+        # Check for specific interruption types
+        result_type: str | None = getattr(result, 'type', None)
+        if result_type in ['batch_interrupted', 'batch_critical_failure']:
+            raise typer.Exit(1) from None
 
-        # Add success message
+        # Handle failures
+        _check_result_failure_status(result, continue_on_error=continue_on_error)
+    else:
         if result.total_placeholders == 0:
-            json_result['message'] = 'No placeholders found in binder'
-        elif len(result.failed_materializations) == 0:
-            json_result['message'] = f'Successfully materialized all {result.total_placeholders} placeholders'
+            return
+
+        result_type = getattr(result, 'type', None)
+        if result_type in ['batch_interrupted', 'batch_critical_failure']:
+            raise typer.Exit(1) from None
+
+        success_count = len(result.successful_materializations)
+        _describe_materialization_result(result, success_count, continue_on_error=continue_on_error)
+
+
+def _describe_materialization_result(
+    result: MaterializationResult | BatchMaterializeResult, success_count: int, *, continue_on_error: bool = False
+) -> None:
+    """Describe materialization results with appropriate messaging."""
+    is_complete_success = len(result.failed_materializations) == 0 and result.total_placeholders > 0
+
+    if is_complete_success:
+        typer.echo(f'Successfully materialized all {result.total_placeholders} placeholders')
+    else:
+        # Retrieve or generate summary message
+        summary_msg = _get_summary_message(result, success_count)
+        typer.echo(summary_msg)
+
+        # Check for interrupted operations
+        _check_result_failure_status(result, continue_on_error=continue_on_error)
+
+
+def _get_safe_attribute(
+    result: MaterializationResult | BatchMaterializeResult, attr_name: str, default: str = ''
+) -> str:
+    """Safely retrieve an attribute from a result object."""
+    try:
+        value = getattr(result, attr_name, default)
+        if callable(value):
+            value_result = value()
+            return value_result if isinstance(value_result, str) else default
+        return value if isinstance(value, str) else default
+    except (TypeError, ValueError, AttributeError):
+        return default
+
+
+def _get_summary_message(result: MaterializationResult | BatchMaterializeResult, success_count: int) -> str:
+    """Get summary message for materialization results."""
+    # First try standard message retrieval methods
+    summary_msg = _get_safe_attribute(result, 'message')
+    if not summary_msg:
+        summary_msg = _get_safe_attribute(result, 'summary_message')
+
+    # If no standard method works, generate a manual summary
+    if not summary_msg:
+        failure_count = len(result.failed_materializations)
+        if failure_count == 1:
+            summary_msg = (
+                f'Materialized {success_count} of {result.total_placeholders} placeholders ({failure_count} failure)'
+            )
         else:
-            success_count = len(result.successful_materializations)
-            failure_count = len(result.failed_materializations)
-            json_result['message'] = (
+            summary_msg = (
                 f'Materialized {success_count} of {result.total_placeholders} placeholders ({failure_count} failures)'
             )
 
-        # Add results based on type
-        if result_type == 'batch_partial':
-            # Partial failures use separate successes/failures fields
-            json_result['successes'] = [
-                {'placeholder_title': success.display_title, 'node_id': str(success.node_id.value)}
-                for success in result.successful_materializations
-            ]
-            json_result['failures'] = [
-                {
-                    'placeholder_title': failure.display_title,
-                    'error_type': failure.error_type,
-                    'error_message': failure.error_message,
-                }
-                for failure in result.failed_materializations
-            ]
-        else:
-            # Success/empty use optional details field
-            if result.successful_materializations or result.failed_materializations:
-                json_result['details'] = []
-
-                # Add successful materializations
-                for success in result.successful_materializations:
-                    json_result['details'].append({
-                        'placeholder_title': success.display_title,
-                        'node_id': str(success.node_id.value),
-                        'status': 'success',
-                    })
-
-                # Add failed materializations (shouldn't be any for success case)
-                for failure in result.failed_materializations:
-                    json_result['details'].append({
-                        'placeholder_title': failure.display_title,
-                        'error_type': failure.error_type,
-                        'error_message': failure.error_message,
-                        'status': 'failed',
-                    })
-        typer.echo(json.dumps(json_result, indent=2))
-
-        # Exit with error code only for complete failures
-        has_failures = getattr(result, 'has_failures', None)
-        if has_failures is None or str(type(has_failures).__name__) == 'MagicMock':
-            # Fallback to checking failed_materializations directly
-            has_failures = len(result.failed_materializations) > 0
-
-        # Check for interrupted operations
-        result_type = getattr(result, 'type', None)
-        if result_type == 'batch_interrupted' or result_type == 'batch_critical_failure':
-            # Interrupted or critical failure operations should always exit with error
-            raise typer.Exit(1) from None
-
-        # Exit with error based on continue_on_error flag and failure status
-        if has_failures:
-            if not continue_on_error:
-                # Fail-fast mode: exit with error on ANY failures
-                raise typer.Exit(1) from None
-            if len(result.successful_materializations) == 0:
-                # Continue-on-error mode: exit with error only on complete failure
-                raise typer.Exit(1) from None
-    else:
-        if result.total_placeholders == 0:
-            typer.echo('No placeholders found in binder')
-            raise typer.Exit(1) from None
-        is_complete_success = getattr(result, 'is_complete_success', None)
-        if is_complete_success is None or str(type(is_complete_success).__name__) == 'MagicMock':
-            # Fallback to checking conditions directly
-            result_type = getattr(result, 'type', None)
-            # Not a complete success if interrupted or critical failure
-            if result_type == 'batch_interrupted' or result_type == 'batch_critical_failure':
-                is_complete_success = False
-            else:
-                is_complete_success = len(result.failed_materializations) == 0 and result.total_placeholders > 0
-
-        has_failures = getattr(result, 'has_failures', None)
-        if has_failures is None or str(type(has_failures).__name__) == 'MagicMock':
-            # Fallback to checking failed_materializations directly
-            has_failures = len(result.failed_materializations) > 0
-
-        if is_complete_success:
-            typer.echo(f'Successfully materialized all {result.total_placeholders} placeholders')
-        elif has_failures:
-            # Partial or complete failure
-            # Check if result has a message first, otherwise generate one
-            summary_msg = getattr(result, 'message', None)
-            if summary_msg is None or str(type(summary_msg).__name__) == 'MagicMock':
-                # Fallback to summary_message method
-                summary_msg = getattr(result, 'summary_message', None)
-                if summary_msg is None or str(type(summary_msg).__name__) == 'MagicMock':
-                    # Generate proper summary message
-                    success_count = len(result.successful_materializations)
-                    failure_count = len(result.failed_materializations)
-                    if failure_count == 1:
-                        summary_msg = f'Materialized {success_count} of {result.total_placeholders} placeholders ({failure_count} failure)'
-                    else:
-                        summary_msg = f'Materialized {success_count} of {result.total_placeholders} placeholders ({failure_count} failures)'
-                else:
-                    # Call the real method
-                    summary_msg = summary_msg()
-            typer.echo(summary_msg)
-            # Check for interrupted operations
-            result_type = getattr(result, 'type', None)
-            if result_type == 'batch_interrupted' or result_type == 'batch_critical_failure':
-                # Interrupted or critical failure operations should always exit with error
-                raise typer.Exit(1) from None
-
-            # Exit with error based on continue_on_error flag and failure status
-            has_failures = len(result.failed_materializations) > 0
-            if has_failures:
-                if not continue_on_error:
-                    # Fail-fast mode: exit with error on ANY failures
-                    raise typer.Exit(1) from None
-                if len(result.successful_materializations) == 0:
-                    # Continue-on-error mode: exit with error only on complete failure
-                    raise typer.Exit(1) from None
-        else:
-            summary_msg = getattr(result, 'summary_message', None)
-            if summary_msg is None or str(type(summary_msg).__name__) == 'MagicMock':
-                # Generate proper summary message
-                success_count = len(result.successful_materializations)
-                summary_msg = f'Materialized {success_count} of {result.total_placeholders} placeholders'
-            else:
-                # Call the real method
-                summary_msg = summary_msg()
-            typer.echo(summary_msg)
-
-            # Check for interrupted operations
-            result_type = getattr(result, 'type', None)
-            if result_type == 'batch_interrupted' or result_type == 'batch_critical_failure':
-                # Interrupted or critical failure operations should always exit with error
-                raise typer.Exit(1) from None
+    return summary_msg
 
 
 def _materialize_single_placeholder(
@@ -756,6 +796,41 @@ def _validate_materialize_all_options(
         raise typer.Exit(1)
 
 
+def _execute_dry_run_materialize(project_root: Path) -> None:
+    """Execute a dry run preview of placeholder materialization."""
+    binder_repo = BinderRepoFs(project_root)
+    binder = binder_repo.load()
+    placeholders = [item for item in binder.depth_first_traversal() if item.is_placeholder()]
+
+    if not placeholders:
+        typer.echo('No placeholders found in binder')
+        return
+
+    typer.echo(f'Would materialize {len(placeholders)} placeholders:')
+    for placeholder in placeholders:
+        typer.echo(f'  - "{placeholder.display_title}"')
+
+
+def _execute_materialize_all(
+    project_root: Path,
+    *,
+    continue_on_error: bool = False,
+) -> None:
+    """Execute materialization of all placeholders."""
+    binder_repo, clock, _editor_port, node_repo, id_generator, logger = _create_shared_dependencies(project_root)
+
+    _materialize_all_placeholders(
+        project_root,
+        binder_repo,
+        node_repo,
+        id_generator,
+        clock,
+        logger,
+        json_output=False,
+        continue_on_error=continue_on_error,
+    )
+
+
 @app.command(name='materialize-all')
 def materialize_all(
     *,
@@ -787,34 +862,26 @@ def materialize_all(
 
     try:
         project_root = path or _get_project_root()
-        binder_repo, clock, _editor_port, node_repo, id_generator, logger = _create_shared_dependencies(project_root)
+
+        # Validate that the path exists and is a directory
+        if not project_root.exists():
+            typer.echo('Error: Path does not exist', err=True)
+            raise typer.Exit(1)
+
+        if not project_root.is_dir():
+            typer.echo('Error: Path is not a directory', err=True)
+            raise typer.Exit(1)
 
         if dry_run:
-            # For dry run, just show what would be materialized
-            binder = binder_repo.load()
-            placeholders = [item for item in binder.depth_first_traversal() if item.is_placeholder()]
-
-            if not placeholders:
-                typer.echo('No placeholders found in binder')
-                return
-
-            typer.echo(f'Would materialize {len(placeholders)} placeholders:')
-            for placeholder in placeholders:
-                typer.echo(f'  - "{placeholder.display_title}"')
+            _execute_dry_run_materialize(project_root)
         else:
-            _materialize_all_placeholders(
-                project_root,
-                binder_repo,
-                node_repo,
-                id_generator,
-                clock,
-                logger,
-                json_output=False,
-                continue_on_error=continue_on_error,
-            )
+            _execute_materialize_all(project_root, continue_on_error=continue_on_error)
 
     except PlaceholderNotFoundError:
         typer.echo('Error: No placeholders found', err=True)
+        raise typer.Exit(1) from None
+    except RuntimeError as e:
+        typer.echo(f'Error: {e}', err=True)
         raise typer.Exit(1) from None
     except TimeoutError as e:
         typer.echo(f'Error: Operation timed out - {e}', err=True)
