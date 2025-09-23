@@ -1,11 +1,10 @@
 """Tests for ConfigPort abstract base class."""
 
 from pathlib import Path
-from typing import Any
 
 import pytest
 
-from prosemark.ports.config_port import ConfigPort
+from prosemark.ports.config_port import ConfigPort, ProsemarkConfig
 
 
 class TestConfigPort:
@@ -23,7 +22,7 @@ class TestConfigPort:
             def config_exists(self, config_path: Path) -> bool:
                 return False
 
-            def get_default_config_values(self) -> dict[str, Any]:
+            def get_default_config_values(self) -> ProsemarkConfig:
                 return {}
 
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
@@ -36,7 +35,7 @@ class TestConfigPort:
             def create_default_config(self, config_path: Path) -> None:
                 pass
 
-            def get_default_config_values(self) -> dict[str, Any]:
+            def get_default_config_values(self) -> ProsemarkConfig:
                 return {}
 
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
@@ -65,7 +64,7 @@ class TestConfigPort:
             def config_exists(self, config_path: Path) -> bool:
                 return False
 
-            def get_default_config_values(self) -> dict[str, Any]:
+            def get_default_config_values(self) -> ProsemarkConfig:
                 return {}
 
         # Should not raise

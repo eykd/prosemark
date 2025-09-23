@@ -56,7 +56,7 @@ from prosemark.exceptions import (
 )
 
 # Port imports
-from prosemark.ports.config_port import ConfigPort
+from prosemark.ports.config_port import ConfigPort, ProsemarkConfig
 
 
 # Protocol definitions
@@ -100,7 +100,7 @@ class FileSystemConfigPort(ConfigPort):
         """Check if configuration file already exists."""
         return config_path.exists()
 
-    def get_default_config_values(self) -> dict[str, Any]:
+    def get_default_config_values(self) -> ProsemarkConfig:
         """Return default configuration values as dictionary."""
         return {}
 

@@ -11,7 +11,7 @@ from prosemark.adapters.console_pretty import ConsolePretty
 from prosemark.adapters.logger_stdout import LoggerStdout
 from prosemark.app.use_cases import InitProject
 from prosemark.exceptions import BinderIntegrityError, FileSystemError
-from prosemark.ports.config_port import ConfigPort
+from prosemark.ports.config_port import ConfigPort, ProsemarkConfig
 
 
 class FileSystemConfigPort(ConfigPort):
@@ -25,7 +25,7 @@ class FileSystemConfigPort(ConfigPort):
         """Check if configuration file already exists."""
         return config_path.exists()
 
-    def get_default_config_values(self) -> dict[str, Any]:
+    def get_default_config_values(self) -> ProsemarkConfig:
         """Return default configuration values as dictionary."""
         return {}
 

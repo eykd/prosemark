@@ -2,7 +2,15 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
+
+
+class ProsemarkConfig(TypedDict, total=False):
+    """Type definition for prosemark configuration values."""
+
+    editor: str
+    daily_dir: str
+    binder_file: str
 
 
 class ConfigPort(ABC):
@@ -72,7 +80,7 @@ class ConfigPort(ABC):
         raise NotImplementedError(msg)  # pragma: no cover
 
     @abstractmethod
-    def get_default_config_values(self) -> dict[str, Any]:
+    def get_default_config_values(self) -> ProsemarkConfig:
         """Return default configuration values as dictionary.
 
         Provides the standard default configuration values that would be

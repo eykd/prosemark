@@ -3,10 +3,36 @@
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 
-def assert_batch_result_valid(result: dict[str, Any]) -> None:
+class BatchResult(TypedDict):
+    """Type definition for batch materialization result."""
+
+    type: str
+    total_placeholders: int
+    successful_materializations: int
+    failed_materializations: int
+    execution_time: float
+    message: str
+
+
+class FailureDetail(TypedDict):
+    """Type definition for failure detail."""
+
+    placeholder_title: str
+    error_type: str
+    error_message: str
+
+
+class PartialFailureResult(BatchResult):
+    """Type definition for partial failure result."""
+
+    successes: list[str]
+    failures: list[FailureDetail]
+
+
+def assert_batch_result_valid(result: BatchResult) -> None:
     """Assert that a batch materialization result has valid structure."""
     assert 'type' in result
     assert result['type'] == 'batch'
@@ -27,7 +53,7 @@ def assert_batch_result_valid(result: dict[str, Any]) -> None:
     assert result['execution_time'] < 300  # Should complete within 5 minutes
 
 
-def assert_partial_failure_valid(result: dict[str, Any]) -> None:
+def assert_partial_failure_valid(result: PartialFailureResult) -> None:
     """Assert that a partial failure result has valid structure."""
     assert 'type' in result
     assert result['type'] == 'batch_partial'

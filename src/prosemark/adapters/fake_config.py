@@ -4,9 +4,8 @@
 """Fake configuration adapter for testing config management."""
 
 from pathlib import Path
-from typing import Any
 
-from prosemark.ports.config_port import ConfigPort
+from prosemark.ports.config_port import ConfigPort, ProsemarkConfig
 
 
 class FakeConfigPort(ConfigPort):
@@ -56,7 +55,7 @@ class FakeConfigPort(ConfigPort):
         """
         return config_path in self._created_configs
 
-    def get_default_config_values(self) -> dict[str, Any]:
+    def get_default_config_values(self) -> ProsemarkConfig:
         """Return minimal valid default configuration values.
 
         Returns:
