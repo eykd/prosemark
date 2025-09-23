@@ -68,10 +68,11 @@ class FrontmatterCodec:
             remaining_content = remaining_content.removeprefix('\n')
 
         # Parse YAML content
-        frontmatter_data = self._parse_yaml_content(yaml_content)
+        frontmatter_data = FrontmatterCodec._parse_yaml_content(yaml_content)
         return frontmatter_data, remaining_content
 
-    def generate(self, frontmatter: dict[str, Any], content: str) -> str:
+    @staticmethod
+    def generate(frontmatter: dict[str, Any], content: str) -> str:
         """Generate markdown content with frontmatter block.
 
         Args:
@@ -135,9 +136,10 @@ class FrontmatterCodec:
                 msg = 'Frontmatter block missing closing delimiter'
                 raise FrontmatterFormatError(msg)
         elif '---' in content and not content.startswith('---'):
-            self._check_misplaced_frontmatter(content)
+            FrontmatterCodec._check_misplaced_frontmatter(content)
 
-    def _check_misplaced_frontmatter(self, content: str) -> None:
+    @staticmethod
+    def _check_misplaced_frontmatter(content: str) -> None:
         """Check for frontmatter that is not at the document start.
 
         Raises:
@@ -157,7 +159,8 @@ class FrontmatterCodec:
                     raise FrontmatterFormatError(msg)
                 break
 
-    def _parse_yaml_content(self, yaml_content: str) -> dict[str, Any]:
+    @staticmethod
+    def _parse_yaml_content(yaml_content: str) -> dict[str, Any]:
         """Parse YAML content and return processed frontmatter data.
 
         Returns:
@@ -177,13 +180,14 @@ class FrontmatterCodec:
                 msg = 'Frontmatter must be a YAML mapping/dictionary'
                 raise FrontmatterFormatError(msg)
 
-            return self._convert_datetimes_to_strings(frontmatter_data)
+            return FrontmatterCodec._convert_datetimes_to_strings(frontmatter_data)
 
         except yaml.YAMLError as exc:
             msg = 'Invalid YAML in frontmatter block'
             raise FrontmatterFormatError(msg) from exc
 
-    def _convert_datetimes_to_strings(self, data: dict[str, Any]) -> dict[str, Any]:
+    @staticmethod
+    def _convert_datetimes_to_strings(data: dict[str, Any]) -> dict[str, Any]:
         """Convert datetime objects to ISO format strings to preserve original format.
 
         YAML automatically parses ISO timestamp strings to datetime objects,

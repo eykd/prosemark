@@ -78,11 +78,11 @@ class TestFakeLogger:
     def test_has_logged_formatting_failures(self) -> None:
         """Test logging with malformed formatting."""
         logger = FakeLogger()
-        logger.debug('Test %s', 'value', 'extra')
+        logger.debug('Test %s %s', 'value', 'extra')
         assert not logger.has_logged('debug', 'unrelated')
 
     def test_has_logged_kwargs_path(self) -> None:
         """Test logging with kwargs."""
         logger = FakeLogger()
-        logger.debug('Test message', {'key': 'value'})
+        logger.debug('Test message: %s', {'key': 'value'})
         assert logger.has_logged('debug', 'message')

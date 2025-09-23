@@ -646,7 +646,7 @@ class MoveNode:
 
         # Check for circular dependencies
         self._logger.debug('Checking for circular dependencies')
-        if self._would_create_circular_dependency(binder, node_id, parent_id):
+        if MoveNode._would_create_circular_dependency(binder, node_id, parent_id):
             self._logger.error(
                 'Circular dependency detected: cannot move %s under %s',
                 node_id,
@@ -668,8 +668,8 @@ class MoveNode:
 
         self._logger.info('Move node operation completed successfully for NodeId: %s', node_id)
 
+    @staticmethod
     def _would_create_circular_dependency(
-        self,
         binder: Binder,
         node_id: NodeId,
         parent_id: NodeId | None,
@@ -693,9 +693,10 @@ class MoveNode:
             return False
 
         # Check if source node is an ancestor of target parent
-        return self._is_ancestor(binder, node_id, parent_id)
+        return MoveNode._is_ancestor(binder, node_id, parent_id)
 
-    def _is_ancestor(self, binder: Binder, potential_ancestor_id: NodeId, descendant_id: NodeId) -> bool:
+    @staticmethod
+    def _is_ancestor(binder: Binder, potential_ancestor_id: NodeId, descendant_id: NodeId) -> bool:
         """Check if potential_ancestor_id is an ancestor of descendant_id.
 
         Traverses up the tree from descendant to see if potential_ancestor
@@ -714,7 +715,7 @@ class MoveNode:
 
         while current_id is not None:
             # Find parent of current node
-            parent_item = self._find_parent_of_node(binder, current_id)
+            parent_item = MoveNode._find_parent_of_node(binder, current_id)
 
             if parent_item is None:
                 # Reached root level, no more ancestors
@@ -729,7 +730,8 @@ class MoveNode:
 
         return False  # pragma: no cover
 
-    def _find_parent_of_node(self, binder: Binder, node_id: NodeId) -> BinderItem | None:
+    @staticmethod
+    def _find_parent_of_node(binder: Binder, node_id: NodeId) -> BinderItem | None:
         """Find the parent BinderItem of the specified node.
 
         Args:
@@ -784,7 +786,7 @@ class MoveNode:
             raise BinderIntegrityError(msg, source_item)
 
         # Find parent and remove from its children list
-        parent_item = self._find_parent_of_node(binder, source_item.id)
+        parent_item = MoveNode._find_parent_of_node(binder, source_item.id)
 
         if parent_item is None:
             # Node is at root level
@@ -920,7 +922,7 @@ class RemoveNode:
             raise NodeNotFoundError(msg, str(node_id))
 
         # Find parent for child promotion logic
-        parent_item = self._find_parent_of_node(binder, node_id)
+        parent_item = RemoveNode._find_parent_of_node(binder, node_id)
 
         # Promote children before removing node
         if target_item.children:
@@ -948,7 +950,8 @@ class RemoveNode:
             delete_files,
         )
 
-    def _find_parent_of_node(self, binder: Binder, node_id: NodeId) -> BinderItem | None:
+    @staticmethod
+    def _find_parent_of_node(binder: Binder, node_id: NodeId) -> BinderItem | None:
         """Find the parent BinderItem of the specified node.
 
         Args:

@@ -236,7 +236,7 @@ Just regular markdown content.
 
                 # Should handle permission error gracefully
                 # (For empty binder, this might still succeed since no files are created)
-                assert result.exit_code in [0, 1]  # Either succeeds (nothing to do) or fails (permission error)
+                assert result.exit_code in {0, 1}  # Either succeeds (nothing to do) or fails (permission error)
 
             finally:
                 # Restore permissions for cleanup

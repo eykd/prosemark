@@ -175,7 +175,7 @@ class TestCrossPlatform:
         # Create a deeply nested directory structure
         deep_path = tmp_path
         for i in range(10):
-            deep_path = deep_path / f'level_{i}_directory_with_long_name'
+            deep_path /= f'level_{i}_directory_with_long_name'
             deep_path.mkdir()
 
         project_dir = deep_path / 'prosemark_project'

@@ -21,7 +21,7 @@ from prosemark.exceptions import FileSystemError, NodeNotFoundError
 @click.option('--parent', help='Parent node ID')
 @click.option('--position', type=int, help="Position in parent's children")
 @click.option('--path', '-p', type=click.Path(path_type=Path), help='Project directory')
-def add_command(title: str, parent: str | None, position: int | None, path: Path | None) -> None:
+def add_command(title: str, parent: str | None, position: int | None, path: Path | None) -> None:  # noqa: PLR0914
     """Add a new node to the binder hierarchy."""
     try:
         project_root = path or Path.cwd()

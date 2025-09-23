@@ -119,7 +119,7 @@ class MaterializeAllPlaceholders:
 
             except Exception as e:
                 # Create failure record
-                failure = self._create_failure_record(placeholder, e)
+                failure = MaterializeAllPlaceholders._create_failure_record(placeholder, e)
                 failed_materializations.append(failure)
 
                 # Report progress
@@ -242,7 +242,8 @@ class MaterializeAllPlaceholders:
             position=placeholder.position,
         )
 
-    def _create_failure_record(self, placeholder: PlaceholderSummary, error: Exception) -> MaterializeFailure:
+    @staticmethod
+    def _create_failure_record(placeholder: PlaceholderSummary, error: Exception) -> MaterializeFailure:
         """Create a MaterializeFailure record from an exception.
 
         Args:
@@ -254,7 +255,7 @@ class MaterializeAllPlaceholders:
 
         """
         # Categorize the error type based on exception
-        error_type = self._categorize_error(error)
+        error_type = MaterializeAllPlaceholders._categorize_error(error)
         error_message = str(error)
 
         return MaterializeFailure(
@@ -264,7 +265,8 @@ class MaterializeAllPlaceholders:
             position=placeholder.position,
         )
 
-    def _categorize_error(self, error: Exception) -> str:
+    @staticmethod
+    def _categorize_error(error: Exception) -> str:
         """Categorize an exception into a known error type.
 
         Args:

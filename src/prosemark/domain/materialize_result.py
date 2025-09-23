@@ -24,6 +24,9 @@ class MaterializeResult:
 
     """
 
+    # Expected number of file paths (main and notes)
+    EXPECTED_FILE_COUNT = 2
+
     display_title: str
     node_id: NodeId
     file_paths: list[str]
@@ -42,7 +45,7 @@ class MaterializeResult:
             raise ValueError(msg)
 
         # Validate file_paths contains exactly 2 paths
-        if len(self.file_paths) != 2:
+        if len(self.file_paths) != self.EXPECTED_FILE_COUNT:
             msg = f'File paths must contain exactly 2 paths (main and notes), got {len(self.file_paths)}'
             raise ValueError(msg)
 

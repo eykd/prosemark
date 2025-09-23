@@ -196,6 +196,19 @@ class FreeformContent:
 
     """
 
+    # Constants for validation
+    EXPECTED_UUID_VERSION = 7
+    TIMESTAMP_LENGTH = 13
+    TIMESTAMP_T_POSITION = 8
+    MIN_MONTH = 1
+    MAX_MONTH = 12
+    MIN_DAY = 1
+    MAX_DAY = 31
+    MIN_HOUR = 0
+    MAX_HOUR = 23
+    MIN_MINUTE = 0
+    MAX_MINUTE = 59
+
     id: str
     title: str | None
     created: str
@@ -222,8 +235,8 @@ class FreeformContent:
             import uuid
 
             parsed_uuid = uuid.UUID(self.id)
-            if parsed_uuid.version != 7:
-                self._raise_uuid_version_error(parsed_uuid.version or 0)
+            if parsed_uuid.version != self.EXPECTED_UUID_VERSION:
+                FreeformContent._raise_uuid_version_error(parsed_uuid.version or 0)
         except ValueError as exc:
             from prosemark.exceptions import FreeformContentValidationError
 
@@ -237,12 +250,13 @@ class FreeformContent:
             msg = f'FreeformContent file must end with .md: {filename}'
             raise FreeformContentValidationError(msg)
 
-        timestamp_part, uuid_part = self._extract_filename_parts(filename)
+        timestamp_part, uuid_part = FreeformContent._extract_filename_parts(filename)
         self._validate_uuid_match(uuid_part)
         self._validate_timestamp_format(timestamp_part)
         self._validate_timestamp_consistency(timestamp_part)
 
-    def _extract_filename_parts(self, filename: str) -> tuple[str, str]:
+    @staticmethod
+    def _extract_filename_parts(filename: str) -> tuple[str, str]:
         """Extract timestamp and UUID parts from filename."""
         if '_' not in filename:
             msg = f'FreeformContent filename must contain underscore: {filename}'
@@ -260,7 +274,7 @@ class FreeformContent:
 
     def _validate_timestamp_format(self, timestamp_part: str) -> None:
         """Validate timestamp format YYYYMMDDTHHMM."""
-        if len(timestamp_part) != 13 or timestamp_part[8] != 'T':
+        if len(timestamp_part) != self.TIMESTAMP_LENGTH or timestamp_part[self.TIMESTAMP_T_POSITION] != 'T':
             msg = f'Invalid timestamp format in filename: {timestamp_part}'
             raise FreeformContentValidationError(msg)
 
@@ -283,16 +297,16 @@ class FreeformContent:
 
     def _validate_time_ranges(self, month: int, day: int, hour: int, minute: int) -> None:
         """Validate time component ranges."""
-        if not (1 <= month <= 12):
+        if not (self.MIN_MONTH <= month <= self.MAX_MONTH):
             msg = f'Invalid month in timestamp: {month}'
             raise FreeformContentValidationError(msg)
-        if not (1 <= day <= 31):
+        if not (self.MIN_DAY <= day <= self.MAX_DAY):
             msg = f'Invalid day in timestamp: {day}'
             raise FreeformContentValidationError(msg)
-        if not (0 <= hour <= 23):
+        if not (self.MIN_HOUR <= hour <= self.MAX_HOUR):
             msg = f'Invalid hour in timestamp: {hour}'
             raise FreeformContentValidationError(msg)
-        if not (0 <= minute <= 59):
+        if not (self.MIN_MINUTE <= minute <= self.MAX_MINUTE):
             msg = f'Invalid minute in timestamp: {minute}'
             raise FreeformContentValidationError(msg)
 
@@ -314,7 +328,8 @@ class FreeformContent:
             msg = f'Filename timestamp ({timestamp_part}) does not match created timestamp ({expected_timestamp})'
             raise FreeformContentValidationError(msg)
 
-    def _raise_uuid_version_error(self, version: int) -> None:
+    @staticmethod
+    def _raise_uuid_version_error(version: int) -> None:
         """Raise error for invalid UUID version."""
         msg = f'FreeformContent ID must be UUIDv7, got version {version}'
         raise FreeformContentValidationError(msg)

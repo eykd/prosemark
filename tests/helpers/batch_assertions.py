@@ -74,13 +74,13 @@ def assert_partial_failure_valid(result: PartialFailureResult) -> None:
         assert 'placeholder_title' in failure
         assert 'error_type' in failure
         assert 'error_message' in failure
-        assert failure['error_type'] in [
+        assert failure['error_type'] in {
             'filesystem',
             'validation',
             'already_materialized',
             'binder_integrity',
             'id_generation',
-        ]
+        }
 
 
 def assert_all_placeholders_materialized(project_dir: Path) -> None:
@@ -102,7 +102,7 @@ def assert_all_placeholders_materialized(project_dir: Path) -> None:
     links = re.findall(link_pattern, managed_content)
 
     for title, href in links:
-        assert href != '', f"Placeholder '{title}' was not materialized (empty href)"
+        assert href, f"Placeholder '{title}' was not materialized (empty href)"
         assert href.endswith('.md'), f"Invalid href for '{title}': {href}"
 
         # Verify the file exists
@@ -135,7 +135,7 @@ def count_placeholders_in_binder(project_dir: Path) -> int:
     link_pattern = r'\[([^\]]+)\]\(([^)]*)\)'
     links = re.findall(link_pattern, managed_content)
 
-    return sum(1 for _, href in links if href == '')
+    return sum(1 for _, href in links if not href)
 
 
 def count_materialized_nodes_in_binder(project_dir: Path) -> int:
@@ -158,7 +158,7 @@ def count_materialized_nodes_in_binder(project_dir: Path) -> int:
     link_pattern = r'\[([^\]]+)\]\(([^)]*)\)'
     links = re.findall(link_pattern, managed_content)
 
-    return sum(1 for _, href in links if href != '')
+    return sum(1 for _, href in links if href)
 
 
 def assert_node_files_created(project_dir: Path, node_id: str, title: str | None = None) -> None:

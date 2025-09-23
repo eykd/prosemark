@@ -30,6 +30,9 @@ class NodeId:
 
     """
 
+    # Expected UUID version for NodeId
+    EXPECTED_UUID_VERSION = 7
+
     value: str
 
     def __post_init__(self) -> None:
@@ -54,7 +57,7 @@ class NodeId:
             raise NodeIdentityError(msg, self.value) from exc
 
         # Check that it's specifically a version 7 UUID
-        if parsed_uuid.version != 7:
+        if parsed_uuid.version != self.EXPECTED_UUID_VERSION:
             msg = 'NodeId must be a UUIDv7'
             raise NodeIdentityError(msg, self.value, parsed_uuid.version)
 

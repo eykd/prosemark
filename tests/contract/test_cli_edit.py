@@ -223,4 +223,4 @@ class TestCLIEditCommand:
 
         # This test documents the contract - actual validation will happen when CLI is implemented
         assert len(expected_mapping) == 3
-        assert all(part in ['draft', 'notes', 'synopsis'] for part in expected_mapping)
+        assert all(part in {'draft', 'notes', 'synopsis'} for part in expected_mapping)

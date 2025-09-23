@@ -96,15 +96,18 @@ class FileSystemConfigPort(ConfigPort):
         """Create default configuration file."""
         # For MVP, we don't need a config file
 
-    def config_exists(self, config_path: Path) -> bool:
+    @staticmethod
+    def config_exists(config_path: Path) -> bool:
         """Check if configuration file already exists."""
         return config_path.exists()
 
-    def get_default_config_values(self) -> ProsemarkConfig:
+    @staticmethod
+    def get_default_config_values() -> ProsemarkConfig:
         """Return default configuration values as dictionary."""
         return {}
 
-    def load_config(self, _config_path: Path) -> dict[str, Any]:
+    @staticmethod
+    def load_config(_config_path: Path) -> dict[str, Any]:
         """Load configuration from file."""
         return {}
 
@@ -526,7 +529,7 @@ def _materialize_all_placeholders(
 
         # Check for specific interruption types
         result_type: str | None = getattr(result, 'type', None)
-        if result_type in ['batch_interrupted', 'batch_critical_failure']:
+        if result_type in {'batch_interrupted', 'batch_critical_failure'}:
             raise typer.Exit(1) from None
 
         # Handle failures
@@ -536,7 +539,7 @@ def _materialize_all_placeholders(
             return
 
         result_type = getattr(result, 'type', None)
-        if result_type in ['batch_interrupted', 'batch_critical_failure']:
+        if result_type in {'batch_interrupted', 'batch_critical_failure'}:
             raise typer.Exit(1) from None
 
         success_count = len(result.successful_materializations)
@@ -898,7 +901,7 @@ def materialize_all(
 
 
 @app.command()
-def audit(  # noqa: C901
+def audit(  # noqa: C901, PLR0912
     *,
     fix: Annotated[bool, typer.Option('--fix', help='Attempt to fix discovered issues')] = False,
     path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,

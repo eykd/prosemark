@@ -164,7 +164,7 @@ class TestMaterializeAllPlaceholdersCoverage:
         def mock_categorize_error(error: Exception) -> str:
             return 'binder_integrity'  # Critical error type
 
-        with patch.object(use_case, '_categorize_error', side_effect=mock_categorize_error):
+        with patch.object(MaterializeAllPlaceholders, '_categorize_error', side_effect=mock_categorize_error):
             result = use_case.execute(binder=binder, project_path=Path('/test'))
 
         # Verify the critical error caused a batch stop

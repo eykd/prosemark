@@ -49,10 +49,10 @@ class EditorLauncherSystem(EditorPort):
         abs_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Find suitable editor
-        editor_cmd = self._find_editor()
+        editor_cmd = EditorLauncherSystem._find_editor()
 
         # Build command with cursor hint if supported
-        cmd = self._build_command(editor_cmd, str(abs_path), cursor_hint)
+        cmd = EditorLauncherSystem._build_command(editor_cmd, str(abs_path), cursor_hint)
 
         try:
             # Launch editor as subprocess
@@ -70,7 +70,8 @@ class EditorLauncherSystem(EditorPort):
             msg = f'Failed to launch editor: {exc}'
             raise EditorLaunchError(msg) from exc
 
-    def _find_editor(self) -> list[str]:
+    @staticmethod
+    def _find_editor() -> list[str]:
         """Find suitable editor command.
 
         Returns:
@@ -92,13 +93,14 @@ class EditorLauncherSystem(EditorPort):
             return ['notepad.exe']
         # Unix-like systems - try common editors
         for editor in ['nano', 'vim', 'vi']:
-            if self._command_exists(editor):
+            if EditorLauncherSystem._command_exists(editor):
                 return [editor]
 
         msg = 'No suitable editor found. Set $EDITOR environment variable.'
         raise EditorNotFoundError(msg)
 
-    def _command_exists(self, command: str) -> bool:
+    @staticmethod
+    def _command_exists(command: str) -> bool:
         """Check if a command exists in PATH.
 
         Args:
@@ -115,7 +117,8 @@ class EditorLauncherSystem(EditorPort):
         else:
             return True
 
-    def _build_command(self, editor_cmd: list[str], file_path: str, cursor_hint: str | None) -> list[str]:
+    @staticmethod
+    def _build_command(editor_cmd: list[str], file_path: str, cursor_hint: str | None) -> list[str]:
         """Build complete command with optional cursor positioning.
 
         Args:
@@ -131,12 +134,13 @@ class EditorLauncherSystem(EditorPort):
         cmd.append(file_path)
 
         # Add cursor hint if provided and editor supports it
-        if cursor_hint and self._supports_cursor_hint(editor_cmd[0]):
-            cmd = self._add_cursor_hint(cmd, cursor_hint)
+        if cursor_hint and EditorLauncherSystem._supports_cursor_hint(editor_cmd[0]):
+            cmd = EditorLauncherSystem._add_cursor_hint(cmd, cursor_hint)
 
         return cmd
 
-    def _supports_cursor_hint(self, editor: str) -> bool:
+    @staticmethod
+    def _supports_cursor_hint(editor: str) -> bool:
         """Check if editor supports cursor positioning hints.
 
         Args:
@@ -150,7 +154,8 @@ class EditorLauncherSystem(EditorPort):
         editors_with_hints = {'vim', 'vi', 'nano', 'emacs', 'code'}
         return any(known_editor in editor.lower() for known_editor in editors_with_hints)
 
-    def _add_cursor_hint(self, cmd: list[str], cursor_hint: str) -> list[str]:
+    @staticmethod
+    def _add_cursor_hint(cmd: list[str], cursor_hint: str) -> list[str]:
         """Add cursor positioning hint to command.
 
         Args:

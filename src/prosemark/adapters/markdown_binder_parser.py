@@ -53,12 +53,12 @@ class MarkdownBinderParser:
         """
         try:
             # Validate markdown format
-            self._validate_markdown_format(markdown_content)
+            MarkdownBinderParser._validate_markdown_format(markdown_content)
 
             # Find all list items with their indentation
             matches = self.LIST_ITEM_PATTERN.findall(markdown_content)
             if not matches:
-                self._handle_no_matches(markdown_content)
+                MarkdownBinderParser._handle_no_matches(markdown_content)
                 return Binder(roots=[])
 
             # Build tree structure
@@ -67,7 +67,7 @@ class MarkdownBinderParser:
         except BinderFormatError:
             raise
         except Exception as exc:  # noqa: BLE001
-            self._raise_parse_error(exc)
+            MarkdownBinderParser._raise_parse_error(exc)
 
     def render_from_binder(self, binder: Binder) -> str:
         """Render Binder object as markdown list content.
@@ -84,31 +84,34 @@ class MarkdownBinderParser:
             self._render_item(root, 0, lines)
         return '\n'.join(lines)
 
-    def _validate_markdown_format(self, markdown_content: str) -> None:
+    @staticmethod
+    def _validate_markdown_format(markdown_content: str) -> None:
         """Validate markdown format and raise errors for malformed patterns."""
         lines = markdown_content.strip().split('\n')
         for line in lines:
             stripped_line = line.strip()
             if stripped_line:  # Skip empty lines
-                self._check_bracket_patterns(stripped_line)
+                MarkdownBinderParser._check_bracket_patterns(stripped_line)
 
-    def _check_bracket_patterns(self, line: str) -> None:
+    @staticmethod
+    def _check_bracket_patterns(line: str) -> None:
         """Check for malformed bracket patterns in a line."""
         if '- [' in line and line.count('[') != line.count(']'):
-            self._raise_malformed_error('unmatched brackets')
+            MarkdownBinderParser._raise_malformed_error('unmatched brackets')
         if '- [' in line and '[' in line and not line.endswith(']') and ')' not in line:
-            self._raise_malformed_error('unclosed bracket')
+            MarkdownBinderParser._raise_malformed_error('unclosed bracket')
 
-    def _handle_no_matches(self, markdown_content: str) -> None:
+    @staticmethod
+    def _handle_no_matches(markdown_content: str) -> None:
         """Handle case where no list items were matched."""
         lines = markdown_content.strip().split('\n')
         for line in lines:
             stripped_line = line.strip()
             if stripped_line and ('- ' in stripped_line or '* ' in stripped_line or stripped_line.startswith('  - ')):
-                self._raise_malformed_error('invalid list item format')
+                MarkdownBinderParser._raise_malformed_error('invalid list item format')
         # If there's any non-empty content but no valid list items, it might be malformed
         if any(line.strip() for line in lines):
-            self._raise_malformed_error('content found but no valid list items')
+            MarkdownBinderParser._raise_malformed_error('content found but no valid list items')
 
     def _build_binder_tree(self, matches: list[tuple[str, str, str]]) -> Binder:
         """Build the binder tree structure from matched list items.
@@ -130,7 +133,7 @@ class MarkdownBinderParser:
             item = BinderItem(display_title=title.strip(), node_id=node_id, children=[])
 
             # Find parent based on indentation
-            parent = self._find_parent(item_stack, indent_level)
+            parent = MarkdownBinderParser._find_parent(item_stack, indent_level)
 
             if parent is None:
                 # Root level item
@@ -145,7 +148,8 @@ class MarkdownBinderParser:
 
         return Binder(roots=root_items)
 
-    def _raise_malformed_error(self, issue: str) -> NoReturn:
+    @staticmethod
+    def _raise_malformed_error(issue: str) -> NoReturn:
         """Raise a BinderFormatError with malformed markdown message.
 
         Raises:
@@ -155,7 +159,8 @@ class MarkdownBinderParser:
         msg = f'Malformed markdown: {issue}'
         raise BinderFormatError(msg)
 
-    def _raise_parse_error(self, exc: Exception) -> NoReturn:
+    @staticmethod
+    def _raise_parse_error(exc: Exception) -> NoReturn:
         """Raise a BinderFormatError for parse failures.
 
         Raises:
@@ -198,7 +203,8 @@ class MarkdownBinderParser:
                 return None
         return None
 
-    def _find_parent(self, item_stack: list[tuple[int, BinderItem]], indent_level: int) -> BinderItem | None:
+    @staticmethod
+    def _find_parent(item_stack: list[tuple[int, BinderItem]], indent_level: int) -> BinderItem | None:
         """Find the appropriate parent item based on indentation level.
 
         Returns:
