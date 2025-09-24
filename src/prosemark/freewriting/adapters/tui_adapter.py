@@ -10,6 +10,7 @@ import time
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, VerticalScroll
 from textual.reactive import reactive
 from textual.widgets import Footer, Header, Input, Static
@@ -64,7 +65,6 @@ class FreewritingApp(App[int]):
     }
 
     .content_line {
-        margin-bottom: 1;
         padding: 0 1;
     }
 
@@ -77,9 +77,10 @@ class FreewritingApp(App[int]):
     """
 
     BINDINGS: ClassVar = [
-        ('ctrl+c', 'quit', 'Quit'),
-        ('ctrl+s', 'pause', 'Pause/Resume'),
-        ('escape', 'quit', 'Quit'),
+        Binding('ctrl+c', 'quit', 'Quit', show=True, priority=True),
+        Binding('ctrl+d', 'quit', 'Quit', show=True, priority=True),
+        Binding('escape', 'quit', 'Quit', show=True),
+        Binding('ctrl+s', 'pause', 'Pause/Resume', show=True),
     ]
 
     # Reactive attributes for real-time updates
