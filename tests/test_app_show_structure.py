@@ -347,7 +347,7 @@ class TestShowStructure:
         This tests the edge case at line 1163 where an empty items list is passed.
         """
         # Act - Call internal method with empty list
-        result = show_structure._format_items([], '')  # noqa: SLF001
+        result = show_structure._format_items([], '')
 
         # Assert - Should return empty string
         assert result == ''
@@ -361,7 +361,7 @@ class TestShowStructure:
         This tests the edge case at line 1184 where an empty items list is passed.
         """
         # Act - Call internal method with empty list
-        result = show_structure._format_items_with_root_connectors([])  # noqa: SLF001
+        result = show_structure._format_items_with_root_connectors([])
 
         # Assert - Should return empty string
         assert result == ''

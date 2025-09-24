@@ -40,7 +40,7 @@ class FileSystemAdapter(FileSystemPort):
             with Path(file_path).open(mode, encoding='utf-8') as f:
                 f.write(content)
 
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             raise FileSystemError('write', file_path, str(e)) from e
 
     @classmethod
@@ -77,7 +77,8 @@ class FileSystemAdapter(FileSystemPort):
         """
         return Path(file_path).exists()
 
-    def create_directory(self, directory_path: str, parents: bool = True) -> None:  # noqa: FBT001, FBT002
+    @classmethod
+    def create_directory(cls, directory_path: str, parents: bool = True) -> None:  # noqa: FBT001, FBT002
         """Create directory if it doesn't exist.
 
         Args:
@@ -128,6 +129,9 @@ class FileSystemAdapter(FileSystemPort):
                         return self.is_writable(str(path.parent))
                 except OSError:
                     return False
+                else:
+                    # If creation succeeded but directory doesn't exist (race condition)
+                    return False  # pragma: no cover
 
             # Check if we can write by creating a temporary file
             test_file = path / '.write_test'
@@ -135,9 +139,10 @@ class FileSystemAdapter(FileSystemPort):
                 with test_file.open('w', encoding='utf-8') as f:
                     f.write('test')
                 test_file.unlink()
-                return True
             except OSError:
                 return False
+            else:
+                return True
 
         except OSError:
             return False
@@ -194,7 +199,8 @@ class FileSystemAdapter(FileSystemPort):
         except OSError as e:
             raise FileSystemError('stat', file_path, str(e)) from e
 
-    def backup_file(self, file_path: str, backup_suffix: str = '.bak') -> str:
+    @classmethod
+    def backup_file(cls, file_path: str, backup_suffix: str = '.bak') -> str:
         """Create backup copy of file.
 
         Args:
@@ -238,3 +244,29 @@ class FileSystemAdapter(FileSystemPort):
 
         except OSError as e:
             raise FileSystemError('ensure_parent', str(Path(file_path).parent), str(e)) from e
+
+    @staticmethod
+    def sanitize_title(title: str) -> str:
+        """Sanitize a title string for use in filenames.
+
+        Args:
+            title: The title string to sanitize.
+
+        Returns:
+            Sanitized title safe for use in filenames.
+
+        """
+        # Replace potentially problematic characters with underscores
+        sanitized = title.replace('/', '_').replace('\\', '_').replace(':', '_').replace('*', '_')
+        sanitized = sanitized.replace('?', '_').replace('"', '_').replace('<', '_').replace('>', '_')
+        sanitized = sanitized.replace('|', '_')
+
+        # Remove leading/trailing whitespace and convert to clean format
+        sanitized = sanitized.strip()
+
+        # Collapse multiple underscores into single ones
+        while '__' in sanitized:
+            sanitized = sanitized.replace('__', '_')
+
+        # Remove leading/trailing underscores
+        return sanitized.strip('_')

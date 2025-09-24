@@ -36,15 +36,15 @@ class TestCLIWriteCommand:
             assert 'Created freeform file:' in result.output
             assert 'Opened in editor' in result.output
 
-            # Should create file with timestamp format: 20250920T1530_01234567-89ab-cdef-0123-456789abcdef.md
-            filename_pattern = r'\d{8}T\d{4}_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.md'
+            # Should create file with timestamp format: 2025-09-24-1430.md
+            filename_pattern = r'\d{4}-\d{2}-\d{2}-\d{4}\.md'
             assert re.search(filename_pattern, result.output)
 
     @pytest.mark.skipif(not CLI_AVAILABLE, reason='CLI module not implemented')
     def test_write_command_with_title_succeeds(self) -> None:
         """Test write command with title creates named freeform file."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(write_command, ['Morning Pages'])
+            result = self.runner.invoke(write_command, ['--title', 'Morning Pages'])
 
             assert result.exit_code == 0
             assert 'Created freeform file:' in result.output
@@ -56,7 +56,7 @@ class TestCLIWriteCommand:
         """Test write command handles long titles appropriately."""
         long_title = 'A Very Long Title That Might Need To Be Truncated Or Handled Specially'
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(write_command, [long_title])
+            result = self.runner.invoke(write_command, ['--title', long_title])
 
             assert result.exit_code == 0
             assert 'Created freeform file:' in result.output
@@ -65,7 +65,7 @@ class TestCLIWriteCommand:
     def test_write_command_special_characters_in_title(self) -> None:
         """Test write command handles special characters in title."""
         with self.runner.isolated_filesystem():
-            result = self.runner.invoke(write_command, ['Title: With/Special\\Characters'])
+            result = self.runner.invoke(write_command, ['--title', 'Title: With/Special\\Characters'])
 
             assert result.exit_code == 0
             assert 'Created freeform file:' in result.output
@@ -101,8 +101,8 @@ class TestCLIWriteCommand:
     def test_write_command_multiple_invocations(self) -> None:
         """Test multiple write command invocations create unique files."""
         with self.runner.isolated_filesystem():
-            result1 = self.runner.invoke(write_command, ['First'])
-            result2 = self.runner.invoke(write_command, ['Second'])
+            result1 = self.runner.invoke(write_command, ['--title', 'First'])
+            result2 = self.runner.invoke(write_command, ['--title', 'Second'])
 
             assert result1.exit_code == 0
             assert result2.exit_code == 0
@@ -114,7 +114,7 @@ class TestCLIWriteCommand:
         result = self.runner.invoke(write_command, ['--help'])
 
         assert result.exit_code == 0
-        assert '[TITLE]' in result.output or 'TITLE' in result.output
+        assert '--title' in result.output or 'Session title' in result.output
 
     def test_cli_write_import_contract(self) -> None:
         """Test that expected CLI write interface exists when implemented.

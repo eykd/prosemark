@@ -66,7 +66,7 @@ Some existing content without managed block.
         new_managed_content = '- [Chapter 1](chapter-1.md)'
 
         # Test the private method directly
-        result = repo._update_managed_block(original_content, new_managed_content)  # noqa: SLF001
+        result = repo._update_managed_block(original_content, new_managed_content)
 
         # Should call _create_new_content since no managed block exists
         assert '<!-- BEGIN_MANAGED_BLOCK -->' in result

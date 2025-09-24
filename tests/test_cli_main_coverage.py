@@ -354,9 +354,9 @@ class TestMaterializeAllPlaceholdersCoverage:
         validation_error = ValueError('Invalid input')
         unknown_error = RuntimeError('Unknown error')
 
-        assert use_case._categorize_error(filesystem_error) == 'filesystem'  # noqa: SLF001
-        assert use_case._categorize_error(validation_error) == 'validation'  # noqa: SLF001
-        assert use_case._categorize_error(unknown_error) == 'filesystem'  # noqa: SLF001
+        assert use_case._categorize_error(filesystem_error) == 'filesystem'
+        assert use_case._categorize_error(validation_error) == 'validation'
+        assert use_case._categorize_error(unknown_error) == 'filesystem'
 
     def test_create_failure_record_and_file_paths(self) -> None:
         """Test failure record creation and file path generation."""
@@ -376,7 +376,7 @@ class TestMaterializeAllPlaceholdersCoverage:
         placeholder = PlaceholderSummary(display_title='Test Placeholder', position='[0]', parent_title=None, depth=0)
 
         error = ValueError('Test validation error')
-        failure = use_case._create_failure_record(placeholder, error)  # noqa: SLF001
+        failure = use_case._create_failure_record(placeholder, error)
 
         assert failure.display_title == 'Test Placeholder'
         assert failure.error_type == 'validation'

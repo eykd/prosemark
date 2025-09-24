@@ -161,7 +161,7 @@ class FileSystemPort(ABC):
         """
 
     @staticmethod
-    def resolve_path(path: str) -> Path:
+    def resolve_path(path: str) -> Path:  # pragma: no cover
         """Resolve path to pathlib.Path object.
 
         Args:

@@ -140,8 +140,8 @@ updated: 2025-09-20T12:00:00Z
     def test_write_freeform_content(self, runner: CliRunner, project: dict[str, Any]) -> None:
         """Test creating freeform writing files."""
         # Mock the open method directly on the EditorLauncherSystem class
-        with patch.object(EditorLauncherSystem, 'open') as mock_open:
-            result = runner.invoke(app, ['write', 'Quick Ideas', '--path', str(project['dir'])])
+        with patch.object(EditorLauncherSystem, 'open'):
+            result = runner.invoke(app, ['write', '--title', 'Quick Ideas', '--path', str(project['dir'])])
             assert result.exit_code == 0
             assert 'Created freeform file' in result.output
 
@@ -152,14 +152,11 @@ updated: 2025-09-20T12:00:00Z
             # Verify the file has correct structure
             content = freeform_files[0].read_text()
             assert '---' in content  # YAML frontmatter
-            assert 'title: Quick Ideas' in content
-            assert '# Freeform Writing' in content
+            assert 'title: "Quick Ideas"' in content
+            assert '# Freewrite Session' in content
 
-            # Verify the editor was called
-            mock_open.assert_called_once()
-            # Get the filename that was passed to the editor
-            called_filename = mock_open.call_args[0][0]
-            assert freeform_files[0].name in called_filename
+            # Note: The freewriting command now uses a TUI instead of launching an external editor
+            # so we don't expect the editor mock to be called
 
     def test_edit_nonexistent_node_fails(self, runner: CliRunner, project: dict[str, Any]) -> None:
         """Test that editing a non-existent node fails gracefully."""

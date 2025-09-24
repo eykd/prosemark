@@ -210,6 +210,7 @@ unfixable = []
     "PLR0914",  # Too many local variables - acceptable in test setup
     "PLR2004",  # Magic value literals - acceptable in test data
     "PLR6301",  # Static method suggestions - acceptable in test methods
+    "SLF001",   # Private member access - acceptable for testing private methods
     "PLC0415",  # Import placement - acceptable in test functions
 ]
 
@@ -272,6 +273,7 @@ markers = [
     #     def test_my_slow_test():
     #         # ...
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "asyncio: marks tests as async (requires pytest-asyncio)",
 ]
 
 

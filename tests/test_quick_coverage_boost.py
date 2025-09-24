@@ -69,12 +69,12 @@ class TestQuickCoverageBoost:
         repo = BinderRepoFs(Path())
 
         # Test _extract_managed_block with no start marker
-        result = repo._extract_managed_block('# Project\n\nNo managed block')  # noqa: SLF001
+        result = repo._extract_managed_block('# Project\n\nNo managed block')
         assert result == ''
 
         # Test _extract_managed_block with no end marker
         with pytest.raises((Exception, ValueError), match=r'.*'):  # Should raise BinderFormatError
-            repo._extract_managed_block('# Project\n\n<!-- BEGIN_MANAGED_BLOCK -->\nContent')  # noqa: SLF001
+            repo._extract_managed_block('# Project\n\n<!-- BEGIN_MANAGED_BLOCK -->\nContent')
 
     def test_cli_error_handling_simple(self) -> None:
         """Test simple CLI error handling paths."""

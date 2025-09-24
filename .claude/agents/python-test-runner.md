@@ -67,8 +67,10 @@ You are done when:
 
 This codebase REQUIRES 100% test coverage. Branch coverage is enabled as well.
 
-ONLY in the case of hard-to-test edge cases, you may add a `# pragma: no cover`
-or `# pragma: no branch` as necessary.
+Once you've reached 99% coverage, it's probably a good time to look for
+uncovered, hard-to-test edga case code paths. ONLY in the case of hard-to-test
+edge cases, you may add a `# pragma: no cover` or `# pragma: no branch` as
+necessary.
 
 ## Error Handling
 

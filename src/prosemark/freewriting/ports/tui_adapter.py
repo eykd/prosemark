@@ -10,10 +10,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable
 
     from prosemark.freewriting.domain.models import FreewriteSession, SessionConfig
+    from prosemark.freewriting.ports.freewrite_service import FreewriteServicePort
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,16 @@ class TUIAdapterPort(ABC):
     This port defines the contract for main TUI operations such as
     session management and content handling.
     """
+
+    @property
+    @abstractmethod
+    def freewrite_service(self) -> FreewriteServicePort:
+        """Freewrite service instance for session operations.
+
+        Returns:
+            The freewrite service instance used by this TUI adapter.
+
+        """
 
     @abstractmethod
     def initialize_session(self, config: SessionConfig) -> FreewriteSession:

@@ -155,67 +155,54 @@ class TestMainAppIntegration:
         assert result.exit_code == 0
         assert f'Added "Test Node" ({valid_node_id})' in result.stdout
 
-    @patch('prosemark.cli.main.WriteFreeform')
+    @patch('prosemark.freewriting.container.run_freewriting_session')
     @patch('prosemark.cli.main._get_project_root')
-    @patch('prosemark.cli.main.DailyRepoFs')
-    @patch('prosemark.cli.main.EditorLauncherSystem')
     def test_write_command_success(
         self,
-        mock_editor: Mock,
-        mock_daily_repo: Mock,
         mock_get_root: Mock,
-        mock_write_freeform: Mock,
+        mock_run_freewriting: Mock,
     ) -> None:
         """Test successful write command."""
-        mock_get_root.return_value = Path('/test')
-        mock_interactor = Mock()
-        mock_write_freeform.return_value = mock_interactor
-        mock_interactor.execute.return_value = '2023-01-01-test.md'
+        mock_get_root.return_value = Path.cwd()  # Use a real directory
+        mock_run_freewriting.return_value = None
 
-        result = self.runner.invoke(app, ['write', 'Test Title'])
+        result = self.runner.invoke(app, ['write', '--title', 'Test Title'])
 
         assert result.exit_code == 0
-        assert 'Created freeform file: 2023-01-01-test.md' in result.stdout
 
-    @patch('prosemark.cli.main.WriteFreeform')
+    @patch('prosemark.cli.main.run_freewriting_session')
     @patch('prosemark.cli.main._get_project_root')
-    @patch('prosemark.cli.main.DailyRepoFs')
     def test_write_command_filesystem_error(
         self,
-        mock_daily_repo: Mock,
         mock_get_root: Mock,
-        mock_write_freeform: Mock,
+        mock_run_freewriting: Mock,
     ) -> None:
         """Test write command with filesystem error."""
-        mock_get_root.return_value = Path('/test')
-        mock_interactor = Mock()
-        mock_write_freeform.return_value = mock_interactor
-        mock_interactor.execute.side_effect = FileSystemError('Disk full')
+        mock_get_root.return_value = Path.cwd()  # Use a real directory
+        mock_run_freewriting.side_effect = FileSystemError('Disk full')
 
-        result = self.runner.invoke(app, ['write', 'Test'])
+        result = self.runner.invoke(app, ['write'])
 
+        # Check if the mock was called
+        mock_run_freewriting.assert_called_once()
         assert result.exit_code == 1
-        assert 'Error: File creation failed' in result.stdout
+        assert 'Disk full' in result.stdout
 
-    @patch('prosemark.cli.main.WriteFreeform')
+    @patch('prosemark.cli.main.run_freewriting_session')
     @patch('prosemark.cli.main._get_project_root')
-    @patch('prosemark.cli.main.DailyRepoFs')
     def test_write_command_editor_launch_error(
         self,
-        mock_daily_repo: Mock,
         mock_get_root: Mock,
-        mock_write_freeform: Mock,
+        mock_run_freewriting: Mock,
     ) -> None:
         """Test write command with editor launch error."""
-        mock_get_root.return_value = Path('/test')
-        mock_interactor = Mock()
-        mock_write_freeform.return_value = mock_interactor
-        mock_interactor.execute.side_effect = EditorLaunchError('No editor')
+        mock_get_root.return_value = Path.cwd()  # Use a real directory
+        mock_run_freewriting.side_effect = EditorLaunchError('No editor')
 
-        result = self.runner.invoke(app, ['write', 'Test'])
+        result = self.runner.invoke(app, ['write'])
 
-        assert result.exit_code == 2
-        assert 'Error: Editor launch failed' in result.stdout
+        assert result.exit_code == 1  # All exceptions result in exit code 1
+        assert 'No editor' in result.stdout
 
     @patch('prosemark.cli.main.ShowStructure')
     @patch('prosemark.cli.main._get_project_root')

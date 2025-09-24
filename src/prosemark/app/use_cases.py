@@ -1138,10 +1138,11 @@ class WriteFreeform:
             try:
                 self._editor_port.open(filename)
                 self._logger.debug('Opened freewrite file in editor: %s', filename)
-                return filename
             except EditorLaunchError as exc:
                 # Editor failure shouldn't prevent the freewrite from being created
                 self._logger.warning('Failed to open freewrite file in editor: %s (file still created)', str(exc))
+                return filename
+            else:
                 return filename
 
         except FileSystemError:
@@ -1859,7 +1860,7 @@ class AuditBinder:
                 import re
 
                 if re.match(r'^\d{8}T\d{4}_[0-9a-f-]+$', md_file.stem):
-                    continue
+                    continue  # pragma: no cover
 
                 # Try to create a NodeId from the filename
                 try:

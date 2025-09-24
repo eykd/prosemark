@@ -352,7 +352,7 @@ class TestAddNodeCoverage:
         # 3. if found: evaluates to False (since found=None)
         # 4. Continue to next iteration (line 125->121 branch)
         # 5. Check second_root (target_id == target_id, match!)
-        result = add_node._find_item(binder.roots, target_id)  # noqa: SLF001
+        result = add_node._find_item(binder.roots, target_id)
 
         # Assert
         assert result is not None

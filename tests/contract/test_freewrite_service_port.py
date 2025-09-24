@@ -8,6 +8,8 @@ Tests will initially fail due to missing imports - this is expected.
 from datetime import UTC, datetime
 from unittest.mock import Mock
 
+import pytest
+
 from prosemark.freewriting.domain.exceptions import FileSystemError, ValidationError
 from prosemark.freewriting.domain.models import FreewriteSession, SessionConfig
 from prosemark.freewriting.ports.file_system import FileSystemPort
@@ -49,7 +51,7 @@ class TestFreewriteServicePortContract:
 
         # Assert
         assert isinstance(result, FreewriteSession)
-        assert result.session_id == 'test-session-id'
+        assert result.session_id == '01234567-89ab-cdef-0123-456789abcdef'
         assert result.target_node == config.target_node
         assert result.title == config.title
         mock_service.create_session.assert_called_once_with(config)
@@ -93,32 +95,23 @@ class TestFreewriteServicePortContract:
 
     def test_create_session_raises_validation_error_on_invalid_config(self) -> None:
         """Test create_session() raises ValidationError for invalid configuration."""
-        # Arrange
-        mock_service = Mock(spec=FreewriteServicePort)
-        invalid_config = SessionConfig(
-            target_node='invalid-uuid',
-            title='Test',
-            word_count_goal=-100,
-            time_limit=-60,
-            theme='nonexistent',
-            current_directory='/nonexistent/path',
-        )
-        mock_service.create_session.side_effect = ValidationError('config', 'invalid', 'Invalid configuration')
-
-        # Act & Assert
-        try:
-            mock_service.create_session(invalid_config)
-            raise AssertionError('Should have raised ValidationError')
-        except ValidationError:
-            pass  # Expected
-        mock_service.create_session.assert_called_once_with(invalid_config)
+        # Act & Assert - ValidationError should be raised when creating invalid SessionConfig
+        with pytest.raises(ValueError, match='Invalid target_node UUID format'):
+            SessionConfig(
+                target_node='invalid-uuid',
+                title='Test',
+                word_count_goal=-100,
+                time_limit=-60,
+                theme='nonexistent',
+                current_directory='/nonexistent/path',
+            )
 
     def test_append_content_updates_session_and_word_count(self) -> None:
         """Test that append_content() updates session with new content and word count."""
         # Arrange
         mock_service = Mock(spec=FreewriteServicePort)
         initial_session = FreewriteSession(
-            session_id='test-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Test Session',
             start_time=datetime.now(UTC),
@@ -131,7 +124,7 @@ class TestFreewriteServicePortContract:
         )
         content = 'This is a test line with five words'
         updated_session = FreewriteSession(
-            session_id='test-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Test Session',
             start_time=initial_session.start_time,
@@ -158,7 +151,7 @@ class TestFreewriteServicePortContract:
         # Arrange
         mock_service = Mock(spec=FreewriteServicePort)
         session = FreewriteSession(
-            session_id='test-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Test',
             start_time=datetime.now(UTC),
@@ -232,7 +225,7 @@ class TestFreewriteServicePortContract:
         # Assert
         assert result == expected_filename
         assert result.endswith('.md')
-        assert len(result) == 19  # YYYY-MM-DD-HHmm.md
+        assert len(result) == 18  # YYYY-MM-DD-HHmm.md
         mock_service.create_daily_filename.assert_called_once_with(test_timestamp)
 
     def test_create_daily_filename_handles_different_times(self) -> None:
@@ -261,7 +254,7 @@ class TestFreewriteServicePortContract:
         # Arrange
         mock_service = Mock(spec=FreewriteServicePort)
         session = FreewriteSession(
-            session_id='test-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Test Session',
             start_time=datetime.now(UTC),
@@ -298,7 +291,7 @@ class TestFreewriteServicePortContract:
         # Arrange
         mock_service = Mock(spec=FreewriteServicePort)
         session = FreewriteSession(
-            session_id='no-goals-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='No Goals Session',
             start_time=datetime.now(UTC),

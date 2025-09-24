@@ -238,6 +238,14 @@ class CLIError(FreewriteError):
         self.reason = reason
         self.exit_code = exit_code
 
+    def __str__(self) -> str:
+        """Return string representation of the error.
+
+        For CLI errors, we return just the reason to maintain backward compatibility
+        with the contract tests that expect simple reason strings.
+        """
+        return self.reason
+
 
 class ConfigurationError(FreewriteError):
     """Raised when configuration is invalid.
@@ -311,6 +319,27 @@ class ContentError(FreewriteError):
 
 # Legacy exception aliases for backward compatibility
 # These can be removed once all code uses the new exception hierarchy
-ArgumentValidationError = ValidationError
-ThemeNotFoundError = ConfigurationError
-DirectoryNotWritableError = FileSystemError
+
+
+class ArgumentValidationError(CLIError):
+    """Legacy alias for CLI argument validation errors."""
+
+    def __init__(self, argument: str, _value: str, reason: str) -> None:
+        """Initialize with CLI error pattern."""
+        super().__init__('validate', argument, reason)
+
+
+class ThemeNotFoundError(CLIError):
+    """Legacy alias for CLI theme not found errors."""
+
+    def __init__(self, config_key: str, _value: str, reason: str) -> None:
+        """Initialize with CLI error pattern."""
+        super().__init__('configure', config_key, reason)
+
+
+class DirectoryNotWritableError(CLIError):
+    """Legacy alias for CLI directory not writable errors."""
+
+    def __init__(self, operation: str, path: str, reason: str) -> None:
+        """Initialize with CLI error pattern."""
+        super().__init__(operation, path, reason)

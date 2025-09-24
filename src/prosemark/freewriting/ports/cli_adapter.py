@@ -10,9 +10,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from prosemark.freewriting.domain.models import SessionConfig
-    from prosemark.freewriting.ports.tui_adapter import TUIConfig
+    from prosemark.freewriting.ports.tui_adapter import TUIAdapterPort, TUIConfig
 
 
 class CLIAdapterPort(ABC):
@@ -21,6 +21,16 @@ class CLIAdapterPort(ABC):
     This port defines the contract for command-line interface operations
     such as argument parsing and TUI launching.
     """
+
+    @property
+    @abstractmethod
+    def tui_adapter(self) -> TUIAdapterPort:
+        """TUI adapter instance for launching interface.
+
+        Returns:
+            The TUI adapter instance used by this CLI adapter.
+
+        """
 
     @abstractmethod
     def parse_arguments(

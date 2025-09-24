@@ -282,7 +282,7 @@ class TestNodeServicePortContract:
             'Content with **bold** and *italic* markdown',
             'Unicode content: 中文字符 and emojis 🚀✨',
             "Code snippet: `print('hello world')`",
-            'Mathematical symbols: α + β = γ, ∑x²',
+            'Mathematical symbols: a + b = c, ∑x²',
             'Special punctuation: "quotes", \'apostrophes\', & symbols!',
         ]
         session_metadata = {'session_id': 'special-chars-session', 'word_count': 32}

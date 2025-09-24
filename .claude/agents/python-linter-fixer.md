@@ -18,6 +18,8 @@ Your workflow is:
 2. Use the Bash tool to run `uv run ruff check --fix --ignore F401 --unsafe-fixes|head -20` (note: F401 ignored!)
 3. Analyze the first error in the output
 4. Fix that specific error by editing the relevant file
+   - Ideally, address the underlying problem flagged by the linter.
+   - Situationally, for acceptable violations, add a `noqa` comment, e.g. SLF001 violations in tests -> `# noqa: SLF001`
 5. Run the linter command again to verify the fix and identify the next issue
 6. **AFTER FIXES**: Verify mypy still passes with `uv run mypy src tests`
 7. Repeat this cycle until no linting errors remain (except F401 conflicts)

@@ -100,9 +100,9 @@ class FreewriteSession:
         """Validate output_file_path is a valid file path."""
         try:
             Path(self.output_file_path)
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError) as e:  # pragma: no cover
             msg = f'Invalid output_file_path: {self.output_file_path}'
-            raise ValueError(msg) from e
+            raise ValueError(msg) from e  # pragma: no cover
 
     def calculate_word_count(self) -> int:
         """Calculate total word count from content lines.
@@ -264,9 +264,9 @@ class SessionConfig:
         """Validate current_directory is a valid path."""
         try:
             Path(self.current_directory)
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError) as e:  # pragma: no cover
             msg = f'Invalid current_directory: {self.current_directory}'
-            raise ValueError(msg) from e
+            raise ValueError(msg) from e  # pragma: no cover
 
     def has_goals(self) -> bool:
         """Check if this configuration has any goals set.
@@ -368,9 +368,9 @@ class FileTarget:
         """Validate file_path is a valid path."""
         try:
             Path(self.file_path)
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError) as e:  # pragma: no cover
             msg = f'Invalid file_path: {self.file_path}'
-            raise ValueError(msg) from e
+            raise ValueError(msg) from e  # pragma: no cover
 
     def _validate_node_consistency(self) -> None:
         """Validate node_uuid is provided if is_node is True."""

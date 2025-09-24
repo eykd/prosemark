@@ -343,7 +343,7 @@ class TestNodeRepoFs:
 
         # Test _is_valid_node_id directly with empty string
         # This should return False due to line 309
-        assert not repo._is_valid_node_id('')  # noqa: SLF001
+        assert not repo._is_valid_node_id('')
 
     def test_is_uuid7_format_invalid_dash_count(self, tmp_path: Path) -> None:
         """Test _is_uuid7_format with wrong number of dashes (line 325)."""
@@ -356,7 +356,7 @@ class TestNodeRepoFs:
         assert len(invalid_uuid.split('-')) == 4  # Should be 5 for valid UUID
 
         # Test _is_uuid7_format directly - should return False due to line 325
-        assert not repo._is_uuid7_format(invalid_uuid)  # noqa: SLF001
+        assert not repo._is_uuid7_format(invalid_uuid)
 
         # This should be excluded from get_existing_files
         existing = repo.get_existing_files()

@@ -194,7 +194,7 @@ class TestMaterializeAllPlaceholdersCoverage:
 
         placeholder = PlaceholderSummary(display_title='Test', position='[0]', parent_title=None, depth=0)
 
-        result = use_case._materialize_single_placeholder(placeholder=placeholder, project_path=Path('/test'))  # noqa: SLF001
+        result = use_case._materialize_single_placeholder(placeholder=placeholder, project_path=Path('/test'))
 
         # Check file paths are created correctly
         expected_main = f'{mock_node_id.value}.md'
@@ -289,40 +289,40 @@ class TestMaterializeAllPlaceholdersCoverage:
             PermissionError('Permission denied'),
         ]
         for error in filesystem_errors:
-            assert use_case._categorize_error(error) == 'filesystem'  # noqa: SLF001
+            assert use_case._categorize_error(error) == 'filesystem'
 
         # Test validation errors - ValueError should map to validation
         validation_error = ValueError('Invalid value')
-        assert use_case._categorize_error(validation_error) == 'validation'  # noqa: SLF001
+        assert use_case._categorize_error(validation_error) == 'validation'
 
         # Test specific ValidationError in the name
         class CustomValidationError(Exception):
             pass
 
         custom_validation_error = CustomValidationError('Validation failed')
-        assert use_case._categorize_error(custom_validation_error) == 'validation'  # noqa: SLF001
+        assert use_case._categorize_error(custom_validation_error) == 'validation'
 
         # Test ID generation errors
         class UUIDGenerationError(Exception):
             pass
 
         uuid_error = UUIDGenerationError('UUID generation failed')
-        assert use_case._categorize_error(uuid_error) == 'id_generation'  # noqa: SLF001
+        assert use_case._categorize_error(uuid_error) == 'id_generation'
 
         # Test binder integrity errors
         class BinderIntegrityError(Exception):
             pass
 
         binder_error = BinderIntegrityError('Binder corrupted')
-        assert use_case._categorize_error(binder_error) == 'binder_integrity'  # noqa: SLF001
+        assert use_case._categorize_error(binder_error) == 'binder_integrity'
 
         # Test already materialized errors
         class AlreadyMaterializedError(Exception):
             pass
 
         already_error = AlreadyMaterializedError('Already exists')
-        assert use_case._categorize_error(already_error) == 'already_materialized'  # noqa: SLF001
+        assert use_case._categorize_error(already_error) == 'already_materialized'
 
         # Test unknown error defaults to filesystem
         unknown_error = RuntimeError('Unknown error')
-        assert use_case._categorize_error(unknown_error) == 'filesystem'  # noqa: SLF001
+        assert use_case._categorize_error(unknown_error) == 'filesystem'

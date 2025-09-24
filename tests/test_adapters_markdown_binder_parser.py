@@ -32,10 +32,10 @@ class TestMarkdownBinderParser:
     def test_extract_node_id_handles_empty_link(self, parser: MarkdownBinderParser) -> None:
         """Test _extract_node_id returns None for empty link."""
         # Act & Assert - empty string
-        assert parser._extract_node_id('') is None  # noqa: SLF001
+        assert parser._extract_node_id('') is None
 
         # Act & Assert - whitespace only
-        assert parser._extract_node_id('   ') is None  # noqa: SLF001
+        assert parser._extract_node_id('   ') is None
 
     def test_find_parent_returns_none_when_no_parent_found(self, parser: MarkdownBinderParser) -> None:
         """Test _find_parent returns None when no suitable parent is found."""
@@ -43,7 +43,7 @@ class TestMarkdownBinderParser:
         item_stack: list[tuple[int, BinderItem]] = []
 
         # Act
-        result = parser._find_parent(item_stack, 0)  # noqa: SLF001
+        result = parser._find_parent(item_stack, 0)
 
         # Assert
         assert result is None
@@ -59,7 +59,7 @@ class TestMarkdownBinderParser:
         ]
 
         # Act - looking for parent at level 1 (shallower than any in stack)
-        result = parser._find_parent(item_stack, 1)  # noqa: SLF001
+        result = parser._find_parent(item_stack, 1)
 
         # Assert
         assert result is None
@@ -71,7 +71,7 @@ class TestMarkdownBinderParser:
         lines: list[str] = []
 
         # Act
-        parser._render_item(placeholder_item, 0, lines)  # noqa: SLF001
+        parser._render_item(placeholder_item, 0, lines)
 
         # Assert
         assert len(lines) == 1

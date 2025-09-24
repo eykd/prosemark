@@ -452,4 +452,4 @@ class TestLogger:
         assert len(test_logger.log_entries) == 2
         assert test_logger.log_entries[0] == ('info', 'Starting node creation for %s', ('test123',))
         assert test_logger.log_entries[1] == ('debug', 'Node %s creation completed', ('test123',))
-        assert isinstance(service._logger, Logger)  # noqa: SLF001 - Testing dependency injection pattern
+        assert isinstance(service._logger, Logger)

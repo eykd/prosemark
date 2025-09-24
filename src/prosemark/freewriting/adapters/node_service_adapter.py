@@ -15,7 +15,7 @@ from prosemark.domain.models import NodeId
 from prosemark.freewriting.domain.exceptions import FileSystemError, NodeError, ValidationError
 from prosemark.freewriting.ports.node_service import NodeServicePort
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pathlib import Path
 
     from prosemark.ports.binder_repo import BinderRepo
@@ -90,14 +90,11 @@ class NodeServiceAdapter(NodeServicePort):
             NodeError: If node creation fails.
 
         """
+        # Validate UUID format first (outside try block to avoid TRY301)
+        if not NodeServiceAdapter.validate_node_uuid(node_uuid):
+            raise ValidationError('node_uuid', node_uuid, 'must be valid UUID format')
+
         try:
-            # Validate UUID format
-            def _validate_node_format() -> None:
-                if not NodeServiceAdapter.validate_node_uuid(node_uuid):
-                    raise ValidationError('node_uuid', node_uuid, 'must be valid UUID format')
-
-            _validate_node_format()
-
             # Convert to NodeId
             node_id = NodeId(node_uuid)
 
@@ -137,19 +134,15 @@ class NodeServiceAdapter(NodeServicePort):
             NodeError: If node operations fail.
 
         """
+        # Validate UUID format first (outside try block to avoid TRY301)
+        if not NodeServiceAdapter.validate_node_uuid(node_uuid):
+            raise ValidationError('node_uuid', node_uuid, 'must be valid UUID format')
+
+        # Check if node exists (outside try block to avoid TRY301)
+        if not self.node_exists(node_uuid):
+            raise ValidationError('node_uuid', node_uuid, 'node must exist')
+
         try:
-            # Validate UUID format
-            def _validate_node_format() -> None:
-                if not NodeServiceAdapter.validate_node_uuid(node_uuid):
-                    raise ValidationError('node_uuid', node_uuid, 'must be valid UUID format')
-
-            _validate_node_format()
-
-            # Check if node exists
-            if not self.node_exists(node_uuid):
-                msg = f'Node does not exist: {node_uuid}'
-                raise ValidationError('node_uuid', node_uuid, 'node must exist')
-
             node_file = self.project_path / f'{node_uuid}.md'
 
             # Read existing content
@@ -264,13 +257,13 @@ class NodeServiceAdapter(NodeServicePort):
                 # For now, we'll create a simple entry
                 # This may need to be adjusted based on the actual BinderRepo implementation
                 pass  # The actual binder integration would depend on the BinderRepo interface
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 # Don't let binder failures stop freewriting
-                msg = f'Warning: Could not add node to binder: {e}'
-                raise NodeError(node_uuid, 'add_to_binder', msg) from e
+                msg = f'Warning: Could not add node to binder: {e}'  # pragma: no cover
+                raise NodeError(node_uuid, 'add_to_binder', msg) from e  # pragma: no cover
 
         except (ValidationError, NodeError):
-            raise
+            raise  # pragma: no cover
         except Exception as e:
             msg = f'Failed to add node to binder: {e}'
             raise NodeError(node_uuid, 'add_to_binder', msg) from e

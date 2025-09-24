@@ -5,9 +5,10 @@ correctly implements the contract defined in the domain interfaces.
 Tests will initially fail due to missing imports - this is expected.
 """
 
+from datetime import UTC, datetime
 from unittest.mock import Mock
 
-from prosemark.freewriting.domain.exceptions import FileSystemError, ValidationError
+from prosemark.freewriting.domain.exceptions import FileSystemError
 from prosemark.freewriting.domain.models import FreewriteSession, SessionConfig
 from prosemark.freewriting.ports.tui_adapter import (
     ErrorEvent,
@@ -38,10 +39,10 @@ class TestTUIAdapterPortContract:
             current_directory='/test/project',
         )
         expected_session = FreewriteSession(
-            session_id='tui-session-id',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=config.target_node,
             title=config.title,
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=config.word_count_goal,
             time_limit=config.time_limit,
             current_word_count=0,
@@ -56,43 +57,34 @@ class TestTUIAdapterPortContract:
 
         # Assert
         assert isinstance(result, FreewriteSession)
-        assert result.session_id == 'tui-session-id'
+        assert result.session_id == '01234567-89ab-cdef-0123-456789abcdef'
         assert result.target_node == config.target_node
         mock_adapter.initialize_session.assert_called_once_with(config)
 
     def test_initialize_session_raises_validation_error_on_invalid_config(self) -> None:
         """Test initialize_session() raises ValidationError for invalid config."""
-        # Arrange
-        mock_adapter = Mock(spec=TUIAdapterPort)
-        invalid_config = SessionConfig(
-            target_node='invalid-format',
-            title='',
-            word_count_goal=-500,
-            time_limit=-60,
-            theme='nonexistent',
-            current_directory='/invalid/path',
-        )
-        mock_adapter.initialize_session.side_effect = ValidationError(
-            'target_node', 'invalid-format', 'must be valid UUID format'
-        )
+        # Act & Assert - ValidationError should be raised when creating invalid SessionConfig
+        import pytest
 
-        # Act & Assert
-        try:
-            mock_adapter.initialize_session(invalid_config)
-            raise AssertionError('Should have raised ValidationError')
-        except ValidationError:
-            pass  # Expected
-        mock_adapter.initialize_session.assert_called_once_with(invalid_config)
+        with pytest.raises(ValueError, match='Invalid target_node UUID format'):
+            SessionConfig(
+                target_node='invalid-format',
+                title='',
+                word_count_goal=-500,
+                time_limit=-60,
+                theme='nonexistent',
+                current_directory='/invalid/path',
+            )
 
     def test_handle_input_submission_updates_session(self) -> None:
         """Test handle_input_submission() processes input and returns updated session."""
         # Arrange
         mock_adapter = Mock(spec=TUIAdapterPort)
         initial_session = FreewriteSession(
-            session_id='input-test-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Input Test',
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=None,
             time_limit=None,
             current_word_count=0,
@@ -102,7 +94,7 @@ class TestTUIAdapterPortContract:
         )
         input_text = 'This is user input from the TUI'
         updated_session = FreewriteSession(
-            session_id='input-test-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Input Test',
             start_time=initial_session.start_time,
@@ -129,10 +121,10 @@ class TestTUIAdapterPortContract:
         # Arrange
         mock_adapter = Mock(spec=TUIAdapterPort)
         session = FreewriteSession(
-            session_id='empty-input-session',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Empty Input Test',
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=None,
             time_limit=None,
             current_word_count=10,
@@ -157,10 +149,10 @@ class TestTUIAdapterPortContract:
         # Arrange
         mock_adapter = Mock(spec=TUIAdapterPort)
         session = FreewriteSession(
-            session_id='display-test',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Display Test',
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=None,
             time_limit=None,
             current_word_count=50,
@@ -186,10 +178,10 @@ class TestTUIAdapterPortContract:
         # Arrange
         mock_adapter = Mock(spec=TUIAdapterPort)
         session = FreewriteSession(
-            session_id='few-lines-test',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Few Lines',
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=None,
             time_limit=None,
             current_word_count=15,
@@ -214,10 +206,10 @@ class TestTUIAdapterPortContract:
         # Arrange
         mock_adapter = Mock(spec=TUIAdapterPort)
         session = FreewriteSession(
-            session_id='progress-test',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Progress Test',
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=1000,
             time_limit=1800,
             current_word_count=400,
@@ -251,10 +243,10 @@ class TestTUIAdapterPortContract:
         # Arrange
         mock_adapter = Mock(spec=TUIAdapterPort)
         session = FreewriteSession(
-            session_id='no-goals-test',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='No Goals',
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=None,
             time_limit=None,
             current_word_count=150,
@@ -285,10 +277,10 @@ class TestTUIAdapterPortContract:
         # Arrange
         mock_adapter = Mock(spec=TUIAdapterPort)
         session = FreewriteSession(
-            session_id='error-test',
+            session_id='01234567-89ab-cdef-0123-456789abcdef',
             target_node=None,
             title='Error Test',
-            start_time=Mock(),
+            start_time=datetime.now(UTC),
             word_count_goal=None,
             time_limit=None,
             current_word_count=0,

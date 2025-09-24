@@ -130,7 +130,7 @@ class TestConsolePort:
         mock_item.node_id = None
         mock_item.children = []
 
-        console._print_item(mock_item, indent=0)  # noqa: SLF001
+        console._print_item(mock_item, indent=0)
 
         assert len(console.messages) == 1
         assert console.messages[0] == '- Title Only Item'
@@ -144,7 +144,7 @@ class TestConsolePort:
         mock_item.node_id = 'item-789'
         mock_item.children = []
 
-        console._print_item(mock_item, indent=0)  # noqa: SLF001
+        console._print_item(mock_item, indent=0)
 
         assert len(console.messages) == 1
         assert console.messages[0] == '- Item With ID (item-789)'
@@ -159,9 +159,9 @@ class TestConsolePort:
         mock_item.children = []
 
         # Test different indentation levels
-        console._print_item(mock_item, indent=0)  # noqa: SLF001
-        console._print_item(mock_item, indent=1)  # noqa: SLF001
-        console._print_item(mock_item, indent=2)  # noqa: SLF001
+        console._print_item(mock_item, indent=0)
+        console._print_item(mock_item, indent=1)
+        console._print_item(mock_item, indent=2)
 
         assert len(console.messages) == 3
         assert console.messages[0] == '- Indented Item (indent-123)'
@@ -184,7 +184,7 @@ class TestConsolePort:
         mock_parent.node_id = 'parent-888'
         mock_parent.children = [mock_child]
 
-        console._print_item(mock_parent, indent=0)  # noqa: SLF001
+        console._print_item(mock_parent, indent=0)
 
         assert len(console.messages) == 2
         assert console.messages[0] == '- Parent Item (parent-888)'

@@ -525,7 +525,7 @@ class TestMoveNode:
         # Act & Assert: This is a defensive case that shouldn't happen in normal operation
         # but tests the error handling for malformed data
         with pytest.raises(BinderIntegrityError) as exc_info:
-            move_node._remove_node_from_current_location(binder, item_without_id)  # noqa: SLF001
+            move_node._remove_node_from_current_location(binder, item_without_id)
 
         assert 'Cannot remove item without NodeId' in str(exc_info.value)
 
@@ -546,7 +546,7 @@ class TestMoveNode:
 
         # Act & Assert: This tests the defensive check in _add_node_to_new_location
         with pytest.raises(NodeNotFoundError) as exc_info:
-            move_node._add_node_to_new_location(binder, source_item, phantom_parent_id, None)  # noqa: SLF001
+            move_node._add_node_to_new_location(binder, source_item, phantom_parent_id, None)
 
         assert 'Parent item not found' in str(exc_info.value)
 
@@ -589,7 +589,7 @@ class TestMoveNode:
         fake_binder_repo.save(binder)
 
         # Act: Test ancestor check between unrelated nodes (should return False)
-        result = move_node._is_ancestor(binder, orphan_id, child_id)  # noqa: SLF001
+        result = move_node._is_ancestor(binder, orphan_id, child_id)
 
         # Assert: Orphan is not an ancestor of child
         assert result is False

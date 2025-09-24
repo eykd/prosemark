@@ -15,7 +15,7 @@ from prosemark.freewriting.domain.exceptions import FileSystemError, ValidationE
 from prosemark.freewriting.domain.models import FreewriteSession, SessionConfig, SessionState
 from prosemark.freewriting.ports.freewrite_service import FreewriteServicePort
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from prosemark.freewriting.ports.file_system import FileSystemPort
     from prosemark.freewriting.ports.node_service import NodeServicePort
 from prosemark.freewriting.adapters.node_service_adapter import NodeServiceAdapter
@@ -138,9 +138,9 @@ class FreewriteServiceAdapter(FreewriteServicePort):
             from uuid import UUID
 
             UUID(node_uuid)
-            return True
         except ValueError:
             return False
+        return True
 
     @staticmethod
     def create_daily_filename(timestamp: datetime) -> str:
@@ -295,10 +295,14 @@ class FreewriteServiceAdapter(FreewriteServicePort):
         # Write initial content
         self.file_system.write_file(session.output_file_path, initial_content, append=False)
 
-        try:
-            # Verify file was written successfully
+        def _verify_file_created() -> None:
+            """Verify that the file was written successfully."""
             if not Path(session.output_file_path).exists():
                 raise OSError('File not created')
+
+        try:
+            # Verify file was written successfully
+            _verify_file_created()
         except Exception as e:
             raise FileSystemError('initialize', session.output_file_path, str(e)) from e
 
