@@ -43,6 +43,8 @@ class TestFreewriteServiceAdapter:
         mock_file_system.join_paths.return_value = '/test/2024-01-15-1430.md'
         mock_file_system.get_absolute_path.return_value = '/test/2024-01-15-1430.md'
         mock_file_system.write_file.return_value = None
+        mock_file_system.file_exists.return_value = False  # No existing content
+        mock_file_system.read_file.return_value = ''  # Empty file content
 
         mock_node_service = Mock(spec=NodeServicePort)
         adapter = FreewriteServiceAdapter(mock_file_system, mock_node_service)
@@ -74,6 +76,8 @@ class TestFreewriteServiceAdapter:
         # Arrange
         mock_file_system = Mock(spec=FileSystemPort)
         mock_file_system.is_writable.return_value = True
+        mock_file_system.file_exists.return_value = False  # No existing content
+        mock_file_system.read_file.return_value = ''  # Empty file content
 
         mock_node_service = Mock(spec=NodeServicePort)
         mock_node_service.get_node_path.return_value = '/test/node-123.md'
@@ -155,6 +159,8 @@ class TestFreewriteServiceAdapter:
         # Arrange
         mock_file_system = Mock(spec=FileSystemPort)
         mock_file_system.is_writable.return_value = True
+        mock_file_system.file_exists.return_value = False  # No existing content
+        mock_file_system.read_file.return_value = ''  # Empty file content
 
         mock_node_service = Mock(spec=NodeServicePort)
         mock_node_service.get_node_path.return_value = '/test/new-node.md'
@@ -201,6 +207,8 @@ class TestFreewriteServiceAdapter:
         mock_file_system.join_paths.return_value = '/test/file.md'
         mock_file_system.get_absolute_path.return_value = '/test/file.md'
         mock_file_system.write_file.return_value = None
+        mock_file_system.file_exists.return_value = False  # No existing content
+        mock_file_system.read_file.return_value = ''  # Empty file content
 
         mock_node_service = Mock(spec=NodeServicePort)
         adapter = FreewriteServiceAdapter(mock_file_system, mock_node_service)
@@ -519,6 +527,8 @@ class TestFreewriteServiceAdapterIntegration:
         mock_file_system.join_paths.return_value = '/test/2024-01-15-1430.md'
         mock_file_system.get_absolute_path.return_value = '/test/2024-01-15-1430.md'
         mock_file_system.write_file.return_value = None
+        mock_file_system.file_exists.return_value = False  # No existing content
+        mock_file_system.read_file.return_value = ''  # Empty file content
 
         mock_node_service = Mock(spec=NodeServicePort)
         adapter = FreewriteServiceAdapter(mock_file_system, mock_node_service)
@@ -546,6 +556,8 @@ class TestFreewriteServiceAdapterIntegration:
         # Arrange
         mock_file_system = Mock(spec=FileSystemPort)
         mock_file_system.is_writable.return_value = True
+        mock_file_system.file_exists.return_value = False  # No existing content
+        mock_file_system.read_file.return_value = ''  # Empty file content
 
         mock_node_service = Mock(spec=NodeServicePort)
         mock_node_service.get_node_path.return_value = '/test/node-123.md'
@@ -572,3 +584,102 @@ class TestFreewriteServiceAdapterIntegration:
 
         # Verify node service operations
         assert mock_node_service.append_to_node.call_count == 2
+
+    def test_load_existing_content_exception_handling(self) -> None:
+        """Test exception handling when loading existing content fails."""
+        # Arrange
+        mock_file_system = Mock(spec=FileSystemPort)
+        mock_file_system.is_writable.return_value = True
+        mock_file_system.join_paths.return_value = '/test/2024-01-15-1430.md'
+        mock_file_system.get_absolute_path.return_value = '/test/2024-01-15-1430.md'
+        mock_file_system.write_file.return_value = None
+        mock_file_system.file_exists.return_value = True  # File exists
+        mock_file_system.read_file.side_effect = OSError('Permission denied')  # File read fails
+
+        mock_node_service = Mock(spec=NodeServicePort)
+        adapter = FreewriteServiceAdapter(mock_file_system, mock_node_service)
+
+        config = SessionConfig(title='Daily Freewrite', current_directory='/test')
+
+        # Act & Assert
+        with (
+            patch.object(Path, 'exists', return_value=False),
+            pytest.raises(FileSystemError, match='File system operation failed: read_existing'),
+        ):  # Force file creation path
+            adapter.create_session(config)
+
+    def test_filter_frontmatter_with_yaml_content(self) -> None:
+        """Test filtering YAML frontmatter from content lines."""
+        # Arrange
+        content_lines = [
+            '---',
+            'title: Test Document',
+            'author: Test Author',
+            '---',
+            '# Test Header',
+            '',
+            'This is content that should be kept.',
+            'More content here.',
+        ]
+
+        # Act
+        filtered_lines = FreewriteServiceAdapter._filter_frontmatter_and_header(content_lines)
+
+        # Assert
+        expected_lines = ['This is content that should be kept.', 'More content here.']
+        assert filtered_lines == expected_lines
+
+    def test_load_existing_content_node_target_no_filter(self) -> None:
+        """Test loading existing content for node target (no frontmatter filtering)."""
+        # Arrange
+        mock_file_system = Mock(spec=FileSystemPort)
+        mock_file_system.is_writable.return_value = True
+        mock_file_system.file_exists.return_value = True
+        mock_file_system.read_file.return_value = 'Line 1\nLine 2\n'
+
+        mock_node_service = Mock(spec=NodeServicePort)
+        mock_node_service.get_node_path.return_value = '/test/node-123.md'
+        mock_node_service.node_exists.return_value = True
+
+        adapter = FreewriteServiceAdapter(mock_file_system, mock_node_service)
+        config = SessionConfig(target_node='01234567-89ab-cdef-0123-456789abcdef', current_directory='/test')
+
+        # Act
+        session = adapter.create_session(config)
+
+        # Assert - For node targets, content should be loaded without filtering
+        assert session.current_word_count == 4  # "Line 1" + "Line 2" = 4 words
+        assert len(session.content_lines) == 2
+
+    def test_filter_frontmatter_without_yaml_markers(self) -> None:
+        """Test filtering when content has no YAML frontmatter markers."""
+        # Arrange - Content without YAML frontmatter
+        content_lines = ['# Test Header', '', 'This is content that should be kept.', 'More content here.']
+
+        # Act
+        filtered_lines = FreewriteServiceAdapter._filter_frontmatter_and_header(content_lines)
+
+        # Assert - Without frontmatter, header is NOT skipped, only leading empty lines
+        expected_lines = ['# Test Header', '', 'This is content that should be kept.', 'More content here.']
+        assert filtered_lines == expected_lines
+
+    def test_filter_frontmatter_multiple_yaml_markers(self) -> None:
+        """Test filtering when there are multiple --- markers after frontmatter is closed."""
+        # Arrange - Content with YAML frontmatter and additional --- markers
+        content_lines = [
+            '---',
+            'title: Test Document',
+            '---',
+            '# Test Header',
+            '---',  # This should NOT be treated as frontmatter start
+            'Content with triple dashes',
+            '---',  # This should also NOT be treated as frontmatter start
+            'More content here.',
+        ]
+
+        # Act
+        filtered_lines = FreewriteServiceAdapter._filter_frontmatter_and_header(content_lines)
+
+        # Assert - After frontmatter is closed, subsequent --- should be kept as content
+        expected_lines = ['---', 'Content with triple dashes', '---', 'More content here.']
+        assert filtered_lines == expected_lines

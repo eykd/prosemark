@@ -67,13 +67,13 @@ class TestFreeformWriting:
                 result = runner.invoke(app, ['write', '--title', title, '--path', str(project)])
                 assert result.exit_code == 0
 
-            # Verify at least one file was created (same timestamp = same filename = overwrite)
+            # Verify at least one file was created (same timestamp = same filename = preserve original)
             freeform_files = list(project.glob('2025*.md'))
             assert len(freeform_files) >= 1  # At least one file created
 
-            # The last title should be in the file content (overwritten previous ones)
+            # The first title should be in the file content (file preserves original title)
             content = freeform_files[0].read_text()
-            assert 'Research notes' in content  # Last title should be present
+            assert 'Morning thoughts' in content  # First title should be present (no overwriting)
 
     def test_freeform_timestamp_ordering(self, runner: CliRunner, project: Path) -> None:
         """Test that freeform files maintain chronological ordering."""
@@ -192,6 +192,6 @@ class TestFreeformWriting:
             freeform_files = list(project.glob('2025*.md'))
             assert len(freeform_files) >= 1  # At least one file created
 
-            # The last title should be in the file content (overwritten previous ones)
+            # The first title should be in the file content (file preserves original title)
             content = freeform_files[0].read_text()
-            assert 'Plot/Character Development' in content  # Last title should be present
+            assert 'Ideas: Part 1' in content  # First title should be present (no overwriting)

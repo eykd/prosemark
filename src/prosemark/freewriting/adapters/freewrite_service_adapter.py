@@ -87,6 +87,9 @@ class FreewriteServiceAdapter(FreewriteServicePort):
         # Initialize the output file
         self._initialize_output_file(session, config)
 
+        # Load existing content if file exists
+        session = self._load_existing_content(session, config)
+
         return session.change_state(SessionState.ACTIVE)
 
     def append_content(self, session: FreewriteSession, content: str) -> FreewriteSession:
@@ -265,6 +268,34 @@ class FreewriteServiceAdapter(FreewriteServicePort):
             # For node files, we don't initialize - content gets appended
             return
 
+        # Check if file already exists
+        if self.file_system.file_exists(session.output_file_path):
+            # File exists, no initialization needed - content will be loaded into session separately
+            return
+
+        # Create initial content for daily file
+        initial_content = FreewriteServiceAdapter._create_daily_file_initial_content(session)
+
+        # Write initial content
+        self.file_system.write_file(session.output_file_path, initial_content, append=False)
+
+        try:
+            # Verify file was written successfully
+            self._verify_file_created(session.output_file_path)
+        except Exception as e:
+            raise FileSystemError('initialize', session.output_file_path, str(e)) from e
+
+    @staticmethod
+    def _create_daily_file_initial_content(session: FreewriteSession) -> str:
+        """Create the initial content for a daily freewrite file.
+
+        Args:
+            session: The session being initialized.
+
+        Returns:
+            Initial file content with YAML frontmatter and header.
+
+        """
         # For daily files, create with YAML frontmatter
         frontmatter_data: dict[str, Any] = {
             'type': 'freewrite',
@@ -290,21 +321,106 @@ class FreewriteServiceAdapter(FreewriteServicePort):
                 frontmatter_lines.append(f'{key}: {value}')
         frontmatter_lines.extend(['---', '', '# Freewrite Session', ''])
 
-        initial_content = '\n'.join(frontmatter_lines)
+        return '\n'.join(frontmatter_lines)
 
-        # Write initial content
-        self.file_system.write_file(session.output_file_path, initial_content, append=False)
+    @staticmethod
+    def _verify_file_created(file_path: str) -> None:
+        """Verify that the file was written successfully.
 
-        def _verify_file_created() -> None:
-            """Verify that the file was written successfully."""
-            if not Path(session.output_file_path).exists():
-                raise OSError('File not created')
+        Args:
+            file_path: Path to the file to verify.
+
+        Raises:
+            OSError: If file was not created.
+
+        """
+        if not Path(file_path).exists():
+            raise OSError('File not created')
+
+    def _load_existing_content(self, session: FreewriteSession, config: SessionConfig) -> FreewriteSession:
+        """Load existing content from file if it exists.
+
+        Args:
+            session: The session being initialized.
+            config: Session configuration.
+
+        Returns:
+            Updated session with existing content loaded.
+
+        Raises:
+            FileSystemError: If file reading fails.
+
+        """
+        # Check if file exists
+        if not self.file_system.file_exists(session.output_file_path):
+            # No existing file, return session as-is
+            return session
 
         try:
-            # Verify file was written successfully
-            _verify_file_created()
+            # Read existing file content
+            existing_content = self.file_system.read_file(session.output_file_path)
+
+            # Split into lines and filter out empty lines at the end
+            content_lines = existing_content.splitlines()
+
+            # For daily files, skip YAML frontmatter and header if present
+            if not config.target_node:
+                content_lines = FreewriteServiceAdapter._filter_frontmatter_and_header(content_lines)
+
+            # Update session with existing content
+            updated_session = session
+            for line in content_lines:
+                updated_session = updated_session.add_content_line(line)
+
         except Exception as e:
-            raise FileSystemError('initialize', session.output_file_path, str(e)) from e
+            raise FileSystemError('read_existing', session.output_file_path, str(e)) from e
+        else:
+            return updated_session
+
+    @staticmethod
+    def _filter_frontmatter_and_header(content_lines: list[str]) -> list[str]:
+        """Filter out YAML frontmatter and header from daily freewrite files.
+
+        Args:
+            content_lines: Raw content lines from file.
+
+        Returns:
+            Content lines without frontmatter and header.
+
+        """
+        filtered_lines = []
+        in_frontmatter = False
+        frontmatter_closed = False
+        skip_empty_lines = True
+
+        for line in content_lines:
+            # Check for YAML frontmatter start/end
+            if line.strip() == '---':
+                if not in_frontmatter and not frontmatter_closed:
+                    in_frontmatter = True
+                    continue
+                if in_frontmatter:
+                    in_frontmatter = False
+                    frontmatter_closed = True
+                    continue
+
+            # Skip frontmatter lines
+            if in_frontmatter:
+                continue
+
+            # Skip header line (starts with #)
+            if frontmatter_closed and line.strip().startswith('# '):
+                continue
+
+            # Skip leading empty lines after header
+            if skip_empty_lines and not line.strip():
+                continue
+
+            # Found content, stop skipping empty lines
+            skip_empty_lines = False
+            filtered_lines.append(line)
+
+        return filtered_lines
 
     def _append_to_daily_file(self, session: FreewriteSession, content: str) -> None:
         """Append content to daily freewrite file.
