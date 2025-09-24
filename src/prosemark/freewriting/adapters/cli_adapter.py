@@ -343,7 +343,7 @@ class TyperCLIAdapter(CLIAdapterPort, CommandValidationPort):
             # Test write permission with a temporary file
             return _check_write_permission(path)
 
-        except OSError:
+        except OSError:  # pragma: no cover
             return False
 
 
