@@ -17,11 +17,10 @@ class TestCLIWriteCoverage:
 
         with (
             runner.isolated_filesystem(),
-            patch('prosemark.cli.write.WriteFreeform') as mock_write_class,
+            patch('prosemark.freewriting.container.run_freewriting_session') as mock_run_session,
         ):
-            # Mock the WriteFreeform use case to raise FileSystemError
-            mock_write_instance = mock_write_class.return_value
-            mock_write_instance.execute.side_effect = FileSystemError('Permission denied')
+            # Mock the freewriting session to raise FileSystemError
+            mock_run_session.side_effect = FileSystemError('Permission denied')
 
             result = runner.invoke(write_command, ['Test Title'])
 
@@ -34,11 +33,10 @@ class TestCLIWriteCoverage:
 
         with (
             runner.isolated_filesystem(),
-            patch('prosemark.cli.write.WriteFreeform') as mock_write_class,
+            patch('prosemark.freewriting.container.run_freewriting_session') as mock_run_session,
         ):
-            # Mock the WriteFreeform use case to raise EditorLaunchError
-            mock_write_instance = mock_write_class.return_value
-            mock_write_instance.execute.side_effect = EditorLaunchError('Editor not found')
+            # Mock the freewriting session to raise EditorLaunchError
+            mock_run_session.side_effect = EditorLaunchError('Editor not found')
 
             result = runner.invoke(write_command, ['Test Title'])
 

@@ -34,7 +34,7 @@ class TestFreeformWriting:
         with patch('prosemark.adapters.editor_launcher_system.subprocess.run') as mock_run:
             mock_run.return_value.returncode = 0
 
-            result = runner.invoke(app, ['write', 'Character Ideas', '--path', str(project)])
+            result = runner.invoke(app, ['write', '--title', 'Character Ideas', '--path', str(project)])
             assert result.exit_code == 0
             assert 'Created freeform file' in result.output
 
@@ -64,7 +64,7 @@ class TestFreeformWriting:
             # Create multiple freeform files
             titles = ['Morning thoughts', 'Plot ideas', 'Research notes']
             for title in titles:
-                result = runner.invoke(app, ['write', title, '--path', str(project)])
+                result = runner.invoke(app, ['write', '--title', title, '--path', str(project)])
                 assert result.exit_code == 0
 
             # Verify all files were created
@@ -82,7 +82,7 @@ class TestFreeformWriting:
             filenames = []
 
             for i in range(3):
-                result = runner.invoke(app, ['write', f'Note {i}', '--path', str(project)])
+                result = runner.invoke(app, ['write', '--title', f'Note {i}', '--path', str(project)])
                 assert result.exit_code == 0
 
                 # Extract filename from output
@@ -102,7 +102,7 @@ class TestFreeformWriting:
         with patch('prosemark.adapters.editor_launcher_system.subprocess.run') as mock_run:
             mock_run.return_value.returncode = 0
 
-            result = runner.invoke(app, ['write', 'Test Content', '--path', str(project)])
+            result = runner.invoke(app, ['write', '--title', 'Test Content', '--path', str(project)])
             assert result.exit_code == 0
 
             # Find the created file
@@ -126,8 +126,8 @@ class TestFreeformWriting:
             mock_run.return_value.returncode = 0
 
             # Create some freeform content
-            runner.invoke(app, ['write', 'Freeform 1', '--path', str(project)])
-            runner.invoke(app, ['write', 'Freeform 2', '--path', str(project)])
+            runner.invoke(app, ['write', '--title', 'Freeform 1', '--path', str(project)])
+            runner.invoke(app, ['write', '--title', 'Freeform 2', '--path', str(project)])
 
             # Add a regular node for comparison
             runner.invoke(app, ['add', 'Chapter 1', '--path', str(project)])
@@ -151,7 +151,7 @@ class TestFreeformWriting:
             mock_run.return_value.returncode = 0
 
             # Create a freeform file
-            runner.invoke(app, ['write', 'Persistent Note', '--path', str(project)])
+            runner.invoke(app, ['write', '--title', 'Persistent Note', '--path', str(project)])
 
             # Find the file
             freeform_files = list(project.glob('2025*.md'))
@@ -181,7 +181,7 @@ class TestFreeformWriting:
             titles = ['Ideas: Part 1', 'Notes & Thoughts', 'Research (2025)', 'Plot/Character Development']
 
             for title in titles:
-                result = runner.invoke(app, ['write', title, '--path', str(project)])
+                result = runner.invoke(app, ['write', '--title', title, '--path', str(project)])
                 assert result.exit_code == 0
 
             # Verify all files were created

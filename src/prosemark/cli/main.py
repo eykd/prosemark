@@ -17,7 +17,6 @@ import typer
 from prosemark.adapters.binder_repo_fs import BinderRepoFs
 from prosemark.adapters.clock_system import ClockSystem
 from prosemark.adapters.console_pretty import ConsolePretty
-from prosemark.adapters.daily_repo_fs import DailyRepoFs
 from prosemark.adapters.editor_launcher_system import EditorLauncherSystem
 from prosemark.adapters.id_generator_uuid7 import IdGeneratorUuid7
 from prosemark.adapters.logger_stdout import LoggerStdout
@@ -34,7 +33,6 @@ from prosemark.app.use_cases import (
     MoveNode,
     RemoveNode,
     ShowStructure,
-    WriteFreeform,
 )
 from prosemark.app.use_cases import MaterializeNode as MaterializeNodeUseCase
 from prosemark.domain.batch_materialize_result import BatchMaterializeResult
@@ -54,6 +52,9 @@ from prosemark.exceptions import (
     NodeNotFoundError,
     PlaceholderNotFoundError,
 )
+
+# Freewriting imports
+from prosemark.freewriting.container import run_freewriting_session
 
 # Port imports
 from prosemark.ports.config_port import ConfigPort, ProsemarkConfig
@@ -314,40 +315,28 @@ def structure(
 
 @app.command()
 def write(
-    title: Annotated[str | None, typer.Argument(help='Optional title for freeform content')] = None,
+    node_uuid: Annotated[str | None, typer.Argument(help='UUID of target node (optional)')] = None,
+    title: Annotated[str | None, typer.Option('--title', '-t', help='Session title')] = None,
+    word_count_goal: Annotated[int | None, typer.Option('--words', '-w', help='Word count goal')] = None,
+    time_limit: Annotated[int | None, typer.Option('--time', help='Time limit in minutes')] = None,
     path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
-    """Create a timestamped freeform writing file."""
+    """Start a freewriting session in a distraction-free TUI."""
     try:
         project_root = path or _get_project_root()
 
-        # Wire up dependencies
-        clock = ClockSystem()
-        id_generator = IdGeneratorUuid7()
-        daily_repo = DailyRepoFs(project_root, id_generator=id_generator, clock=clock)
-        editor_port = EditorLauncherSystem()
-        logger = LoggerStdout()
-
-        # Execute use case
-        interactor = WriteFreeform(
-            daily_repo=daily_repo,
-            editor_port=editor_port,
-            logger=logger,
-            clock=clock,
+        # Run freewriting session with dependency injection
+        run_freewriting_session(
+            node_uuid=node_uuid,
+            title=title,
+            word_count_goal=word_count_goal,
+            time_limit=time_limit,
+            project_path=project_root,
         )
 
-        filename = interactor.execute(title)
-
-        # Success output
-        typer.echo(f'Created freeform file: {filename}')
-        typer.echo('Opened in editor')
-
-    except FileSystemError:
-        typer.echo('Error: File creation failed', err=True)
-        raise typer.Exit(1) from None
-    except EditorLaunchError:
-        typer.echo('Error: Editor launch failed', err=True)
-        raise typer.Exit(2) from None
+    except Exception as e:
+        typer.echo(f'Error: {e}', err=True)
+        raise typer.Exit(1) from e
 
 
 def _validate_materialize_args(title: str | None, *, all_placeholders: bool) -> None:

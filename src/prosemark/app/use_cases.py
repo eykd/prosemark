@@ -1138,7 +1138,7 @@ class WriteFreeform:
             try:
                 self._editor_port.open(filename)
                 self._logger.debug('Opened freewrite file in editor: %s', filename)
-                return filename  # noqa: TRY300
+                return filename
             except EditorLaunchError as exc:
                 # Editor failure shouldn't prevent the freewrite from being created
                 self._logger.warning('Failed to open freewrite file in editor: %s (file still created)', str(exc))

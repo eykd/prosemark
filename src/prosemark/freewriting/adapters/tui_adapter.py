@@ -1,0 +1,532 @@
+"""TUI adapter implementation using Textual framework.
+
+This module provides the concrete implementation of the TUI ports
+using the Textual framework for terminal user interface operations.
+"""
+
+from __future__ import annotations
+
+import time
+from typing import TYPE_CHECKING, Any
+
+from textual.app import App, ComposeResult
+from textual.containers import Container, VerticalScroll
+from textual.reactive import reactive
+from textual.widgets import Footer, Header, Input, Static
+
+from prosemark.freewriting.domain.exceptions import TUIError, ValidationError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from prosemark.freewriting.domain.models import FreewriteSession, SessionConfig
+    from prosemark.freewriting.ports.freewrite_service import FreewriteServicePort
+    from prosemark.freewriting.ports.tui_adapter import TUIConfig, UIState
+
+from prosemark.freewriting.ports.tui_adapter import (
+    TUIAdapterPort,
+    TUIDisplayPort,
+    TUIEventPort,
+    UIState,
+)
+
+
+class FreewritingApp(App[int]):
+    """Main Textual application for freewriting sessions."""
+
+    CSS = """
+    Screen {
+        layout: vertical;
+    }
+
+    #content_area {
+        height: 80%;
+        border: solid $primary;
+        padding: 1;
+    }
+
+    #input_container {
+        height: 20%;
+        border: solid $secondary;
+        padding: 1;
+    }
+
+    #input_box {
+        width: 100%;
+    }
+
+    #stats_display {
+        dock: top;
+        height: 1;
+        background: $surface;
+        color: $text;
+        text-align: center;
+    }
+
+    .content_line {
+        margin-bottom: 1;
+        padding: 0 1;
+    }
+
+    .error_message {
+        background: $error;
+        color: $error-background;
+        padding: 1;
+        margin: 1;
+    }
+    """
+
+    BINDINGS = [
+        ('ctrl+c', 'quit', 'Quit'),
+        ('ctrl+s', 'pause', 'Pause/Resume'),
+        ('escape', 'quit', 'Quit'),
+    ]
+
+    # Reactive attributes for real-time updates
+    current_session: reactive[FreewriteSession | None] = reactive(None)
+    elapsed_seconds: reactive[int] = reactive(0)
+    error_message: reactive[str | None] = reactive(None)
+
+    def __init__(
+        self,
+        session_config: SessionConfig,
+        tui_adapter: TUIAdapterPort,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> None:
+        """Initialize the freewriting TUI application.
+
+        Args:
+            session_config: Configuration for the session.
+            tui_adapter: TUI adapter for session operations.
+            **kwargs: Additional arguments passed to App.
+
+        """
+        super().__init__(**kwargs)
+        self.session_config = session_config
+        self.tui_adapter = tui_adapter
+        self.start_time = time.time()
+        self.is_paused = False
+
+        # Event callbacks
+        self._input_change_callbacks: list[Callable[[str], None]] = []
+        self._input_submit_callbacks: list[Callable[[str], None]] = []
+        self._session_pause_callbacks: list[Callable[[], None]] = []
+        self._session_resume_callbacks: list[Callable[[], None]] = []
+        self._session_exit_callbacks: list[Callable[[], None]] = []
+
+    def compose(self) -> ComposeResult:  # noqa: PLR6301
+        """Create child widgets for the app."""
+        yield Header()
+        yield Static('', id='stats_display')
+        yield VerticalScroll(id='content_area')
+        with Container(id='input_container'):
+            yield Input(
+                placeholder='Start writing... (Press Enter to add line)',
+                id='input_box',
+            )
+        yield Footer()
+
+    def on_mount(self) -> None:
+        """Initialize the application after mounting."""
+        try:
+            # Initialize the session
+            self.current_session = self.tui_adapter.initialize_session(self.session_config)
+
+            # Set up the UI
+            self.title = 'Freewriting Session'
+            subtitle = f'Target: {self.session_config.target_node or "Daily File"}'
+            if self.session_config.title:
+                subtitle += f' | {self.session_config.title}'
+            self.sub_title = subtitle
+
+            # Focus the input box
+            self.query_one('#input_box').focus()
+
+            # Start the timer
+            self.set_interval(1.0, self._update_timer)
+
+            # Update display
+            self._update_display()
+
+        except (OSError, RuntimeError, ValueError) as e:
+            self.error_message = f'Failed to initialize session: {e}'
+            self.exit(1)
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle ENTER key press in input box."""
+        if not self.current_session or self.is_paused:
+            return
+
+        input_widget = event.input
+        text = input_widget.value
+
+        try:
+            # Submit content through adapter
+            updated_session = self.tui_adapter.handle_input_submission(self.current_session, text)
+            self.current_session = updated_session
+
+            # Clear input
+            input_widget.clear()
+
+            # Trigger callbacks
+            for callback in self._input_submit_callbacks:
+                callback(text)
+
+            # Update display
+            self._update_display()
+
+            # Check if goals are met
+            progress = self.tui_adapter.calculate_progress(self.current_session)
+            goals_met = progress.get('goals_met', {})
+            if any(goals_met.values()):
+                self._show_completion_message(goals_met)
+
+        except (OSError, RuntimeError, ValueError) as e:
+            ui_state = TextualTUIAdapter.handle_error(e, self.current_session)
+            self.error_message = ui_state.error_message
+            # Don't exit on content errors, let user continue
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle input text changes."""
+        # Trigger callbacks for input changes
+        for callback in self._input_change_callbacks:
+            callback(event.value)
+
+    def action_pause(self) -> None:
+        """Toggle pause/resume state."""
+        if not self.current_session:
+            return
+
+        if self.is_paused:
+            self.is_paused = False
+            for callback in self._session_resume_callbacks:
+                callback()
+            self.sub_title = self.sub_title.replace(' [PAUSED]', '')
+        else:
+            self.is_paused = True
+            for callback in self._session_pause_callbacks:
+                callback()
+            self.sub_title += ' [PAUSED]'
+
+    async def action_quit(self) -> None:
+        """Handle quit action."""
+        # Trigger exit callbacks
+        for callback in self._session_exit_callbacks:
+            callback()
+
+        # Exit with success code
+        self.exit(0)
+
+    def _update_timer(self) -> None:
+        """Update elapsed time every second."""
+        if not self.is_paused and self.current_session:
+            current_time = time.time()
+            self.elapsed_seconds = int(current_time - self.start_time)
+
+            # Update session with elapsed time
+            self.current_session = self.current_session.update_elapsed_time(self.elapsed_seconds)
+
+            # Update stats display
+            self._update_stats_display()
+
+    def _update_display(self) -> None:
+        """Update the content display area."""
+        if not self.current_session:
+            return
+
+        # Get display content from adapter
+        display_lines = TextualTUIAdapter.get_display_content(self.current_session, max_lines=1000)
+
+        # Update content area
+        content_area = self.query_one('#content_area')
+        content_area.remove_children()
+
+        for line in display_lines:
+            content_area.mount(Static(line, classes='content_line'))
+
+        # Auto-scroll to bottom
+        content_area.scroll_end()
+
+    def _update_stats_display(self) -> None:
+        """Update statistics display."""
+        if not self.current_session:
+            return
+
+        progress = self.tui_adapter.calculate_progress(self.current_session)
+
+        # Format stats string
+        stats_parts = []
+
+        # Word count
+        word_count = progress.get('word_count', 0)
+        stats_parts.append(f'Words: {word_count}')
+
+        if self.session_config.word_count_goal:
+            goal_progress = (word_count / self.session_config.word_count_goal) * 100
+            stats_parts.append(f'({goal_progress:.0f}%)')
+
+        # Time
+        elapsed = progress.get('elapsed_time', 0)
+        elapsed_min = elapsed // 60
+        elapsed_sec = elapsed % 60
+        stats_parts.append(f'Time: {elapsed_min:02d}:{elapsed_sec:02d}')
+
+        if self.session_config.time_limit:
+            remaining = max(0, self.session_config.time_limit - elapsed)
+            remaining_min = remaining // 60
+            remaining_sec = remaining % 60
+            stats_parts.append(f'(Remaining: {remaining_min:02d}:{remaining_sec:02d})')
+
+        stats_text = ' | '.join(stats_parts)
+        stats_display = self.query_one('#stats_display', Static)
+        stats_display.update(stats_text)
+
+    def _show_completion_message(self, goals_met: dict[str, bool]) -> None:
+        """Show completion message when goals are met."""
+        messages = []
+        if goals_met.get('word_count'):
+            messages.append('Word count goal reached!')
+        if goals_met.get('time_limit'):
+            messages.append('Time limit reached!')
+
+        if messages:
+            completion_text = ' '.join(messages) + ' Press Ctrl+C to exit.'
+            # For now, just update the sub_title with completion message
+            self.sub_title = completion_text
+
+
+class TextualTUIAdapter(TUIAdapterPort, TUIEventPort, TUIDisplayPort):
+    """Concrete implementation of TUI ports using Textual framework."""
+
+    def __init__(self, freewrite_service: FreewriteServicePort) -> None:
+        """Initialize the Textual TUI adapter.
+
+        Args:
+            freewrite_service: Service for freewriting operations.
+
+        """
+        self.freewrite_service = freewrite_service
+        self.app_instance: FreewritingApp | None = None
+
+    def initialize_session(self, config: SessionConfig) -> FreewriteSession:
+        """Initialize a new freewriting session.
+
+        Args:
+            config: Session configuration from CLI.
+
+        Returns:
+            Created session object.
+
+        Raises:
+            ValidationError: If configuration is invalid.
+
+        """
+        try:
+            return self.freewrite_service.create_session(config)
+        except Exception as e:
+            msg = 'Failed to initialize session'
+            raise ValidationError('session_config', str(config), msg) from e
+
+    def handle_input_submission(self, session: FreewriteSession, input_text: str) -> FreewriteSession:
+        """Handle user pressing ENTER in input box.
+
+        Args:
+            session: Current session state.
+            input_text: Text from input box.
+
+        Returns:
+            Updated session after content is appended.
+
+        Raises:
+            FileSystemError: If save operation fails.
+
+        """
+        return self.freewrite_service.append_content(session, input_text)
+
+    @staticmethod
+    def get_display_content(session: FreewriteSession, max_lines: int) -> list[str]:
+        """Get content lines to display in content area.
+
+        Args:
+            session: Current session.
+            max_lines: Maximum lines to return (for bottom of file view).
+
+        Returns:
+            List of content lines for display.
+
+        """
+        # Return bottom portion of content lines for "tail" view
+        content_lines = session.content_lines
+        if len(content_lines) <= max_lines:
+            return content_lines
+        return content_lines[-max_lines:]
+
+    def calculate_progress(self, session: FreewriteSession) -> dict[str, Any]:
+        """Calculate session progress metrics.
+
+        Args:
+            session: Current session.
+
+        Returns:
+            Dictionary with progress information.
+
+        """
+        return self.freewrite_service.get_session_stats(session)
+
+    @staticmethod
+    def handle_error(error: Exception, session: FreewriteSession) -> UIState:
+        """Handle errors during session operations.
+
+        Args:
+            error: The exception that occurred.
+            session: Current session state.
+
+        Returns:
+            Updated UI state with error information.
+
+        """
+        error_message = f'Error: {error}'
+
+        return UIState(
+            session=session,
+            input_text='',
+            display_lines=TextualTUIAdapter.get_display_content(session, 1000),
+            word_count=session.current_word_count,
+            elapsed_time=session.elapsed_time,
+            time_remaining=(session.time_limit - session.elapsed_time if session.time_limit else None),
+            progress_percent=None,
+            error_message=error_message,
+            is_paused=False,
+        )
+
+    def on_input_change(self, callback: Callable[[str], None]) -> None:
+        """Register callback for input text changes.
+
+        Args:
+            callback: Function to call when input changes.
+
+        """
+        if self.app_instance:
+            self.app_instance._input_change_callbacks.append(callback)  # noqa: SLF001
+
+    def on_input_submit(self, callback: Callable[[str], None]) -> None:
+        """Register callback for input submission (ENTER key).
+
+        Args:
+            callback: Function to call when input is submitted.
+
+        """
+        if self.app_instance:
+            self.app_instance._input_submit_callbacks.append(callback)  # noqa: SLF001
+
+    def on_session_pause(self, callback: Callable[[], None]) -> None:
+        """Register callback for session pause events.
+
+        Args:
+            callback: Function to call when session is paused.
+
+        """
+        if self.app_instance:
+            self.app_instance._session_pause_callbacks.append(callback)  # noqa: SLF001
+
+    def on_session_resume(self, callback: Callable[[], None]) -> None:
+        """Register callback for session resume events.
+
+        Args:
+            callback: Function to call when session is resumed.
+
+        """
+        if self.app_instance:
+            self.app_instance._session_resume_callbacks.append(callback)  # noqa: SLF001
+
+    def on_session_exit(self, callback: Callable[[], None]) -> None:
+        """Register callback for session exit events.
+
+        Args:
+            callback: Function to call when session exits.
+
+        """
+        if self.app_instance:
+            self.app_instance._session_exit_callbacks.append(callback)  # noqa: SLF001
+
+    def update_content_area(self, _lines: list[str]) -> None:
+        """Update the main content display area.
+
+        Args:
+            lines: Content lines to display.
+
+        """
+        if self.app_instance and self.app_instance.current_session:
+            self.app_instance._update_display()  # noqa: SLF001
+
+    def update_stats_display(self, _stats: dict[str, Any]) -> None:
+        """Update statistics display (word count, timer, etc.).
+
+        Args:
+            stats: Statistics to display.
+
+        """
+        if self.app_instance:
+            self.app_instance._update_stats_display()  # noqa: SLF001
+
+    def clear_input_area(self) -> None:
+        """Clear the input text box."""
+        if self.app_instance:
+            input_box = self.app_instance.query_one('#input_box', Input)
+            input_box.clear()
+
+    def show_error_message(self, message: str) -> None:
+        """Display error message to user.
+
+        Args:
+            message: Error message to show.
+
+        """
+        if self.app_instance:
+            self.app_instance.error_message = message
+
+    def hide_error_message(self) -> None:
+        """Hide any currently displayed error message."""
+        if self.app_instance:
+            self.app_instance.error_message = None
+
+    @staticmethod
+    def set_theme(theme_name: str) -> None:
+        """Apply UI theme.
+
+        Args:
+            theme_name: Name of theme to apply.
+
+        """
+        # Textual theme switching would be implemented here
+        # For now, we'll just validate the theme name
+        valid_themes = ['dark', 'light']
+        if theme_name not in valid_themes:
+            msg = f'Invalid theme: {theme_name}. Valid themes: {valid_themes}'
+            raise TUIError('theme', 'set_theme', msg, recoverable=True)
+
+    def run_tui(self, session_config: SessionConfig, tui_config: TUIConfig | None = None) -> int:
+        """Run the TUI application.
+
+        Args:
+            session_config: Session configuration.
+            tui_config: Optional TUI configuration.
+
+        Returns:
+            Exit code (0 for success).
+
+        """
+        try:
+            # Apply theme if specified
+            if tui_config and tui_config.theme:
+                TextualTUIAdapter.set_theme(tui_config.theme)
+
+            # Create and run the app
+            app = FreewritingApp(session_config, self)
+            self.app_instance = app
+            exit_code = app.run()
+            return exit_code if exit_code is not None else 0
+
+        except Exception as e:
+            msg = f'TUI application failed: {e}'
+            raise TUIError('application', 'run', msg, recoverable=False) from e
