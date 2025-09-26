@@ -438,6 +438,76 @@ class TestFreewritingApp:
         # Assert - no updates when no session
         assert app.elapsed_seconds == initial_elapsed
 
+    def test_pause_resume_timer_accumulates_correctly(self) -> None:
+        """Test that pause/resume correctly accumulates paused time."""
+        from unittest.mock import patch
+
+        # Arrange
+        session_config = SessionConfig()
+        mock_session = Mock(spec=FreewriteSession)
+        mock_tui_adapter = Mock(spec=TextualTUIAdapter)
+
+        app = FreewritingApp(session_config, mock_tui_adapter)
+        app.current_session = mock_session
+
+        # Mock time.time() to control timing and _update_stats_display to avoid UI dependencies
+        with (
+            patch('prosemark.freewriting.adapters.tui_adapter.time.time') as mock_time,
+            patch.object(app, '_update_stats_display'),
+        ):
+            # Start at time 0
+            mock_time.return_value = 0.0
+            app.start_time = 0.0
+            app.total_paused_time = 0.0
+
+            # Run for 3 seconds (should be 3 seconds elapsed)
+            mock_time.return_value = 3.0
+            app._update_timer()
+            assert app.elapsed_seconds == 3
+
+            # Pause at 3 seconds
+            app.action_pause()
+            assert app.is_paused is True
+            assert app.pause_start_time == 3.0
+
+            # Time passes while paused (5 seconds total, 2 seconds paused)
+            mock_time.return_value = 5.0
+            app._update_timer()  # Should not update elapsed time
+            assert app.elapsed_seconds == 3  # Still 3 seconds
+
+            # Resume at 5 seconds
+            app.action_pause()  # Toggle to resume
+            assert app.is_paused is False
+            assert app.total_paused_time == 2.0  # 5 - 3 = 2 seconds paused
+            assert app.pause_start_time is None
+
+            # Continue for another 2 seconds (7 seconds total, 2 seconds paused)
+            mock_time.return_value = 7.0
+            app._update_timer()
+            # Should be 7 - 0 - 2 = 5 seconds elapsed (total - start - paused)
+            assert app.elapsed_seconds == 5
+
+            # Pause again at 7 seconds
+            app.action_pause()
+            assert app.is_paused is True
+            assert app.pause_start_time == 7.0
+
+            # More time passes while paused (10 seconds total)
+            mock_time.return_value = 10.0
+            app._update_timer()  # Should not update elapsed time
+            assert app.elapsed_seconds == 5  # Still 5 seconds
+
+            # Resume at 10 seconds
+            app.action_pause()  # Toggle to resume
+            assert app.is_paused is False
+            assert app.total_paused_time == 5.0  # 2 + (10 - 7) = 5 seconds total paused
+
+            # Final update at 12 seconds total
+            mock_time.return_value = 12.0
+            app._update_timer()
+            # Should be 12 - 0 - 5 = 7 seconds elapsed
+            assert app.elapsed_seconds == 7
+
     def test_update_display_with_session(self) -> None:
         """Test display update when session exists."""
         # Arrange

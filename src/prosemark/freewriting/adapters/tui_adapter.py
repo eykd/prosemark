@@ -107,6 +107,8 @@ class FreewritingApp(App[int]):
         self.tui_adapter = tui_adapter
         self.start_time = time.time()
         self.is_paused = False
+        self.pause_start_time: float | None = None
+        self.total_paused_time = 0.0
 
         # Event callbacks
         self._input_change_callbacks: list[Callable[[str], None]] = []
@@ -199,12 +201,18 @@ class FreewritingApp(App[int]):
             return
 
         if self.is_paused:
+            # Resume: calculate and accumulate paused time
+            if self.pause_start_time is not None:
+                self.total_paused_time += time.time() - self.pause_start_time
+                self.pause_start_time = None
             self.is_paused = False
             for callback in self._session_resume_callbacks:
                 callback()
             self.sub_title = self.sub_title.replace(' [PAUSED]', '')
         else:
+            # Pause: record when pause started
             self.is_paused = True
+            self.pause_start_time = time.time()
             for callback in self._session_pause_callbacks:
                 callback()
             self.sub_title += ' [PAUSED]'
@@ -222,7 +230,8 @@ class FreewritingApp(App[int]):
         """Update elapsed time every second."""
         if not self.is_paused and self.current_session:
             current_time = time.time()
-            self.elapsed_seconds = int(current_time - self.start_time)
+            # Calculate elapsed time excluding paused time
+            self.elapsed_seconds = int(current_time - self.start_time - self.total_paused_time)
 
             # Update session with elapsed time
             self.current_session = self.current_session.update_elapsed_time(self.elapsed_seconds)
