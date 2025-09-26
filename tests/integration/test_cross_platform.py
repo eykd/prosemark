@@ -114,6 +114,7 @@ class TestCrossPlatform:
         # Verify basic structure
         assert '---' in draft_content  # YAML frontmatter
         assert '# Notes' in notes_content  # Basic notes structure
+        assert f'[[{node_id}]]' in notes_content  # Obsidian-style link to node
         assert '<!-- BEGIN_MANAGED_BLOCK -->' in binder_content
 
         # Files should be readable regardless of line endings

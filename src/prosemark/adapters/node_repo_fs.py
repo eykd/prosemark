@@ -115,8 +115,8 @@ class NodeRepoFs(NodeRepo):
             draft_content = self.frontmatter_codec.generate(frontmatter, '')
             draft_file.write_text(draft_content, encoding='utf-8')
 
-            # Create notes file (minimal content, no frontmatter needed)
-            notes_content = '# Notes\n'
+            # Create notes file with obsidian-style link to node file
+            notes_content = f'# Notes\n\n[[{node_id}]]\n'
             notes_file.write_text(notes_content, encoding='utf-8')
 
         except OSError as exc:
