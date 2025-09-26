@@ -54,7 +54,7 @@ class TestNodeRepoFs:
         repo = self._create_repo(tmp_path / 'test_project')
         mock_exists.return_value = False
         self.mock_clock.now_iso.return_value = '2023-01-01T00:00:00Z'
-        self.mock_frontmatter_codec.generate.return_value = '---\nfrontmatter\n---\n# Draft Content\n'
+        self.mock_frontmatter_codec.generate.return_value = '---\nfrontmatter\n---\n'
 
         repo.create(self.test_node_id, 'Test Title', 'Test Synopsis')
 
@@ -66,7 +66,7 @@ class TestNodeRepoFs:
             'created': '2023-01-01T00:00:00Z',
             'updated': '2023-01-01T00:00:00Z',
         }
-        self.mock_frontmatter_codec.generate.assert_called_once_with(expected_frontmatter, '\n# Draft Content\n')
+        self.mock_frontmatter_codec.generate.assert_called_once_with(expected_frontmatter, '')
 
         # Verify file writing
         assert mock_write_text.call_count == 2
@@ -98,7 +98,7 @@ class TestNodeRepoFs:
         repo = self._create_repo(tmp_path / 'test_project')
         mock_exists.return_value = False
         self.mock_clock.now_iso.return_value = '2023-01-01T00:00:00Z'
-        self.mock_frontmatter_codec.generate.return_value = '---\nfrontmatter\n---\n# Draft Content\n'
+        self.mock_frontmatter_codec.generate.return_value = '---\nfrontmatter\n---\n'
         mock_write_text.side_effect = OSError('Permission denied')
 
         with pytest.raises(FileSystemError, match='Cannot create node files'):

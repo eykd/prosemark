@@ -112,7 +112,7 @@ class NodeRepoFs(NodeRepo):
             }
 
             # Create draft file with frontmatter
-            draft_content = self.frontmatter_codec.generate(frontmatter, '\n# Draft Content\n')
+            draft_content = self.frontmatter_codec.generate(frontmatter, '')
             draft_file.write_text(draft_content, encoding='utf-8')
 
             # Create notes file (minimal content, no frontmatter needed)
