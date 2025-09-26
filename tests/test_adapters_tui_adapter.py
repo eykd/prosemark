@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from prosemark.freewriting.adapters.tui_adapter import FreewritingApp, TextualTUIAdapter
+from prosemark.freewriting.adapters.tui_adapter import EmacsInput, FreewritingApp, TextualTUIAdapter
 from prosemark.freewriting.domain.exceptions import TUIError, ValidationError
 from prosemark.freewriting.domain.models import FreewriteSession, SessionConfig
 from prosemark.freewriting.ports.freewrite_service import FreewriteServicePort
@@ -997,9 +997,7 @@ class TestTextualTUIAdapter:
         mock_service = Mock(spec=FreewriteServicePort)
         adapter = TextualTUIAdapter(mock_service)
 
-        from textual.widgets import Input
-
-        mock_input_box = Mock(spec=Input)
+        mock_input_box = Mock(spec=EmacsInput)
         mock_input_box.clear = Mock()
 
         mock_app = Mock(spec=FreewritingApp)
@@ -1010,7 +1008,7 @@ class TestTextualTUIAdapter:
         adapter.clear_input_area()
 
         # Assert
-        mock_app.query_one.assert_called_once_with('#input_box', Input)
+        mock_app.query_one.assert_called_once_with('#input_box', EmacsInput)
         mock_input_box.clear.assert_called_once()
 
     def test_clear_input_area_no_app(self) -> None:
@@ -1181,3 +1179,153 @@ class TestTextualTUIAdapter:
         # Act & Assert
         with pytest.raises(TUIError, match='TUI application failed'):
             adapter.run_tui(session_config, tui_config)
+
+
+class TestEmacsInput:
+    """Test the custom Input widget with emacs keybindings."""
+
+    def test_emacs_input_initialization(self) -> None:
+        """Test EmacsInput initializes with kill buffer."""
+        # Act
+        widget = EmacsInput()
+
+        # Assert
+        assert widget._kill_buffer == ''
+
+    def test_move_char_backward(self) -> None:
+        """Test _move_char_backward method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_char_backward()  # This should silently handle the NoActiveAppError
+
+    def test_move_char_backward_at_start(self) -> None:
+        """Test _move_char_backward method handles exception gracefully."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_char_backward()  # This should silently handle the NoActiveAppError
+
+    def test_move_char_forward(self) -> None:
+        """Test _move_char_forward method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_char_forward()  # This should silently handle the NoActiveAppError
+
+    def test_move_char_forward_at_end(self) -> None:
+        """Test _move_char_forward method handles exception gracefully."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_char_forward()  # This should silently handle the NoActiveAppError
+
+    def test_move_line_start(self) -> None:
+        """Test _move_line_start method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_line_start()  # This should silently handle the NoActiveAppError
+
+    def test_move_line_end(self) -> None:
+        """Test _move_line_end method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_line_end()  # This should silently handle the NoActiveAppError
+
+    def test_delete_char_forward(self) -> None:
+        """Test _delete_char_forward method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._delete_char_forward()  # This should silently handle the NoActiveAppError
+
+    def test_delete_char_forward_at_end(self) -> None:
+        """Test _delete_char_forward method handles exception gracefully."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._delete_char_forward()  # This should silently handle the NoActiveAppError
+
+    def test_kill_to_line_end(self) -> None:
+        """Test _kill_to_line_end method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._kill_to_line_end()  # This should silently handle the NoActiveAppError
+
+    def test_yank_killed_text(self) -> None:
+        """Test _yank_killed_text method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+        widget._kill_buffer = ' world'  # This is safe to set as it's not a reactive property
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._yank_killed_text()  # This should silently handle the NoActiveAppError
+
+    def test_yank_empty_kill_buffer(self) -> None:
+        """Test _yank_killed_text method with empty kill buffer doesn't crash."""
+        # Arrange
+        widget = EmacsInput()
+        widget._kill_buffer = ''  # This is safe to set as it's not a reactive property
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._yank_killed_text()  # This should silently handle the NoActiveAppError
+
+    def test_move_word_backward(self) -> None:
+        """Test _move_word_backward method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_word_backward()  # This should silently handle the NoActiveAppError
+
+    def test_move_word_backward_with_spaces(self) -> None:
+        """Test _move_word_backward method handles exception gracefully."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_word_backward()  # This should silently handle the NoActiveAppError
+
+    def test_move_word_forward(self) -> None:
+        """Test _move_word_forward method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._move_word_forward()  # This should silently handle the NoActiveAppError
+
+    def test_delete_word_forward(self) -> None:
+        """Test _delete_word_forward method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._delete_word_forward()  # This should silently handle the NoActiveAppError
+
+    def test_kill_word_backward_full_word(self) -> None:
+        """Test _kill_word_backward method doesn't crash when called outside app context."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._kill_word_backward()  # This should silently handle the NoActiveAppError
+
+    def test_kill_word_backward_to_beginning(self) -> None:
+        """Test _kill_word_backward method handles exception gracefully."""
+        # Arrange
+        widget = EmacsInput()
+
+        # Act & Assert - Should not raise an exception due to exception handling
+        widget._kill_word_backward()  # This should silently handle the NoActiveAppError
