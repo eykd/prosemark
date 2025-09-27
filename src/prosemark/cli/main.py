@@ -969,3 +969,14 @@ def main() -> None:
 
 if __name__ == '__main__':  # pragma: no cover
     main()
+
+
+@app.command(name='compile')
+def compile_cmd(
+    node_id: Annotated[str, typer.Argument(help='Node ID to compile')],
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
+) -> None:
+    """Compile a node and its subtree into concatenated plain text."""
+    from prosemark.cli.compile import compile_command
+
+    compile_command(node_id, path)

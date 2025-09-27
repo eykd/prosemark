@@ -41,28 +41,28 @@
 - Paths shown below follow hexagonal architecture in plan.md
 
 ## Phase 3.1: Setup
-- [ ] T001 Create compile module directories per implementation plan structure
-- [ ] T002 [P] Create __init__.py files for all new modules
-- [ ] T003 [P] Copy contract definitions to ports directory from specs
+- [x] T001 Create compile module directories per implementation plan structure
+- [x] T002 [P] Create __init__.py files for all new modules
+- [x] T003 [P] Copy contract definitions to ports directory from specs
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
 ### Contract Tests
-- [ ] T004 [P] Write failing contract test for CompileServicePort in tests/contract/ports/compile/test_service_port.py
+- [x] T004 [P] Write failing contract test for CompileServicePort in tests/contract/ports/compile/test_service_port.py
   - Test compile_subtree with valid request
   - Test error handling for non-existent node
   - Test include_empty option behavior
 
 ### Integration Tests
-- [ ] T005 [P] Write failing integration test for CLI compile command in tests/integration/cli/test_compile_command.py
+- [x] T005 [P] Write failing integration test for CLI compile command in tests/integration/cli/test_compile_command.py
   - Test Scenario 1: Simple hierarchy compilation
   - Test Scenario 2: Deep nesting compilation
   - Test Scenario 3: Empty nodes skipped
   - Test Scenario 4: Node not found error
 
 ### Unit Tests for Domain Logic
-- [ ] T006 [P] Write failing unit test for CompileService in tests/unit/domain/compile/test_service.py
+- [x] T006 [P] Write failing unit test for CompileService in tests/unit/domain/compile/test_service.py
   - Test depth-first traversal algorithm
   - Test content concatenation with double newlines
   - Test statistics calculation (node_count, skipped_empty)
