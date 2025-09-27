@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import NamedTuple
 from unittest.mock import Mock, patch
 
 from typer.testing import CliRunner
@@ -13,13 +14,17 @@ from prosemark.cli.main import (
 )
 from prosemark.domain.models import NodeId
 from prosemark.exceptions import (
-    AlreadyMaterializedError,
     BinderIntegrityError,
     EditorLaunchError,
     FileSystemError,
     NodeNotFoundError,
     PlaceholderNotFoundError,
 )
+
+
+class MaterializeResult(NamedTuple):
+    node_id: NodeId
+    was_already_materialized: bool
 
 
 class TestSimpleMainFunctions:
@@ -692,17 +697,17 @@ class TestMaterializeCommand:
         mock_materialize: Mock,
     ) -> None:
         """Test successful materialize command."""
-        valid_node_id = str(NodeId.generate())
+        valid_node_id = NodeId.generate()
         mock_get_root.return_value = Path('/test')
         mock_interactor = Mock()
         mock_materialize.return_value = mock_interactor
-        mock_interactor.execute.return_value = valid_node_id
+        mock_interactor.execute.return_value = MaterializeResult(valid_node_id, was_already_materialized=False)
 
         result = self.runner.invoke(app, ['materialize', 'Test Node'])
 
         assert result.exit_code == 0
-        assert f'Materialized "Test Node" ({valid_node_id})' in result.stdout
-        assert f'Created files: {valid_node_id}.md, {valid_node_id}.notes.md' in result.stdout
+        assert f'Materialized "Test Node" ({valid_node_id.value})' in result.stdout
+        assert f'Created files: {valid_node_id.value}.md, {valid_node_id.value}.notes.md' in result.stdout
         assert 'Updated binder structure' in result.stdout
 
     @patch('prosemark.cli.main.MaterializeNodeUseCase')
@@ -754,16 +759,17 @@ class TestMaterializeCommand:
         mock_get_root: Mock,
         mock_materialize: Mock,
     ) -> None:
-        """Test materialize command with AlreadyMaterializedError."""
+        """Test materialize command with already materialized item."""
+        existing_node_id = NodeId.generate()
         mock_get_root.return_value = Path('/test')
         mock_interactor = Mock()
         mock_materialize.return_value = mock_interactor
-        mock_interactor.execute.side_effect = AlreadyMaterializedError('Already exists')
+        mock_interactor.execute.return_value = MaterializeResult(existing_node_id, was_already_materialized=True)
 
         result = self.runner.invoke(app, ['materialize', 'Test Node'])
 
-        assert result.exit_code == 1
-        assert "Error: 'Test Node' is already materialized" in result.stdout
+        assert result.exit_code == 0
+        assert result.stdout.strip() == ''  # CLI should be silent for already-materialized items
 
     @patch('prosemark.cli.main.MaterializeNodeUseCase')
     @patch('prosemark.cli.main._get_project_root')

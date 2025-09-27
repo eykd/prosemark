@@ -6,12 +6,13 @@ import click
 
 from prosemark.adapters.binder_repo_fs import BinderRepoFs
 from prosemark.adapters.clock_system import ClockSystem
+from prosemark.adapters.console_pretty import ConsolePretty
 from prosemark.adapters.editor_launcher_system import EditorLauncherSystem
 from prosemark.adapters.id_generator_uuid7 import IdGeneratorUuid7
 from prosemark.adapters.logger_stdout import LoggerStdout
 from prosemark.adapters.node_repo_fs import NodeRepoFs
-from prosemark.app.use_cases import MaterializeNode
-from prosemark.exceptions import AlreadyMaterializedError, FileSystemError, PlaceholderNotFoundError
+from prosemark.app.materialize_node import MaterializeNode
+from prosemark.exceptions import FileSystemError, PlaceholderNotFoundError
 
 
 @click.command()
@@ -26,6 +27,7 @@ def materialize_command(title: str, _parent: str | None, path: Path | None) -> N
         # Wire up dependencies
         binder_repo = BinderRepoFs(project_root)
         clock = ClockSystem()
+        console = ConsolePretty()
         editor = EditorLauncherSystem()
         node_repo = NodeRepoFs(project_root, editor, clock)
         id_generator = IdGeneratorUuid7()
@@ -36,21 +38,21 @@ def materialize_command(title: str, _parent: str | None, path: Path | None) -> N
             binder_repo=binder_repo,
             node_repo=node_repo,
             id_generator=id_generator,
+            clock=clock,
+            console=console,
             logger=logger,
         )
 
-        node_id = interactor.execute(display_title=title, synopsis=None)
+        result = interactor.execute(title=title)
 
-        # Success output
-        click.echo(f'Materialized "{title}" ({node_id})')
-        click.echo(f'Created files: {node_id}.md, {node_id}.notes.md')
-        click.echo('Updated binder structure')
+        # Only output success messages if it was newly materialized
+        if not result.was_already_materialized:
+            click.echo(f'Materialized "{title}" ({result.node_id})')
+            click.echo(f'Created files: {result.node_id}.md, {result.node_id}.notes.md')
+            click.echo('Updated binder structure')
 
     except PlaceholderNotFoundError:
-        click.echo('Error: Placeholder not found', err=True)
-        raise SystemExit(1) from None
-    except AlreadyMaterializedError:
-        click.echo(f"Error: '{title}' is already materialized", err=True)
+        click.echo('Error: Item not found', err=True)
         raise SystemExit(1) from None
     except FileSystemError:
         click.echo('Error: File creation failed', err=True)

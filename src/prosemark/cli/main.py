@@ -25,6 +25,7 @@ from prosemark.adapters.node_repo_fs import NodeRepoFs
 # Use case imports
 from prosemark.app.materialize_all_placeholders import MaterializeAllPlaceholders
 from prosemark.app.materialize_node import MaterializeNode
+from prosemark.app.materialize_node import MaterializeNode as MaterializeNodeUseCase
 from prosemark.app.use_cases import (
     AddNode,
     AuditBinder,
@@ -34,7 +35,6 @@ from prosemark.app.use_cases import (
     RemoveNode,
     ShowStructure,
 )
-from prosemark.app.use_cases import MaterializeNode as MaterializeNodeUseCase
 from prosemark.domain.batch_materialize_result import BatchMaterializeResult
 
 # Domain model imports
@@ -43,7 +43,6 @@ from prosemark.domain.models import BinderItem, NodeId
 
 # Exception imports
 from prosemark.exceptions import (
-    AlreadyMaterializedError,
     BinderFormatError,
     BinderIntegrityError,
     BinderNotFoundError,
@@ -593,6 +592,8 @@ def _materialize_single_placeholder(
     binder_repo: BinderRepoFs,
     node_repo: NodeRepoFs,
     id_generator: IdGeneratorUuid7,
+    clock: ClockSystem,
+    console: ConsolePretty,
     logger: LoggerStdout,
 ) -> None:
     """Execute single materialization."""
@@ -600,15 +601,18 @@ def _materialize_single_placeholder(
         binder_repo=binder_repo,
         node_repo=node_repo,
         id_generator=id_generator,
+        clock=clock,
+        console=console,
         logger=logger,
     )
 
-    node_id = interactor.execute(display_title=title, synopsis=None)
+    result = interactor.execute(title=title)
 
-    # Success output
-    typer.echo(f'Materialized "{title}" ({node_id})')
-    typer.echo(f'Created files: {node_id}.md, {node_id}.notes.md')
-    typer.echo('Updated binder structure')
+    # Only output success messages if it was newly materialized
+    if not result.was_already_materialized:
+        typer.echo(f'Materialized "{title}" ({result.node_id})')
+        typer.echo(f'Created files: {result.node_id}.md, {result.node_id}.notes.md')
+        typer.echo('Updated binder structure')
 
 
 @app.command()
@@ -624,6 +628,7 @@ def materialize(
         _validate_materialize_args(title, all_placeholders=all_placeholders)
         project_root = path or _get_project_root()
         binder_repo, clock, _editor_port, node_repo, id_generator, logger = _create_shared_dependencies(project_root)
+        console = ConsolePretty()
 
         if all_placeholders:
             _materialize_all_placeholders(
@@ -634,13 +639,10 @@ def materialize(
             if title is None:
                 typer.echo('Error: Title is required for single materialization', err=True)
                 raise typer.Exit(1) from None
-            _materialize_single_placeholder(title, binder_repo, node_repo, id_generator, logger)
+            _materialize_single_placeholder(title, binder_repo, node_repo, id_generator, clock, console, logger)
 
     except PlaceholderNotFoundError:
         typer.echo('Error: Placeholder not found', err=True)
-        raise typer.Exit(1) from None
-    except AlreadyMaterializedError:
-        typer.echo(f"Error: '{title}' is already materialized", err=True)
         raise typer.Exit(1) from None
     except BinderFormatError as e:
         typer.echo(f'Error: Malformed binder structure - {e}', err=True)

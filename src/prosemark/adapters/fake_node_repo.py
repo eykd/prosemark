@@ -346,3 +346,21 @@ class FakeNodeRepo(NodeRepo):
 
         """
         self._frontmatter_mismatches[file_id] = frontmatter_id
+
+    def create_notes_file(self, node_id: 'NodeId') -> None:
+        """Create only the notes file for an existing node.
+
+        Creates the {id}.notes.md file with obsidian-style link to the node.
+        This is used when the draft file exists but the notes file is missing.
+
+        Args:
+            node_id: NodeId for the node that needs a notes file
+
+        Raises:
+            FileSystemError: If notes file cannot be created
+
+        """
+        # In fake implementation, just mark that notes file exists
+        node_key = str(node_id)
+        if node_key not in self._existing_notes_files:
+            self._existing_notes_files.add(node_key)

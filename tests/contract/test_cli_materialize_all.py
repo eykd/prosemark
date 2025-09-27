@@ -71,8 +71,8 @@ class TestCLIMaterializeAllContract:
                 assert 'Successfully materialized all 3 placeholders' in result.output
 
     def test_materialize_all_no_placeholders(self, tmp_path: Path) -> None:
-        """Test --all flag when no placeholders exist."""
-        # Setup binder without placeholders
+        """Test --all flag when only materialized nodes exist (no true placeholders)."""
+        # Setup binder with only materialized nodes (no placeholders)
         binder_path = tmp_path / '_binder.md'
         binder_content = """# Test Project
 
@@ -87,9 +87,10 @@ class TestCLIMaterializeAllContract:
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(cli, ['materialize', '--all', '--path', str(tmp_path)])
 
-            # Should exit with appropriate code
+            # Should process materialized items to ensure complete file sets
             assert result.exit_code == 0
-            assert 'Found 0 placeholders to materialize' in result.output
+            assert 'Found 2 placeholders to materialize' in result.output
+            assert 'Successfully materialized all 2 placeholders' in result.output
 
     def test_materialize_mutual_exclusion_error(self, tmp_path: Path) -> None:
         """Test that title and --all are mutually exclusive."""

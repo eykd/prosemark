@@ -2,13 +2,15 @@
 
 import pytest
 
+from prosemark.adapters.fake_clock import FakeClock
+from prosemark.adapters.fake_console import FakeConsolePort
 from prosemark.adapters.fake_id_generator import FakeIdGenerator
 from prosemark.adapters.fake_logger import FakeLogger
 from prosemark.adapters.fake_node_repo import FakeNodeRepo
 from prosemark.adapters.fake_storage import FakeBinderRepo
-from prosemark.app.use_cases import MaterializeNode
+from prosemark.app.materialize_node import MaterializeNode
 from prosemark.domain.models import Binder, BinderItem, NodeId
-from prosemark.exceptions import AlreadyMaterializedError, PlaceholderNotFoundError
+from prosemark.exceptions import PlaceholderNotFoundError
 
 
 class TestMaterializeNode:
@@ -35,11 +37,23 @@ class TestMaterializeNode:
         return FakeLogger()
 
     @pytest.fixture
+    def fake_console(self) -> FakeConsolePort:
+        """Fake Console for testing."""
+        return FakeConsolePort()
+
+    @pytest.fixture
+    def fake_clock(self) -> FakeClock:
+        """Fake Clock for testing."""
+        return FakeClock()
+
+    @pytest.fixture
     def materialize_node(
         self,
         fake_binder_repo: FakeBinderRepo,
         fake_node_repo: FakeNodeRepo,
         fake_id_generator: FakeIdGenerator,
+        fake_clock: FakeClock,
+        fake_console: FakeConsolePort,
         fake_logger: FakeLogger,
     ) -> MaterializeNode:
         """MaterializeNode instance with fake dependencies."""
@@ -47,6 +61,8 @@ class TestMaterializeNode:
             binder_repo=fake_binder_repo,
             node_repo=fake_node_repo,
             id_generator=fake_id_generator,
+            clock=fake_clock,
+            console=fake_console,
             logger=fake_logger,
         )
 
@@ -91,11 +107,12 @@ class TestMaterializeNode:
         display_title = 'New Chapter'
 
         # Act
-        result_id = materialize_node.execute(display_title=display_title, synopsis=None)
+        result = materialize_node.execute(title=display_title)
 
         # Assert - Node ID was generated and returned
         expected_id = NodeId('0192f0c1-0000-7000-8000-000000000001')
-        assert result_id == expected_id
+        assert result.node_id == expected_id
+        assert not result.was_already_materialized
 
         # Assert - Node files were created
         assert fake_node_repo.node_exists(expected_id)
@@ -117,18 +134,17 @@ class TestMaterializeNode:
         fake_node_repo: FakeNodeRepo,
         binder_with_placeholder: Binder,
     ) -> None:
-        """Test materialization with custom synopsis text."""
+        """Test materialization creates node with None synopsis."""
         # Arrange
         display_title = 'New Chapter'
-        synopsis = 'This is a custom synopsis for the chapter'
 
         # Act
-        materialize_node.execute(display_title=display_title, synopsis=synopsis)
+        materialize_node.execute(title=display_title)
 
-        # Assert - Node was created with synopsis
+        # Assert - Node was created with None synopsis (current behavior)
         expected_id = NodeId('0192f0c1-0000-7000-8000-000000000001')
         frontmatter = fake_node_repo.read_frontmatter(expected_id)
-        assert frontmatter['synopsis'] == synopsis
+        assert frontmatter['synopsis'] is None
 
     def test_placeholder_not_found_error(
         self,
@@ -140,25 +156,32 @@ class TestMaterializeNode:
         nonexistent_title = 'Nonexistent Chapter'
 
         # Act & Assert
-        with pytest.raises(PlaceholderNotFoundError, match='Placeholder not found'):
-            materialize_node.execute(display_title=nonexistent_title, synopsis=None)
+        with pytest.raises(PlaceholderNotFoundError, match=r'Item.*not found'):
+            materialize_node.execute(title=nonexistent_title)
 
     def test_materialization_of_already_materialized_item(
         self,
         materialize_node: MaterializeNode,
         binder_with_mixed_items: Binder,
+        fake_node_repo: FakeNodeRepo,
         fake_logger: FakeLogger,
     ) -> None:
         """Test materialization of already materialized item."""
         # Arrange
         existing_title = 'Existing Chapter'
 
-        # Act & Assert
-        with pytest.raises(AlreadyMaterializedError, match='Item already materialized'):
-            materialize_node.execute(display_title=existing_title, synopsis=None)
+        # Simulate that the notes file is missing (don't include it in existing notes files)
+        existing_node_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
+        fake_node_repo.set_existing_notes_files([])  # No notes files exist
 
-        # Verify the error was logged (this tests line 1372)
-        assert fake_logger.has_logged('error', 'Item with display_title already materialized: Existing Chapter')
+        # Act - Should handle already materialized item and create missing notes file
+        result = materialize_node.execute(title=existing_title)
+
+        # Assert - Should return existing node ID
+        assert result.node_id == existing_node_id
+
+        # Assert - Notes file should have been created in the fake repo
+        assert fake_node_repo.file_exists(existing_node_id, 'notes')
 
     def test_binder_update_after_materialization(
         self,
@@ -171,11 +194,11 @@ class TestMaterializeNode:
         display_title = 'New Chapter'
 
         # Act
-        result_id = materialize_node.execute(display_title=display_title, synopsis=None)
+        result = materialize_node.execute(title=display_title)
 
         # Assert - Binder was reloaded and placeholder is replaced
         reloaded_binder = fake_binder_repo.load()
-        materialized_item = reloaded_binder.find_by_id(result_id)
+        materialized_item = reloaded_binder.find_by_id(result.node_id)
         assert materialized_item is not None
         assert materialized_item.display_title == display_title
 
@@ -194,7 +217,7 @@ class TestMaterializeNode:
         display_title = 'New Chapter'
 
         # Act
-        materialize_node.execute(display_title=display_title, synopsis=None)
+        materialize_node.execute(title=display_title)
 
         # Assert - Both draft and notes files exist
         expected_id = NodeId('0192f0c1-0000-7000-8000-000000000001')
@@ -216,7 +239,7 @@ class TestMaterializeNode:
         display_title = 'Nested Section'
 
         # Act
-        result_id = materialize_node.execute(display_title=display_title, synopsis=None)
+        result = materialize_node.execute(title=display_title)
 
         # Assert - Hierarchy is preserved
         updated_binder = fake_binder_repo.load()
@@ -227,7 +250,7 @@ class TestMaterializeNode:
         # Assert - Materialized item is now a child of the parent
         assert len(parent_item.children) == 1
         materialized_child = parent_item.children[0]
-        assert materialized_child.id == result_id
+        assert materialized_child.id == result.node_id
         assert materialized_child.display_title == display_title
 
     def test_materialization_preserves_title_as_display_title(
@@ -241,11 +264,11 @@ class TestMaterializeNode:
         display_title = 'New Chapter'
 
         # Act
-        result_id = materialize_node.execute(display_title=display_title, synopsis=None)
+        result = materialize_node.execute(title=display_title)
 
         # Assert - Display title is preserved in binder
         updated_binder = fake_binder_repo.load()
-        materialized_item = updated_binder.find_by_id(result_id)
+        materialized_item = updated_binder.find_by_id(result.node_id)
         assert materialized_item is not None
         assert materialized_item.display_title == display_title
 
@@ -262,11 +285,11 @@ class TestMaterializeNode:
         fake_binder_repo.save(binder)
 
         # Act - Materialize one of them
-        result_id = materialize_node.execute(display_title='Same Title', synopsis=None)
+        result = materialize_node.execute(title='Same Title')
 
         # Assert - Only one was materialized (first found)
         updated_binder = fake_binder_repo.load()
-        materialized_item = updated_binder.find_by_id(result_id)
+        materialized_item = updated_binder.find_by_id(result.node_id)
         assert materialized_item is not None
 
         # Assert - One placeholder still remains
@@ -300,11 +323,11 @@ class TestMaterializeNode:
         fake_binder_repo.save(binder)
 
         # Act - Materialize the deeply nested placeholder
-        result_id = materialize_node.execute(display_title='Deep Placeholder', synopsis=None)
+        result = materialize_node.execute(title='Deep Placeholder')
 
         # Assert - Placeholder was found and materialized
         updated_binder = fake_binder_repo.load()
-        materialized_item = updated_binder.find_by_id(result_id)
+        materialized_item = updated_binder.find_by_id(result.node_id)
         assert materialized_item is not None
         assert materialized_item.display_title == 'Deep Placeholder'
 
@@ -312,6 +335,7 @@ class TestMaterializeNode:
         self,
         materialize_node: MaterializeNode,
         fake_binder_repo: FakeBinderRepo,
+        fake_node_repo: FakeNodeRepo,
         fake_logger: FakeLogger,
     ) -> None:
         """Test error when trying to materialize an already materialized nested item."""
@@ -330,12 +354,14 @@ class TestMaterializeNode:
         binder = Binder(roots=[parent])
         fake_binder_repo.save(binder)
 
-        # Act & Assert - Should raise AlreadyMaterializedError
-        with pytest.raises(AlreadyMaterializedError, match='Item already materialized'):
-            materialize_node.execute(display_title='Already Materialized', synopsis=None)
+        # Simulate that the notes file exists (no missing notes file to create)
+        fake_node_repo.set_existing_notes_files([str(existing_id)])
 
-        # Assert - Error was logged with correct format
-        assert fake_logger.has_logged('error', 'Item with display_title already materialized: Already Materialized')
+        # Act - Should handle already materialized item that has notes file
+        result = materialize_node.execute(title='Already Materialized')
+
+        # Assert - Should return existing node ID
+        assert result.node_id == existing_id
 
     def test_recursive_search_through_multiple_branches(
         self,
@@ -377,11 +403,11 @@ class TestMaterializeNode:
         fake_binder_repo.save(binder)
 
         # Act - Should find the target in the second branch
-        result_id = materialize_node.execute(display_title='Target Placeholder', synopsis=None)
+        result = materialize_node.execute(title='Target Placeholder')
 
         # Assert - Target was found and materialized
         updated_binder = fake_binder_repo.load()
-        materialized_item = updated_binder.find_by_id(result_id)
+        materialized_item = updated_binder.find_by_id(result.node_id)
         assert materialized_item is not None
         assert materialized_item.display_title == 'Target Placeholder'
 
@@ -389,6 +415,7 @@ class TestMaterializeNode:
         self,
         materialize_node: MaterializeNode,
         fake_binder_repo: FakeBinderRepo,
+        fake_node_repo: FakeNodeRepo,
     ) -> None:
         """Test recursive search returns early when found in first child's subtree."""
         # This specifically tests the branch at line 1408->1409 where result is not None
@@ -432,6 +459,77 @@ class TestMaterializeNode:
         binder = Binder(roots=[root])
         fake_binder_repo.save(binder)
 
-        # Act - Try to materialize an already materialized item deep in the tree
-        with pytest.raises(AlreadyMaterializedError, match='Item already materialized'):
-            materialize_node.execute(display_title='Deep Target', synopsis=None)
+        # Simulate that notes file exists for the target item
+        target_id = NodeId('0192f0c1-5555-7000-8000-000000000005')
+        fake_node_repo.set_existing_notes_files([str(target_id)])
+
+        # Act - Should handle already materialized item with existing notes file
+        result = materialize_node.execute(title='Deep Target')
+
+        # Assert - Should return the target node ID
+        assert result.node_id == target_id
+
+    def test_materialization_creates_missing_notes_file(
+        self,
+        materialize_node: MaterializeNode,
+        fake_binder_repo: FakeBinderRepo,
+        fake_node_repo: FakeNodeRepo,
+        fake_console: FakeConsolePort,
+    ) -> None:
+        """Test that materialization creates missing notes file for already materialized nodes."""
+        # Arrange - Binder with already materialized item
+        existing_node_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
+        materialized_item = BinderItem(
+            id_=existing_node_id,
+            display_title='Existing Chapter',
+            children=[],
+        )
+        binder = Binder(roots=[materialized_item])
+        fake_binder_repo.save(binder)
+
+        # Simulate that the notes file is missing (not in existing notes files list)
+        fake_node_repo.set_existing_notes_files([])
+
+        # Act
+        result = materialize_node.execute(title='Existing Chapter')
+
+        # Assert - Should return existing node ID
+        assert result.node_id == existing_node_id
+
+        # Assert - Notes file should now exist
+        assert fake_node_repo.file_exists(existing_node_id, 'notes')
+
+        # Assert - Success message was printed
+        output = fake_console.get_output()
+        assert any('Created missing notes file' in msg for msg in output)
+
+    def test_materialization_skips_creation_when_notes_file_exists(
+        self,
+        materialize_node: MaterializeNode,
+        fake_binder_repo: FakeBinderRepo,
+        fake_node_repo: FakeNodeRepo,
+        fake_console: FakeConsolePort,
+    ) -> None:
+        """Test that materialization skips notes file creation when it already exists."""
+        # Arrange - Binder with already materialized item
+        existing_node_id = NodeId('0192f0c1-1111-7000-8000-000000000001')
+        materialized_item = BinderItem(
+            id_=existing_node_id,
+            display_title='Existing Chapter',
+            children=[],
+        )
+        binder = Binder(roots=[materialized_item])
+        fake_binder_repo.save(binder)
+
+        # Simulate that the notes file already exists
+        fake_node_repo.set_existing_notes_files([str(existing_node_id)])
+
+        # Act
+        result = materialize_node.execute(title='Existing Chapter')
+
+        # Assert - Should return existing node ID
+        assert result.node_id == existing_node_id
+
+        # Assert - Warning message was printed
+        output = fake_console.get_output()
+        assert any('is already materialized' in msg for msg in output)

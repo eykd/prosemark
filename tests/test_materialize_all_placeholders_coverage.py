@@ -50,9 +50,11 @@ class TestMaterializeAllPlaceholdersCoverage:
         binder = Binder(roots=[placeholder_item])
 
         # Mock the materialization to succeed
+        from prosemark.app.materialize_node import MaterializeResult
+
         mock_materialize_use_case = Mock()
         mock_node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
-        mock_materialize_use_case.execute.return_value = mock_node_id
+        mock_materialize_use_case.execute.return_value = MaterializeResult(mock_node_id, was_already_materialized=False)
 
         use_case = MaterializeAllPlaceholders(
             materialize_node_use_case=mock_materialize_use_case,
@@ -83,9 +85,11 @@ class TestMaterializeAllPlaceholdersCoverage:
         binder = Binder(roots=[placeholder_item])
 
         # Mock successful materialization
+        from prosemark.app.materialize_node import MaterializeResult
+
         mock_materialize_use_case = Mock()
         mock_node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
-        mock_materialize_use_case.execute.return_value = mock_node_id
+        mock_materialize_use_case.execute.return_value = MaterializeResult(mock_node_id, was_already_materialized=False)
 
         use_case = MaterializeAllPlaceholders(
             materialize_node_use_case=mock_materialize_use_case,
@@ -179,9 +183,11 @@ class TestMaterializeAllPlaceholdersCoverage:
     def test_materialize_single_placeholder_creates_file_paths(self) -> None:
         """Test that single placeholder materialization creates correct file paths."""
         # Missing lines 236-238: File path creation in _materialize_single_placeholder
+        from prosemark.app.materialize_node import MaterializeResult
+
         mock_materialize_use_case = Mock()
         mock_node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
-        mock_materialize_use_case.execute.return_value = mock_node_id
+        mock_materialize_use_case.execute.return_value = MaterializeResult(mock_node_id, was_already_materialized=False)
 
         use_case = MaterializeAllPlaceholders(
             materialize_node_use_case=mock_materialize_use_case,
@@ -219,9 +225,11 @@ class TestMaterializeAllPlaceholdersCoverage:
         binder = Binder(roots=[placeholder_item])
 
         # Mock successful materialization with specific node ID
+        from prosemark.app.materialize_node import MaterializeResult
+
         mock_materialize_use_case = Mock()
         test_node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
-        mock_materialize_use_case.execute.return_value = test_node_id
+        mock_materialize_use_case.execute.return_value = MaterializeResult(test_node_id, was_already_materialized=False)
 
         use_case = MaterializeAllPlaceholders(
             materialize_node_use_case=mock_materialize_use_case,
@@ -250,9 +258,11 @@ class TestMaterializeAllPlaceholdersCoverage:
         binder = Binder(roots=[placeholder_item])
 
         # Mock successful materialization
+        from prosemark.app.materialize_node import MaterializeResult
+
         mock_materialize_use_case = Mock()
         test_node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
-        mock_materialize_use_case.execute.return_value = test_node_id
+        mock_materialize_use_case.execute.return_value = MaterializeResult(test_node_id, was_already_materialized=False)
 
         use_case = MaterializeAllPlaceholders(
             materialize_node_use_case=mock_materialize_use_case,

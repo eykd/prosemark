@@ -676,3 +676,66 @@ class TestBinder:
         # Should return None when searching through all branches without finding match
         result3 = binder.find_placeholder_by_display_title('Non-existent')
         assert result3 is None
+
+    def test_find_placeholder_recursive_return_none_coverage(self) -> None:
+        """Test to ensure line 412 coverage in recursive search (return None from _search_item)."""
+        # Create a nested structure where the recursive search must return None
+        # This specifically targets the "return None" at the end of _search_item
+        node_id1 = NodeId('0192f0c1-1111-7000-8000-000000000001')
+        node_id2 = NodeId('0192f0c1-2222-7000-8000-000000000002')
+
+        # Deep nested structure with no matching placeholder
+        deep_child = BinderItem(id_=node_id2, display_title='Deep Materialized', children=[])
+        middle_child = BinderItem(id_=node_id1, display_title='Middle Materialized', children=[deep_child])
+        root_item = BinderItem(id_=None, display_title='Root Placeholder', children=[middle_child])
+
+        binder = Binder(roots=[root_item])
+
+        # Search for a title that doesn't exist anywhere
+        # This will cause the recursive search to traverse the tree and return None
+        result = binder.find_placeholder_by_display_title('Nonexistent Title')
+        assert result is None
+
+        # Also search for a materialized item title to ensure recursive traversal
+        result2 = binder.find_placeholder_by_display_title('Deep Materialized')
+        assert result2 is None  # Should be None because it's materialized, not a placeholder
+
+    def test_find_placeholder_nested_match_return_coverage(self) -> None:
+        """Test to ensure line 412 coverage - return result when found in child."""
+        # This specifically targets the "return result" line when a match is found in a child
+        # Create a structure where the placeholder is nested, not at the root level
+
+        # Create a placeholder deeply nested in children
+        target_placeholder = BinderItem(id_=None, display_title='Deep Target Placeholder', children=[])
+
+        # Create materialized items as siblings to ensure search continues
+        sibling1 = BinderItem(
+            id_=NodeId('0192f0c1-1111-7000-8000-000000000001'), display_title='Sibling 1', children=[]
+        )
+        sibling2 = BinderItem(
+            id_=NodeId('0192f0c1-2222-7000-8000-000000000002'), display_title='Sibling 2', children=[]
+        )
+
+        # Create parent with multiple children where the target is the last child
+        parent = BinderItem(
+            id_=None, display_title='Parent Container', children=[sibling1, sibling2, target_placeholder]
+        )
+
+        # Create root that contains this parent
+        root = BinderItem(id_=None, display_title='Root Container', children=[parent])
+
+        binder = Binder(roots=[root])
+
+        # Search for the deeply nested placeholder
+        # This should cause the recursive search to traverse:
+        # 1. Root container (not a match, has children)
+        # 2. Parent container (not a match, has children)
+        # 3. Sibling 1 (not a match, no children) - returns None
+        # 4. Sibling 2 (not a match, no children) - returns None
+        # 5. Target placeholder (MATCH!) - returns the item
+        # 6. Parent's loop finds the match and executes "return result" (line 412)
+        result = binder.find_placeholder_by_display_title('Deep Target Placeholder')
+        assert result == target_placeholder
+        assert result is not None
+        assert result.display_title == 'Deep Target Placeholder'
+        assert result.node_id is None

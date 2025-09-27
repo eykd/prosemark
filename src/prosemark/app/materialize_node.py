@@ -1,7 +1,7 @@
 """MaterializeNode use case for converting placeholders to actual nodes."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from prosemark.domain.models import BinderItem, NodeId
 from prosemark.exceptions import PlaceholderNotFoundError
@@ -15,8 +15,18 @@ if TYPE_CHECKING:  # pragma: no cover
     from prosemark.ports.node_repo import NodeRepo
 
 
+class MaterializeResult(NamedTuple):
+    """Result of a materialization operation."""
+
+    node_id: NodeId
+    was_already_materialized: bool
+
+
 class MaterializeNode:
-    """Convert placeholder items in the binder to actual content nodes."""
+    """Convert placeholder items in the binder to actual content nodes.
+
+    Also creates missing notes files for already-materialized nodes.
+    """
 
     def __init__(
         self,
@@ -51,15 +61,18 @@ class MaterializeNode:
         *,
         title: str,
         project_path: Path | None = None,
-    ) -> NodeId:
+    ) -> MaterializeResult:
         """Materialize a placeholder into a real node.
+
+        If the placeholder is already materialized but is missing a notes file,
+        this method will create the missing notes file with an obsidian-style link.
 
         Args:
             title: Title of the placeholder to materialize.
             project_path: Project directory path.
 
         Returns:
-            The ID of the newly created node.
+            MaterializeResult containing the node ID and whether it was already materialized.
 
         Raises:
             PlaceholderNotFoundError: If no placeholder with the given title is found.
@@ -71,16 +84,24 @@ class MaterializeNode:
         # Load existing binder
         binder = self.binder_repo.load()
 
-        # Find the placeholder item
-        placeholder = self._find_placeholder(binder.roots, title)
-        if not placeholder:
-            msg = f"Placeholder '{title}' not found"
+        # Find the item by title (placeholder or materialized)
+        item = self._find_item_by_title(binder.roots, title)
+        if not item:
+            msg = f"Item '{title}' not found"
             raise PlaceholderNotFoundError(msg)
 
         # Check if already materialized
-        if placeholder.node_id:  # pragma: no cover
-            self.console.print_warning(f"'{title}' is already materialized")  # pragma: no cover
-            return placeholder.node_id  # pragma: no cover
+        if item.node_id:
+            # Node is already materialized, but check if notes file is missing
+            existing_node_id = item.node_id
+            if not self.node_repo.file_exists(existing_node_id, 'notes'):
+                self.logger.info('Creating missing notes file for: %s', existing_node_id.value)
+                self.node_repo.create_notes_file(existing_node_id)
+                self.console.print_success(f'Created missing notes file for "{title}" ({existing_node_id.value})')
+                self.console.print_info(f'Created file: {existing_node_id.value}.notes.md')
+            else:
+                self.console.print_warning(f"'{title}' is already materialized")
+            return MaterializeResult(existing_node_id, was_already_materialized=True)
 
         # Generate new node ID
         node_id = self.id_generator.new()
@@ -88,8 +109,8 @@ class MaterializeNode:
         # Create the node files
         self.node_repo.create(node_id, title, None)
 
-        # Update the placeholder with the node ID
-        placeholder.node_id = node_id
+        # Update the item with the node ID
+        item.node_id = node_id
 
         # Save updated binder
         self.binder_repo.save(binder)
@@ -98,23 +119,23 @@ class MaterializeNode:
         self.console.print_info(f'Created files: {node_id.value}.md, {node_id.value}.notes.md')
         self.logger.info('Placeholder materialized: %s -> %s', title, node_id.value)
 
-        return node_id
+        return MaterializeResult(node_id, was_already_materialized=False)
 
-    def _find_placeholder(self, items: list[BinderItem], title: str) -> BinderItem | None:
-        """Find a placeholder item by title in the hierarchy.
+    def _find_item_by_title(self, items: list[BinderItem], title: str) -> BinderItem | None:
+        """Find an item by title in the hierarchy (placeholder or materialized).
 
         Args:
             items: List of binder items to search.
             title: Title to search for.
 
         Returns:
-            The placeholder item if found, None otherwise.
+            The item if found, None otherwise.
 
         """
         for item in items:
-            if item.display_title == title and not item.node_id:
+            if item.display_title == title:
                 return item
-            found = self._find_placeholder(item.children, title)
+            found = self._find_item_by_title(item.children, title)
             if found:
                 return found
         return None

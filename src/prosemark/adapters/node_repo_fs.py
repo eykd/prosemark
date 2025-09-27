@@ -390,3 +390,27 @@ class NodeRepoFs(NodeRepo):
             raise ValueError(msg)
 
         return file_path.exists()
+
+    def create_notes_file(self, node_id: 'NodeId') -> None:
+        """Create only the notes file for an existing node.
+
+        Creates the {id}.notes.md file with obsidian-style link to the node.
+        This is used when the draft file exists but the notes file is missing.
+
+        Args:
+            node_id: NodeId for the node that needs a notes file
+
+        Raises:
+            FileSystemError: If notes file cannot be created
+
+        """
+        notes_file = self.project_path / f'{node_id}.notes.md'
+
+        try:
+            # Create notes file with obsidian-style link to node file
+            notes_content = f'# Notes\n\n[[{node_id}]]\n'
+            notes_file.write_text(notes_content, encoding='utf-8')
+
+        except OSError as exc:  # pragma: no cover
+            msg = f'Cannot create notes file: {exc}'
+            raise FileSystemError(msg) from exc

@@ -158,13 +158,17 @@ class MaterializeAllPlaceholders:
         return batch_result
 
     def _discover_placeholders(self, binder: Binder) -> list[PlaceholderSummary]:
-        """Discover all placeholders in the binder hierarchy.
+        """Discover all items in the binder hierarchy that need processing.
+
+        This includes both placeholders (items without node IDs) and materialized nodes
+        (items with node IDs that may have missing files). The enhanced MaterializeNode
+        can handle both cases appropriately.
 
         Args:
-            binder: Binder to scan for placeholders
+            binder: Binder to scan for items to process
 
         Returns:
-            List of placeholder summaries in hierarchical order
+            List of item summaries in hierarchical order
 
         """
         placeholders: list[PlaceholderSummary] = []
@@ -179,11 +183,14 @@ class MaterializeAllPlaceholders:
         depth: int,
         position_path: list[int] | None = None,
     ) -> None:
-        """Recursively collect placeholders from binder hierarchy.
+        """Recursively collect all items that need processing from binder hierarchy.
+
+        Collects both placeholders and materialized nodes since the enhanced
+        MaterializeNode can handle both cases (creating new nodes or fixing missing files).
 
         Args:
             items: Current level items to process
-            placeholders: List to append discovered placeholders to
+            placeholders: List to append discovered items to
             parent_title: Title of parent item (if any)
             depth: Current nesting depth
             position_path: Hierarchical position path from root
@@ -194,14 +201,17 @@ class MaterializeAllPlaceholders:
             position_path = position_path or []
             position = '[' + ']['.join(str(idx) for idx in [*position_path, i]) + ']'
 
-            if item.node_id is None:  # This is a placeholder
-                placeholder = PlaceholderSummary(
-                    display_title=item.display_title,
-                    position=position,
-                    parent_title=parent_title,
-                    depth=depth,
-                )
-                placeholders.append(placeholder)
+            # Collect both placeholders (node_id is None) and materialized nodes (node_id exists)
+            # The enhanced MaterializeNode can handle both cases:
+            # - Placeholders: creates new nodes with both .md and .notes.md files
+            # - Materialized nodes: creates missing .notes.md files if needed
+            placeholder = PlaceholderSummary(
+                display_title=item.display_title,
+                position=position,
+                parent_title=parent_title,
+                depth=depth,
+            )
+            placeholders.append(placeholder)
 
             # Recursively process children
             if item.children:
@@ -230,14 +240,14 @@ class MaterializeAllPlaceholders:
 
         """
         # Use the existing MaterializeNode use case
-        node_id = self.materialize_node_use_case.execute(title=placeholder.display_title, project_path=project_path)
+        result = self.materialize_node_use_case.execute(title=placeholder.display_title, project_path=project_path)
 
         # Create file paths
-        file_paths = [f'{node_id.value}.md', f'{node_id.value}.notes.md']
+        file_paths = [f'{result.node_id.value}.md', f'{result.node_id.value}.notes.md']
 
         return MaterializeResult(
             display_title=placeholder.display_title,
-            node_id=node_id,
+            node_id=result.node_id,
             file_paths=file_paths,
             position=placeholder.position,
         )

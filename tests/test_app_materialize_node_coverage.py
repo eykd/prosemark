@@ -100,11 +100,12 @@ class TestMaterializeNodeCoverage:
         title = 'Chapter Placeholder'
 
         # Act
-        result_id = materialize_node.execute(title=title)
+        result = materialize_node.execute(title=title)
 
         # Assert - Node ID was generated and returned
         expected_id = NodeId('0192f0c1-0000-7000-8000-000000000001')
-        assert result_id == expected_id
+        assert result.node_id == expected_id
+        assert not result.was_already_materialized
 
         # Assert - Node files were created
         assert fake_node_repo.node_exists(expected_id)
@@ -140,13 +141,15 @@ class TestMaterializeNodeCoverage:
         fake_binder_repo.save(binder)
 
         # First materialization
-        first_id = materialize_node.execute(title=title)
+        first_result = materialize_node.execute(title=title)
+        first_id = first_result.node_id
 
         # Act - Try to materialize again
-        result_id = materialize_node.execute(title=title)
+        result = materialize_node.execute(title=title)
 
-        # Assert - Returns same node ID
-        assert result_id == first_id
+        # Assert - Returns same node ID and indicates it was already materialized
+        assert result.node_id == first_id
+        assert result.was_already_materialized
 
         # Assert - Warning message displayed on second attempt
         assert fake_console.output_contains(f'WARNING: {title} is already materialized')
@@ -166,7 +169,7 @@ class TestMaterializeNodeCoverage:
         with pytest.raises(PlaceholderNotFoundError) as exc_info:
             materialize_node.execute(title=title)
 
-        assert f"Placeholder '{title}' not found" in str(exc_info.value)
+        assert f"Item '{title}' not found" in str(exc_info.value)
 
     def test_materialize_node_finds_nested_placeholder(
         self,
@@ -186,11 +189,12 @@ class TestMaterializeNodeCoverage:
         fake_binder_repo.save(binder)
 
         # Act
-        result_id = materialize_node.execute(title='Nested Placeholder')
+        result = materialize_node.execute(title='Nested Placeholder')
 
         # Assert - Nested placeholder was materialized
         expected_id = NodeId('0192f0c1-0000-7000-8000-000000000001')
-        assert result_id == expected_id
+        assert result.node_id == expected_id
+        assert not result.was_already_materialized
 
         # Assert - Node files were created
         assert fake_node_repo.node_exists(expected_id)
@@ -239,11 +243,11 @@ class TestMaterializeNodeCoverage:
         fake_binder_repo.save(binder)
 
         # Act
-        result_id = materialize_node.execute(title='Deep Placeholder')
+        result = materialize_node.execute(title='Deep Placeholder')
 
         # Assert - Deep placeholder was found and materialized
         expected_id = NodeId('0192f0c1-0000-7000-8000-000000000001')
-        assert result_id == expected_id
+        assert result.node_id == expected_id
 
         # Verify the deep structure was updated
         updated_binder = fake_binder_repo.load()

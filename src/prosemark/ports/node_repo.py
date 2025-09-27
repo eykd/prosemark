@@ -161,3 +161,18 @@ class NodeRepo(ABC):
             ValueError: If file_type is not valid
 
         """
+
+    @abstractmethod
+    def create_notes_file(self, node_id: 'NodeId') -> None:
+        """Create only the notes file for an existing node.
+
+        Creates the {id}.notes.md file with obsidian-style link to the node.
+        This is used when the draft file exists but the notes file is missing.
+
+        Args:
+            node_id: NodeId for the node that needs a notes file
+
+        Raises:
+            FileSystemError: If notes file cannot be created
+
+        """

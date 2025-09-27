@@ -146,8 +146,9 @@ class TestPlaceholderWorkflow:
         """Test that materializing an already-materialized node is handled gracefully."""
         # Chapter 1 is already materialized
         result = runner.invoke(app, ['materialize', 'Chapter 1', '--path', str(project_with_placeholders['dir'])])
-        # Should either succeed with a warning or fail gracefully
-        assert 'already materialized' in result.output.lower() or result.exit_code != 0
+        # Should succeed silently (warning goes through console, not CLI output)
+        assert result.exit_code == 0
+        assert result.output.strip() == ''  # CLI should be silent for already-materialized items
 
     def test_structure_shows_placeholders(self, runner: CliRunner, project_with_placeholders: dict[str, Any]) -> None:
         """Test that structure command shows placeholders distinctly."""

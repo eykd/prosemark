@@ -120,3 +120,21 @@ class TestFakeNodeRepo:
         # Set the notes file to exist
         repo.set_existing_notes_files([str(node_id)])
         assert repo.file_exists(node_id, 'notes')
+
+    def test_create_notes_file_already_exists_coverage(self) -> None:
+        """Test create_notes_file when notes file already exists (coverage for line 365)."""
+        # Test coverage for the branch where node_key is already in _existing_notes_files
+        node_id = NodeId('01234567-89ab-7def-8123-456789abcdef')
+        repo = FakeNodeRepo()
+
+        # First call creates the notes file entry
+        repo.create_notes_file(node_id)
+        assert str(node_id) in repo._existing_notes_files
+
+        # Second call should take the branch where node_key is already present
+        initial_count = len(repo._existing_notes_files)
+        repo.create_notes_file(node_id)
+
+        # Should still be in the set but no additional entry created
+        assert str(node_id) in repo._existing_notes_files
+        assert len(repo._existing_notes_files) == initial_count

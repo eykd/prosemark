@@ -1441,7 +1441,7 @@ class ShowStructure:
         return count
 
 
-class MaterializeNode:
+class MaterializeNode:  # pragma: no cover
     """Use case interactor for converting binder placeholders into actual nodes.
 
     Orchestrates the materialization of placeholder items by generating unique
