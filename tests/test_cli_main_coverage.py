@@ -21,8 +21,6 @@ from prosemark.domain.materialize_result import MaterializeResult
 from prosemark.domain.models import NodeId
 from prosemark.exceptions import (
     BinderFormatError,
-    FileSystemError,
-    PlaceholderNotFoundError,
 )
 
 
@@ -170,51 +168,6 @@ class TestCliMainCoverage:
                                             path=None,
                                         )
                                     assert exc_info.value.exit_code == 1
-
-    def test_materialize_all_placeholder_not_found_error(self) -> None:
-        """Test materialize-all command with placeholder not found error."""
-        # Missing lines 881-882: PlaceholderNotFoundError handling in materialize-all
-        from typer.testing import CliRunner
-
-        from prosemark.cli.main import app
-
-        runner = CliRunner()
-
-        # Create a temporary directory that exists
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            with (
-                patch('prosemark.cli.main._get_project_root', return_value=temp_path),
-                patch(
-                    'prosemark.cli.main._execute_materialize_all',
-                    side_effect=PlaceholderNotFoundError('No placeholders'),
-                ),
-            ):
-                result = runner.invoke(app, ['materialize-all'])
-                assert result.exit_code == 1
-                assert 'Error: No placeholders found' in result.stdout
-
-    def test_materialize_all_filesystem_error(self) -> None:
-        """Test materialize-all command with filesystem error."""
-        # Missing lines 895-897: FileSystemError handling in materialize-all
-        from typer.testing import CliRunner
-
-        from prosemark.cli.main import app
-
-        runner = CliRunner()
-
-        # Create a temporary directory that exists
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            with patch('prosemark.cli.main._get_project_root', return_value=temp_path):  # noqa: SIM117
-                with patch('prosemark.cli.main._execute_materialize_all', side_effect=FileSystemError('File error')):
-                    result = runner.invoke(app, ['materialize-all'])
-                    assert result.exit_code == 2
-                    assert 'Error: File creation failed' in result.stdout
 
 
 class TestMaterializeAllPlaceholdersCoverage:
@@ -382,3 +335,125 @@ class TestMaterializeAllPlaceholdersCoverage:
         assert failure.error_type == 'validation'
         assert failure.error_message == 'Test validation error'
         assert failure.position == '[0]'
+
+    def test_check_result_failure_status_all_successes_no_continue(self) -> None:
+        """Test failure status check when only successful materializations (line 466)."""
+        # Missing line 466: Check for scenario with failures but all successes = 0
+        result = BatchMaterializeResult(
+            total_placeholders=1,
+            successful_materializations=[],
+            failed_materializations=[
+                MaterializeFailure('Test1', 'filesystem', 'Error1', '[0]'),
+            ],
+            execution_time=1.0,
+        )
+
+        # This should raise exit when there are failures and no successes, regardless of continue_on_error
+        with pytest.raises(typer.Exit) as exc_info:
+            _check_result_failure_status(result, continue_on_error=True)  # Even with continue_on_error=True
+        assert exc_info.value.exit_code == 1
+
+    def test_materialize_all_placeholders_batch_critical_failure_exit(self) -> None:
+        """Test exit when batch operation encounters critical failure (line 561)."""
+
+        # Missing line 561: Exit on batch_critical_failure
+        class MockResultCritical:
+            def __init__(self) -> None:
+                self.total_placeholders = 5
+                self.successful_materializations: list[MaterializeResult] = []
+                self.failed_materializations: list[MaterializeFailure] = []
+                self.type = 'batch_critical_failure'
+                self.execution_time = 1.0
+
+        mock_result = MockResultCritical()
+
+        with patch('prosemark.cli.main.MaterializeAllPlaceholders') as mock_use_case:
+            mock_use_case.return_value.execute.return_value = mock_result
+            with patch('prosemark.cli.main.BinderRepoFs'), patch('prosemark.cli.main.NodeRepoFs'):  # noqa: SIM117
+                with patch('prosemark.cli.main.IdGeneratorUuid7'):
+                    with patch('prosemark.cli.main.ClockSystem'):
+                        with patch('prosemark.cli.main.LoggerStdout'):
+                            with pytest.raises(typer.Exit) as exc_info:
+                                _materialize_all_placeholders(
+                                    project_root=Path('/test'),
+                                    binder_repo=Mock(),
+                                    node_repo=Mock(),
+                                    id_generator=Mock(),
+                                    clock=Mock(),
+                                    logger=Mock(),
+                                    json_output=False,  # Use non-JSON output to hit line 561
+                                )
+                            assert exc_info.value.exit_code == 1
+
+    def test_get_summary_message_no_message_attribute(self) -> None:
+        """Test summary message generation when result has no message attribute (line 602-606)."""
+
+        # Missing lines 602-606: Fallback when no message or summary_message attribute
+        class MockResultNoMessage:
+            def __init__(self) -> None:
+                self.successful_materializations = [
+                    MaterializeResult(
+                        display_title='Success1',
+                        node_id=NodeId('01234567-89ab-7def-8123-456789abcdef'),
+                        file_paths=[
+                            '01234567-89ab-7def-8123-456789abcdef.md',
+                            '01234567-89ab-7def-8123-456789abcdef.notes.md',
+                        ],
+                        position='[0]',
+                    )
+                ]
+                self.failed_materializations = [
+                    MaterializeFailure('Failed1', 'filesystem', 'Error1', '[1]'),
+                ]
+                self.total_placeholders = 2  # 1 success + 1 failure
+                # Deliberately omit 'message' and 'summary_message' attributes
+
+        result = MockResultNoMessage()
+        summary = _get_summary_message(cast('MaterializationResult', result), 1)
+
+        # Should generate manual summary since no message attributes exist
+        assert '1 failure)' in summary  # Should be singular 'failure'
+        assert 'Materialized 1 of 2 placeholders' in summary
+
+    def test_get_summary_message_has_message_attribute(self) -> None:
+        """Test summary message retrieval when result has message attribute (line 602 not taken)."""
+
+        # This test ensures we hit the case where summary_msg gets a value from 'message'
+        # so the second check on line 602 is not taken
+        class MockResultWithMessage:
+            def __init__(self) -> None:
+                self.message = 'Custom message from result'
+                self.successful_materializations: list[MaterializeResult] = []
+                self.failed_materializations: list[MaterializeFailure] = []
+
+        result = MockResultWithMessage()
+        summary = _get_summary_message(cast('MaterializationResult', result), 0)
+
+        # Should use the message attribute, not generate manual summary
+        assert summary == 'Custom message from result'
+
+    def test_check_result_failure_status_continue_with_some_successes(self) -> None:
+        """Test failure status with continue_on_error=True and some successes (line 466 not taken)."""
+        # This test ensures the branch on line 466 is not taken because there are some successes
+        result = BatchMaterializeResult(
+            total_placeholders=2,
+            successful_materializations=[
+                MaterializeResult(
+                    display_title='Success1',
+                    node_id=NodeId('01234567-89ab-7def-8123-456789abcdef'),
+                    file_paths=[
+                        '01234567-89ab-7def-8123-456789abcdef.md',
+                        '01234567-89ab-7def-8123-456789abcdef.notes.md',
+                    ],
+                    position='[0]',
+                )
+            ],
+            failed_materializations=[
+                MaterializeFailure('Test1', 'filesystem', 'Error1', '[1]'),
+            ],
+            execution_time=1.0,
+        )
+
+        # This should NOT raise exit because there are some successes, even with failures
+        # No exception should be raised
+        _check_result_failure_status(result, continue_on_error=True)

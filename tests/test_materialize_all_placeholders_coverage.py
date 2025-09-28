@@ -336,3 +336,61 @@ class TestMaterializeAllPlaceholdersCoverage:
         # Test unknown error defaults to filesystem
         unknown_error = RuntimeError('Unknown error')
         assert use_case._categorize_error(unknown_error) == 'filesystem'
+
+    def test_collect_placeholders_recursive_with_children(self) -> None:
+        """Test recursive placeholder collection with nested children (line 218)."""
+        # This test specifically targets line 218: the recursive call for children
+        from prosemark.app.materialize_all_placeholders import MaterializeAllPlaceholders
+        from prosemark.domain.models import Binder, BinderItem
+        from prosemark.domain.placeholder_summary import PlaceholderSummary
+
+        # Create a binder with nested placeholder structure:
+        # - Root placeholder (no node_id)
+        #   - Child placeholder (no node_id) <- This will trigger the recursive call on line 218
+        child_placeholder = BinderItem(
+            display_title='Child Placeholder',
+            node_id=None,  # This makes it a placeholder
+            children=[],
+        )
+
+        root_placeholder = BinderItem(
+            display_title='Root Placeholder',
+            node_id=None,  # This makes it a placeholder
+            children=[child_placeholder],  # Has children, will trigger recursive call
+        )
+
+        binder = Binder(roots=[root_placeholder])
+
+        use_case = MaterializeAllPlaceholders(
+            materialize_node_use_case=Mock(),
+            binder_repo=Mock(),
+            node_repo=Mock(),
+            id_generator=Mock(),
+            clock=Mock(),
+            logger=Mock(),
+        )
+
+        # Call the internal method to collect placeholders
+        placeholders: list[PlaceholderSummary] = []
+        use_case._collect_placeholders_recursive(
+            items=binder.roots,
+            placeholders=placeholders,
+            parent_title=None,
+            depth=0,
+            position_path=[],
+        )
+
+        # Verify both root and child placeholders are collected
+        assert len(placeholders) == 2
+
+        # Verify root placeholder
+        root_ph = placeholders[0]
+        assert root_ph.display_title == 'Root Placeholder'
+        assert root_ph.depth == 0
+        assert root_ph.parent_title is None
+
+        # Verify child placeholder (this proves line 218 was executed)
+        child_ph = placeholders[1]
+        assert child_ph.display_title == 'Child Placeholder'
+        assert child_ph.depth == 1
+        assert child_ph.parent_title == 'Root Placeholder'
