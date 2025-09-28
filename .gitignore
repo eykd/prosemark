@@ -14,3 +14,4 @@ tmp/
 _binder.md
 src/prosemark/_version.py
 .hypothesis/
+.claude/settings.local.json
