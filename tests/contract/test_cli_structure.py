@@ -176,6 +176,56 @@ class TestCLIStructureCommand:
             # Implementation details depend on actual CLI implementation
 
     @pytest.mark.skipif(not CLI_AVAILABLE, reason='CLI module not implemented')
+    def test_structure_command_with_node_id_argument(self) -> None:
+        """Test structure command with node_id argument shows subtree."""
+        with self.runner.isolated_filesystem():
+            from prosemark.cli import add_command, init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            # Add a parent node
+            parent_result = self.runner.invoke(add_command, ['Parent Chapter'])
+            assert parent_result.exit_code == 0
+
+            # Get the parent node ID from the output
+            parent_node_id = parent_result.output.split('(')[1].split(')')[0]
+
+            # Add a child node
+            child_result = self.runner.invoke(add_command, ['Child Section', '--parent', parent_node_id])
+            assert child_result.exit_code == 0
+
+            # Test with specific node ID - should show only subtree
+            subtree_result = self.runner.invoke(structure_command, [parent_node_id])
+            assert subtree_result.exit_code == 0
+            assert 'Parent Chapter' in subtree_result.output
+            assert 'Child Section' in subtree_result.output
+            # Should include node ID in parentheses
+            assert f'({parent_node_id})' in subtree_result.output
+
+    @pytest.mark.skipif(not CLI_AVAILABLE, reason='CLI module not implemented')
+    def test_structure_command_with_invalid_node_id_fails(self) -> None:
+        """Test structure command with invalid node_id fails gracefully."""
+        with self.runner.isolated_filesystem():
+            from prosemark.cli import init_command
+
+            # Initialize project first
+            init_result = self.runner.invoke(init_command, ['--title', 'Test Project'])
+            assert init_result.exit_code == 0
+
+            # Test with invalid node ID format
+            result = self.runner.invoke(structure_command, ['invalid-node-id'], catch_exceptions=False)
+            assert result.exit_code != 0
+            # Check that error output contains information about the invalid ID
+            assert 'Error:' in result.output or result.exception is not None
+
+            # Test with valid format but non-existent node ID
+            result = self.runner.invoke(structure_command, ['0192f0c1-9999-7000-8000-000000000999'])
+            assert result.exit_code != 0
+            assert 'Error:' in result.output
+
+    @pytest.mark.skipif(not CLI_AVAILABLE, reason='CLI module not implemented')
     def test_structure_command_help_shows_usage(self) -> None:
         """Test structure command help displays proper usage."""
         result = self.runner.invoke(structure_command, ['--help'])
@@ -184,6 +234,7 @@ class TestCLIStructureCommand:
         assert '--format' in result.output
         assert 'tree' in result.output
         assert 'json' in result.output
+        assert 'NODE_ID' in result.output
 
     def test_cli_structure_import_contract(self) -> None:
         """Test that expected CLI structure interface exists when implemented.

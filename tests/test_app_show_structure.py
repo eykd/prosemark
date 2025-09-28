@@ -92,12 +92,12 @@ class TestShowStructure:
         # Assert - Complete tree structure is displayed
         lines = result.strip().split('\n')
 
-        # Should show all nodes in tree format
-        assert 'Part 1' in result
-        assert 'Part 2' in result
-        assert 'Chapter 1' in result
-        assert 'Chapter 2' in result
-        assert 'Section 1.1' in result
+        # Should show all nodes in tree format with IDs
+        assert 'Part 1 (0192f0c1-1111-7000-8000-000000000001)' in result
+        assert 'Part 2 (0192f0c1-5555-7000-8000-000000000005)' in result
+        assert 'Chapter 1 (0192f0c1-2222-7000-8000-000000000002)' in result
+        assert 'Chapter 2 (0192f0c1-4444-7000-8000-000000000004)' in result
+        assert 'Section 1.1 (0192f0c1-3333-7000-8000-000000000003)' in result
 
         # Check hierarchical formatting with tree characters
         assert any('├─' in line or '└─' in line for line in lines)
@@ -125,11 +125,11 @@ class TestShowStructure:
         # Act
         result = show_structure.execute(node_id=part1_id)
 
-        # Assert - Only subtree from Part 1 is shown
-        assert 'Part 1' in result
-        assert 'Chapter 1' in result
-        assert 'Chapter 2' in result
-        assert 'Section 1.1' in result
+        # Assert - Only subtree from Part 1 is shown with IDs
+        assert 'Part 1 (0192f0c1-1111-7000-8000-000000000001)' in result
+        assert 'Chapter 1 (0192f0c1-2222-7000-8000-000000000002)' in result
+        assert 'Chapter 2 (0192f0c1-4444-7000-8000-000000000004)' in result
+        assert 'Section 1.1 (0192f0c1-3333-7000-8000-000000000003)' in result
 
         # Part 2 should NOT appear in subtree
         assert 'Part 2' not in result
@@ -181,19 +181,18 @@ class TestShowStructure:
         result = show_structure.execute()
 
         # Assert - Both real and placeholder items shown
-        assert 'Real Chapter' in result
-        assert 'Placeholder Section' in result
+        assert 'Real Chapter (0192f0c1-1111-7000-8000-000000000001)' in result
+        assert 'Placeholder Section [Placeholder]' in result
 
-        # Assert - Placeholder has distinctive marker
-        assert '[Placeholder]' in result
-
-        # Real node should not have placeholder marker
+        # Assert - Real node shows ID, not placeholder marker
         real_line = next(line for line in result.split('\n') if 'Real Chapter' in line)
+        assert '0192f0c1-1111-7000-8000-000000000001' in real_line
         assert '[Placeholder]' not in real_line
 
-        # Placeholder line should have marker
+        # Placeholder line should have marker, not ID
         placeholder_line = next(line for line in result.split('\n') if 'Placeholder Section' in line)
         assert '[Placeholder]' in placeholder_line
+        assert '0192f0c1' not in placeholder_line  # Should not have any UUID
 
         # Assert - Mixed content was logged
         assert fake_logger.has_logged('debug', 'Found 1 placeholders in structure')

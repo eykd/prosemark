@@ -1382,10 +1382,9 @@ class ShowStructure:
         # Choose tree connector
         connector = '' if not prefix and not force_connector else '└─ ' if is_last else '├─ '
 
-        # Format display title with placeholder marker if needed
+        # Format display title with node ID in parentheses
         display_title = item.display_title
-        if item.id is None:
-            display_title = f'{display_title} [Placeholder]'
+        display_title = f'{display_title} ({item.id})' if item.id is not None else f'{display_title} [Placeholder]'
 
         # Create the line for this item
         line = f'{prefix}{connector}{display_title}'
