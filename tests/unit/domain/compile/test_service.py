@@ -4,6 +4,9 @@ These tests verify the core compilation algorithm including
 depth-first traversal, content concatenation, and statistics.
 """
 
+# This import will fail until we implement the service
+from typing import TYPE_CHECKING
+
 import pytest
 
 from prosemark.domain.compile.models import CompileRequest, CompileResult
@@ -11,11 +14,10 @@ from prosemark.domain.models import NodeId
 from prosemark.ports.compile.service import NodeNotFoundError
 from prosemark.ports.node_repo import NodeRepo
 
-# This import will fail until we implement the service
-try:
+if TYPE_CHECKING:
     from prosemark.domain.compile.service import CompileService
-except ImportError:
-    CompileService = None
+else:
+    CompileService: type['CompileService'] | None = None
 
 
 class MockNode:
@@ -49,7 +51,6 @@ class MockNodeRepo(NodeRepo):
     # Required abstract methods from NodeRepo interface
     def create(self, node_id: NodeId, title: str | None, synopsis: str | None) -> None:
         """Create new node files with initial frontmatter."""
-        pass
 
     def read_frontmatter(self, node_id: NodeId) -> dict[str, str | None]:
         """Read frontmatter from node draft file."""
@@ -59,19 +60,16 @@ class MockNodeRepo(NodeRepo):
 
     def write_frontmatter(self, node_id: NodeId, fm: dict[str, str | None]) -> None:
         """Update frontmatter in node draft file."""
-        pass
 
     def open_in_editor(self, node_id: NodeId, part: str) -> None:
         """Open specified node part in editor."""
-        pass
 
     def delete(self, node_id: NodeId, *, delete_files: bool) -> None:
         """Remove node from system."""
-        pass
 
     def get_existing_files(self) -> set[NodeId]:
         """Get all existing node files from the filesystem."""
-        return set(NodeId(node_id) for node_id in self._nodes.keys())
+        return {NodeId(node_id) for node_id in self._nodes}
 
     def file_exists(self, node_id: NodeId, file_type: str) -> bool:
         """Check if a specific node file exists."""
@@ -79,7 +77,6 @@ class MockNodeRepo(NodeRepo):
 
     def create_notes_file(self, node_id: NodeId) -> None:
         """Create only the notes file for an existing node."""
-        pass
 
 
 @pytest.fixture

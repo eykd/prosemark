@@ -119,7 +119,8 @@ class CompileService:
                 # Skip missing child nodes rather than failing the entire compilation
                 continue
 
-    def _read_node_content(self, node_id: NodeId) -> str:  # pragma: no cover
+    @staticmethod
+    def _read_node_content(node_id: NodeId) -> str:  # pragma: no cover
         """Read the content of a node from its draft file.
 
         Args:
@@ -151,7 +152,8 @@ class CompileService:
             # File doesn't exist or can't be read - return empty content
             return ''
 
-    def _get_children_from_binder(self, node_id: NodeId) -> list[NodeId]:  # pragma: no cover
+    @staticmethod
+    def _get_children_from_binder(node_id: NodeId) -> list[NodeId]:  # pragma: no cover
         """Get the list of child node IDs from the binder file.
 
         Args:

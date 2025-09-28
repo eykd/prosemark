@@ -4,16 +4,19 @@ These tests verify the complete CLI workflow from command execution
 to output generation, following the quickstart scenarios.
 """
 
+# This import will fail until the command is implemented
+from typing import TYPE_CHECKING
+
 import pytest
+from typer import Typer
 from typer.testing import CliRunner
 
 from prosemark.domain.models import NodeId
 
-# This import will fail until the command is implemented
-try:
+if TYPE_CHECKING:
     from prosemark.cli.main import app
-except ImportError:
-    app = None
+else:
+    app: Typer | None = None
 
 
 @pytest.fixture
@@ -169,7 +172,7 @@ def test_cli_command_implementation_missing() -> None:
 
         # Check if compile command is specifically registered
         command_names = [cmd.callback.__name__ for cmd in app.registered_commands if cmd.callback]
-        assert 'compile' in command_names, f'Compile command not found in {command_names}'
+        assert 'compile_cmd' in command_names, f'Compile command not found in {command_names}'
 
     except ImportError:
         # This is expected initially - the test should fail
