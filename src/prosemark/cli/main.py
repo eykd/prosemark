@@ -48,6 +48,7 @@ from prosemark.exceptions import (
     BinderNotFoundError,
     EditorLaunchError,
     FileSystemError,
+    NodeIdentityError,
     NodeNotFoundError,
     PlaceholderNotFoundError,
 )
@@ -258,12 +259,48 @@ def edit(
         raise typer.Exit(1) from e
 
 
+def _output_structure_as_json(binder_repo: BinderRepoFs, parsed_node_id: NodeId | None) -> None:
+    """Output structure in JSON format."""
+    import json
+
+    binder = binder_repo.load()
+
+    def item_to_dict(item: Item | BinderItem) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            'display_title': item.display_title,
+        }
+        node_id = item.id if hasattr(item, 'id') else (item.node_id if hasattr(item, 'node_id') else None)
+        if node_id:
+            result['node_id'] = str(node_id)
+        item_children = item.children if hasattr(item, 'children') else []
+        if item_children:
+            result['children'] = [item_to_dict(child) for child in item_children]
+        return result
+
+    if parsed_node_id is None:
+        # Full tree
+        data: dict[str, list[dict[str, Any]]] = {'roots': [item_to_dict(item) for item in binder.roots]}
+    else:
+        # Subtree - find the specific node
+        target_item = binder.find_by_id(parsed_node_id)
+        if target_item is None:
+            typer.echo(f'Error: Node not found in binder: {parsed_node_id}', err=True)
+            raise typer.Exit(1)
+        data = {'roots': [item_to_dict(target_item)]}
+
+    typer.echo(json.dumps(data, indent=2))
+
+
 @app.command()
 def structure(
+    node_id: Annotated[str | None, typer.Argument(help='Node ID to display as subtree root')] = None,
     output_format: Annotated[str, typer.Option('--format', '-f', help='Output format')] = 'tree',
     path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
 ) -> None:
-    """Display project hierarchy."""
+    """Display project hierarchy.
+
+    If NODE_ID is provided, only show the subtree starting from that node.
+    """
     try:
         project_root = path or _get_project_root()
 
@@ -271,42 +308,35 @@ def structure(
         binder_repo = BinderRepoFs(project_root)
         logger = LoggerStdout()
 
+        # Parse and validate node_id if provided
+        parsed_node_id = None
+        if node_id is not None:
+            parsed_node_id = NodeId(node_id)
+
         # Execute use case
         interactor = ShowStructure(
             binder_repo=binder_repo,
             logger=logger,
         )
 
-        structure_str = interactor.execute()
+        structure_str = interactor.execute(node_id=parsed_node_id)
 
         if output_format == 'tree':
             typer.echo('Project Structure:')
             typer.echo(structure_str)
         elif output_format == 'json':
-            # For JSON format, we need to convert the tree to JSON
-            # This is a simplified version for MVP
-            import json
-
-            binder = binder_repo.load()
-
-            def item_to_dict(item: Item | BinderItem) -> dict[str, Any]:
-                result: dict[str, Any] = {
-                    'display_title': item.display_title,
-                }
-                node_id = item.id if hasattr(item, 'id') else (item.node_id if hasattr(item, 'node_id') else None)
-                if node_id:
-                    result['node_id'] = str(node_id)
-                item_children = item.children if hasattr(item, 'children') else []
-                if item_children:
-                    result['children'] = [item_to_dict(child) for child in item_children]
-                return result
-
-            data: dict[str, list[dict[str, Any]]] = {'roots': [item_to_dict(item) for item in binder.roots]}
-            typer.echo(json.dumps(data, indent=2))
+            _output_structure_as_json(binder_repo, parsed_node_id)
         else:
             typer.echo(f"Error: Unknown format '{output_format}'", err=True)
             raise typer.Exit(1)
 
+    except NodeNotFoundError as e:
+        typer.echo(f'Error: {e}', err=True)
+        raise typer.Exit(1) from e
+    except (ValueError, NodeIdentityError) as e:
+        # Invalid node ID format
+        typer.echo(f'Error: Invalid node ID format: {e}', err=True)
+        raise typer.Exit(1) from e
     except FileSystemError as e:
         typer.echo(f'Error: {e}', err=True)
         raise typer.Exit(1) from e
