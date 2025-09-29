@@ -1,1 +1,1 @@
-"""Test helpers package for prosemark tests."""
+"""Test package initialization."""

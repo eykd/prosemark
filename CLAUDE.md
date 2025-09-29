@@ -1,37 +1,40 @@
 # Claude Code Context
 
-## Project: Prosemark Write-Only Freewriting Interface
+## Project: Prosemark Node Templates System
 
-### Current Feature: 003-write-only-freewriting
+### Completed Feature: 007-node-templates-i
 
-**Branch**: `003-write-only-freewriting`
-**Status**: Design Phase (Phase 1 complete)
+**Branch**: `master`
+**Status**: Implementation Complete (All phases finished)
 
 **Technology Stack**:
 - Python 3.13
-- Textual TUI framework
-- Typer CLI framework
+- Click CLI framework
 - pytest testing
 - Plain text storage (Markdown + YAML frontmatter)
 
 **Architecture**: Hexagonal (Ports & Adapters)
-- Domain services with port interfaces
-- TUI adapter using Textual
-- CLI adapter using Typer
-- File system adapter for persistence
+- Domain entities with validation
+- Template services with business logic
+- File-based repository adapter
+- CLI user prompter adapter
+- Template validator adapter
 
-**Key Components**:
-- `FreewriteServicePort`: Core domain operations
-- `TUIAdapterPort`: Terminal UI interface
-- `CLIAdapterPort`: Command line interface
-- `NodeServicePort`: Node management
-- `FileSystemPort`: File operations
+**Key Components** (Templates Module):
+- `Template` & `Placeholder`: Core domain entities
+- `TemplateService`: Business logic orchestration
+- `FileTemplateRepository`: File-based template storage
+- `CLIUserPrompter`: Interactive placeholder input
+- `ProsemarkTemplateValidator`: Template validation
+- `TemplatesContainer`: Dependency injection
 
-**Recent Changes**:
-- Created comprehensive research on Textual framework
-- Designed domain model with entities and validation rules
-- Created hexagonal architecture contracts
-- Built quickstart guide with test scenarios
+**Implementation Highlights**:
+- 26 Python files implementing complete template system
+- CLI integration with `pmk add --template` and `--list-templates`
+- Interactive placeholder replacement system
+- Support for both single templates and directory templates
+- Hexagonal architecture with ports and adapters
+- Container-based dependency injection
 
 **Quality Requirements** (Constitutional):
 - 100% test coverage required
@@ -40,25 +43,37 @@
 - Test-first development (TDD) mandatory
 
 **File Locations**:
-- Specs: `/workspace/specs/003-write-only-freewriting/`
-- Research: `research.md`
-- Data model: `data-model.md`
-- Contracts: `contracts/`
-- Quickstart: `quickstart.md`
+- Implementation: `/workspace/src/prosemark/templates/`
+- Specs: `/workspace/specs/007-node-templates-i/`
+- Tests: `/workspace/tests/integration/templates/`
+- CLI integration: `/workspace/src/prosemark/cli/add.py`
 
-**Next Steps**:
-- Phase 2: Task generation via `/tasks` command
-- Implementation following TDD principles
-- Integration with existing prosemark domain
+**Template Commands**:
+- `pmk add "Title" --template template-name` - Create node from template
+- `pmk add --list-templates` - List available templates
+- Templates stored in `./templates/` directory
+- Supports interactive placeholder replacement
+- Markdown + YAML frontmatter format
 
-**Command Pattern**:
-- `pmk write` - Daily freewrite file
-- `pmk write <uuid>` - Write to specific node
-- `pmk write --title "title"` - Add session title
-- Optional: `--word-count-goal`, `--time-limit`
+**Template Format**:
+```markdown
+---
+title: "{{title}}"
+author: "{{author}}"
+author_default: "Anonymous"
+---
 
-**UI Layout**:
-- 80% top: Content display (bottom of file)
-- 20% bottom: Input box with readline editing
-- Real-time word count and timer display
-- Error handling within TUI (no crashes)
+# {{title}}
+
+Written by {{author}}.
+
+{{content}}
+```
+
+**Placeholder Features**:
+- Required placeholders: `{{name}}` (must provide value)
+- Optional placeholders: `{{name}}` with `name_default: "value"`
+- Interactive prompting during node creation
+- Support for descriptions via `name_description: "help text"`
+
+### Previous Feature: 003-write-only-freewriting (Design Phase)

@@ -1,1 +1,1 @@
-"""Test fixtures for prosemark tests."""
+"""Test package initialization."""

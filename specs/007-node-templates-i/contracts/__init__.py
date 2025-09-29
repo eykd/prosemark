@@ -1,0 +1,1 @@
+"""Template system contract specifications."""
