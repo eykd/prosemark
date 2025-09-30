@@ -25,7 +25,7 @@ class UserPrompterContract(Protocol):
         ...
 
 
-class TestUserPrompterContract:
+class BaseUserPrompterContract:
     """Contract tests that all UserPrompterPort implementations must pass."""
 
     def test_prompt_for_placeholder_values_success(self, prompter: UserPrompterPort) -> None:

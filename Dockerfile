@@ -1,7 +1,7 @@
-FROM node:20
+FROM node:24-trixie
 
 ARG TZ
-ENV TZ="$TZ"
+ENV TZ="${TZ:-America/Los_Angeles}"
 ENV PROJECT="prosemark"
 
 ARG CLAUDE_CODE_VERSION=latest

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from prosemark.templates.domain.entities.template import Template
-from prosemark.templates.domain.exceptions.template_exceptions import TemplateValidationError
+from prosemark.templates.domain.exceptions.template_exceptions import TemplateParseError, TemplateValidationError
 
 
 class TestTemplate:
@@ -60,7 +60,7 @@ invalid: yaml: structure:
         template_file = tmp_path / 'invalid.md'
         template_file.write_text(template_content)
 
-        with pytest.raises(TemplateValidationError, match='Invalid YAML frontmatter'):
+        with pytest.raises(TemplateParseError, match='Invalid YAML frontmatter'):
             Template.from_file(template_file)
 
     def test_from_file_empty_body_raises_error(self, tmp_path: Path) -> None:

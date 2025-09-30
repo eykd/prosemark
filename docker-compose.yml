@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        TZ: ${TZ:-UTC}                                   # Pass host timezone
+        TZ: ${TZ:-America/Los_Angeles}                   # Pass host timezone
     user: "${UID:-1000}:${GID:-1000}"                    # run as you
     command: tail -f /dev/null                           # Keep container running
     environment:

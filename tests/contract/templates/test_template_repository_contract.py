@@ -34,23 +34,26 @@ class TemplateRepositoryContract(Protocol):
 
         # Create a simple template
         simple_template = templates_dir / 'simple.md'
-        simple_template.write_text('---\ntitle: {{title}}\n---\n\n# {{title}}\n\nContent with {{placeholder}}')
+        simple_template.write_text('---\ntitle: "{{title}}"\n---\n\n# {{title}}\n\nContent with {{placeholder}}')
 
         # Create a template directory
         project_dir = templates_dir / 'project'
         project_dir.mkdir()
 
         overview_template = project_dir / 'overview.md'
-        overview_template.write_text('---\nname: {{project_name}}\n---\n\n# {{project_name}} Overview')
+        overview_template.write_text('---\nname: "{{project_name}}"\n---\n\n# {{project_name}} Overview')
 
         tasks_template = project_dir / 'tasks.md'
-        tasks_template.write_text('---\nproject: {{project_name}}\n---\n\n# Tasks for {{project_name}}')
+        tasks_template.write_text('---\nproject: "{{project_name}}"\n---\n\n# Tasks for {{project_name}}')
 
         return templates_dir
 
 
-class TestTemplateRepositoryContract:
-    """Contract tests that all TemplateRepositoryPort implementations must pass."""
+class BaseTemplateRepositoryContract:
+    """Contract tests that all TemplateRepositoryPort implementations must pass.
+
+    This class should not be run directly - it should be inherited by concrete test classes.
+    """
 
     def test_find_template_by_name_existing(self, repository: TemplateRepositoryPort, temp_templates_dir: Path) -> None:
         """Test finding an existing template by name."""
@@ -59,7 +62,7 @@ class TestTemplateRepositoryContract:
         assert template is not None
         assert isinstance(template, Template)
         assert template.name == 'simple'
-        assert template.path.name == 'simple.md'
+        assert template.path.value.name == 'simple.md'
 
     def test_find_template_by_name_non_existing(
         self, repository: TemplateRepositoryPort, temp_templates_dir: Path

@@ -1,4 +1,5 @@
 from unittest.mock import Mock
+
 """Integration tests for creating nodes from directory templates.
 
 These tests verify the complete workflow of creating multiple related nodes
@@ -6,7 +7,6 @@ from a template directory structure.
 """
 
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 
@@ -130,22 +130,23 @@ class TestDirectoryTemplateIntegration:
         """Test successfully creating multiple nodes from directory template."""
         # This test will fail until use case is implemented (expected for TDD)
         with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import FileTemplateRepository  # type: ignore[import-untyped]
+            from prosemark.templates.adapters.file_template_repository import (
+                FileTemplateRepository,  # type: ignore[import-untyped]
+            )
             from prosemark.templates.adapters.prosemark_template_validator import (
                 ProsemarkTemplateValidator,  # type: ignore[import-untyped]
             )
+            from prosemark.templates.domain.services.template_service import (
+                TemplateService,  # type: ignore[import-untyped]
+            )
 
-            repository = FileTemplateRepository()
+            repository = FileTemplateRepository(temp_templates_dir)
             validator = ProsemarkTemplateValidator()
             output_dir = tmp_path / 'output'
             output_dir.mkdir()
 
-            use_case = CreateFromTemplateUseCase(
-                template_repository=repository,
-                template_validator=validator,
-                user_prompter=mock_user_prompter: Mock,
-                output_directory=output_dir,
-            )
+            template_service = TemplateService(repository, validator, mock_user_prompter)
+            use_case = CreateFromTemplateUseCase(template_service)
 
             # Create nodes from directory template
             result = use_case.create_from_template_directory(
@@ -174,22 +175,23 @@ class TestDirectoryTemplateIntegration:
         """Test that created nodes preserve the original directory structure."""
         # This test will fail until use case is implemented (expected for TDD)
         with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import FileTemplateRepository  # type: ignore[import-untyped]
+            from prosemark.templates.adapters.file_template_repository import (
+                FileTemplateRepository,  # type: ignore[import-untyped]
+            )
             from prosemark.templates.adapters.prosemark_template_validator import (
                 ProsemarkTemplateValidator,  # type: ignore[import-untyped]
             )
+            from prosemark.templates.domain.services.template_service import (
+                TemplateService,  # type: ignore[import-untyped]
+            )
 
-            repository = FileTemplateRepository()
+            repository = FileTemplateRepository(temp_templates_dir)
             validator = ProsemarkTemplateValidator()
             output_dir = tmp_path / 'output'
             output_dir.mkdir()
 
-            use_case = CreateFromTemplateUseCase(
-                template_repository=repository,
-                template_validator=validator,
-                user_prompter=mock_user_prompter: Mock,
-                output_directory=output_dir,
-            )
+            template_service = TemplateService(repository, validator, mock_user_prompter)
+            use_case = CreateFromTemplateUseCase(template_service)
 
             use_case.create_from_template_directory(
                 template_directory_name='project-setup', templates_directory=temp_templates_dir
@@ -208,22 +210,23 @@ class TestDirectoryTemplateIntegration:
         """Test that shared placeholders are replaced consistently across all files."""
         # This test will fail until use case is implemented (expected for TDD)
         with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import FileTemplateRepository  # type: ignore[import-untyped]
+            from prosemark.templates.adapters.file_template_repository import (
+                FileTemplateRepository,  # type: ignore[import-untyped]
+            )
             from prosemark.templates.adapters.prosemark_template_validator import (
                 ProsemarkTemplateValidator,  # type: ignore[import-untyped]
             )
+            from prosemark.templates.domain.services.template_service import (
+                TemplateService,  # type: ignore[import-untyped]
+            )
 
-            repository = FileTemplateRepository()
+            repository = FileTemplateRepository(temp_templates_dir)
             validator = ProsemarkTemplateValidator()
             output_dir = tmp_path / 'output'
             output_dir.mkdir()
 
-            use_case = CreateFromTemplateUseCase(
-                template_repository=repository,
-                template_validator=validator,
-                user_prompter=mock_user_prompter: Mock,
-                output_directory=output_dir,
-            )
+            template_service = TemplateService(repository, validator, mock_user_prompter)
+            use_case = CreateFromTemplateUseCase(template_service)
 
             result = use_case.create_from_template_directory(
                 template_directory_name='project-setup', templates_directory=temp_templates_dir
@@ -244,25 +247,26 @@ class TestDirectoryTemplateIntegration:
         """Test creating nodes from non-existent directory template."""
         # This test will fail until use case is implemented (expected for TDD)
         with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import FileTemplateRepository  # type: ignore[import-untyped]
+            from prosemark.templates.adapters.file_template_repository import (
+                FileTemplateRepository,  # type: ignore[import-untyped]
+            )
             from prosemark.templates.adapters.prosemark_template_validator import (
                 ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            )
+            from prosemark.templates.domain.services.template_service import (
+                TemplateService,  # type: ignore[import-untyped]
             )
             from prosemark.templates.domain.exceptions.template_exceptions import (
                 TemplateDirectoryNotFoundError,  # type: ignore[import-untyped]
             )
 
-            repository = FileTemplateRepository()
+            repository = FileTemplateRepository(temp_templates_dir)
             validator = ProsemarkTemplateValidator()
             output_dir = tmp_path / 'output'
             output_dir.mkdir()
 
-            use_case = CreateFromTemplateUseCase(
-                template_repository=repository,
-                template_validator=validator,
-                user_prompter=mock_user_prompter: Mock,
-                output_directory=output_dir,
-            )
+            template_service = TemplateService(repository, validator, mock_user_prompter)
+            use_case = CreateFromTemplateUseCase(template_service)
 
             with pytest.raises(TemplateDirectoryNotFoundError):
                 use_case.create_from_template_directory(
@@ -279,25 +283,26 @@ class TestDirectoryTemplateIntegration:
 
         # This test will fail until use case is implemented (expected for TDD)
         with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import FileTemplateRepository  # type: ignore[import-untyped]
+            from prosemark.templates.adapters.file_template_repository import (
+                FileTemplateRepository,  # type: ignore[import-untyped]
+            )
             from prosemark.templates.adapters.prosemark_template_validator import (
                 ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            )
+            from prosemark.templates.domain.services.template_service import (
+                TemplateService,  # type: ignore[import-untyped]
             )
             from prosemark.templates.domain.exceptions.template_exceptions import (
                 EmptyTemplateDirectoryError,  # type: ignore[import-untyped]
             )
 
-            repository = FileTemplateRepository()
+            repository = FileTemplateRepository(temp_templates_dir)
             validator = ProsemarkTemplateValidator()
             output_dir = tmp_path / 'output'
             output_dir.mkdir()
 
-            use_case = CreateFromTemplateUseCase(
-                template_repository=repository,
-                template_validator=validator,
-                user_prompter=mock_user_prompter: Mock,
-                output_directory=output_dir,
-            )
+            template_service = TemplateService(repository, validator, mock_user_prompter)
+            use_case = CreateFromTemplateUseCase(template_service)
 
             with pytest.raises(EmptyTemplateDirectoryError):
                 use_case.create_from_template_directory(
@@ -320,25 +325,26 @@ class TestDirectoryTemplateIntegration:
 
         # This test will fail until use case is implemented (expected for TDD)
         with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import FileTemplateRepository  # type: ignore[import-untyped]
+            from prosemark.templates.adapters.file_template_repository import (
+                FileTemplateRepository,  # type: ignore[import-untyped]
+            )
             from prosemark.templates.adapters.prosemark_template_validator import (
                 ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            )
+            from prosemark.templates.domain.services.template_service import (
+                TemplateService,  # type: ignore[import-untyped]
             )
             from prosemark.templates.domain.exceptions.template_exceptions import (
                 TemplateValidationError,  # type: ignore[import-untyped]
             )
 
-            repository = FileTemplateRepository()
+            repository = FileTemplateRepository(temp_templates_dir)
             validator = ProsemarkTemplateValidator()
             output_dir = tmp_path / 'output'
             output_dir.mkdir()
 
-            use_case = CreateFromTemplateUseCase(
-                template_repository=repository,
-                template_validator=validator,
-                user_prompter=mock_user_prompter: Mock,
-                output_directory=output_dir,
-            )
+            template_service = TemplateService(repository, validator, mock_user_prompter)
+            use_case = CreateFromTemplateUseCase(template_service)
 
             # Should halt on first invalid template (fail-fast behavior)
             with pytest.raises(TemplateValidationError):
@@ -352,27 +358,30 @@ class TestDirectoryTemplateIntegration:
         """Test handling user cancellation during directory template processing."""
         # This test will fail until use case is implemented (expected for TDD)
         with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import FileTemplateRepository  # type: ignore[import-untyped]
+            from prosemark.templates.adapters.file_template_repository import (
+                FileTemplateRepository,  # type: ignore[import-untyped]
+            )
             from prosemark.templates.adapters.prosemark_template_validator import (
                 ProsemarkTemplateValidator,  # type: ignore[import-untyped]
             )
-            from prosemark.templates.domain.exceptions.template_exceptions import UserCancelledError  # type: ignore[import-untyped]
+            from prosemark.templates.domain.services.template_service import (
+                TemplateService,  # type: ignore[import-untyped]
+            )
+            from prosemark.templates.domain.exceptions.template_exceptions import (
+                UserCancelledError,  # type: ignore[import-untyped]
+            )
 
             # Mock prompter that raises cancellation
             mock_prompter = Mock()
             mock_prompter.prompt_for_placeholder_values.side_effect = UserCancelledError('User cancelled')
 
-            repository = FileTemplateRepository()
+            repository = FileTemplateRepository(temp_templates_dir)
             validator = ProsemarkTemplateValidator()
             output_dir = tmp_path / 'output'
             output_dir.mkdir()
 
-            use_case = CreateFromTemplateUseCase(
-                template_repository=repository,
-                template_validator=validator,
-                user_prompter=mock_prompter,
-                output_directory=output_dir,
-            )
+            template_service = TemplateService(repository, validator, mock_prompter)
+            use_case = CreateFromTemplateUseCase(template_service)
 
             with pytest.raises(UserCancelledError):
                 use_case.create_from_template_directory(

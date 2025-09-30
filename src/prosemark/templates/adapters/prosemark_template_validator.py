@@ -1,5 +1,6 @@
 """Prosemark-specific template validator adapter."""
 
+import re
 from typing import Any
 
 import yaml
@@ -309,8 +310,8 @@ class ProsemarkTemplateValidator(TemplateValidatorPort):
         pattern = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
         return bool(pattern.match(name))
 
-    @staticmethod
-    def validate_template_structure(content: str) -> bool:
+    @classmethod
+    def validate_template_structure(cls, content: str) -> bool:
         """Validate that template content has valid structure.
 
         Args:
@@ -319,17 +320,26 @@ class ProsemarkTemplateValidator(TemplateValidatorPort):
         Returns:
             True if structure is valid
 
+        Raises:
+            TemplateParseError: If YAML frontmatter is invalid
+            TemplateValidationError: If content violates prosemark format
+
         """
+        from prosemark.templates.domain.exceptions.template_exceptions import (
+            TemplateParseError,
+            TemplateValidationError,
+        )
+
         # Basic structure checks
         if not content.startswith('---'):
-            return False
+            raise TemplateValidationError('Template must have YAML frontmatter', template_path='<string>')
 
         try:
             # Try to split and parse frontmatter
             parts = content.split('---', 2)
             min_frontmatter_parts = 3
             if len(parts) < min_frontmatter_parts:
-                return False
+                raise TemplateValidationError('Template must have YAML frontmatter', template_path='<string>')
 
             frontmatter_text = parts[1].strip()
             body_text = parts[2].lstrip('\n')
@@ -341,16 +351,23 @@ class ProsemarkTemplateValidator(TemplateValidatorPort):
                     if parsed_frontmatter is None:
                         parsed_frontmatter = {}
                     if not isinstance(parsed_frontmatter, dict):
-                        return False
-                except yaml.YAMLError:
-                    return False
+                        raise TemplateParseError('YAML frontmatter must be a dictionary', template_path='<string>')
+                except yaml.YAMLError as e:
+                    msg = f'Invalid YAML frontmatter: {e}'
+                    raise TemplateParseError(msg, template_path='<string>') from e
 
             # Must have body content
-            return bool(body_text.strip())
-        except (ValueError, yaml.YAMLError, AttributeError):
-            return False
+            if not body_text.strip():
+                raise TemplateValidationError('Template must have body content', template_path='<string>')
 
-    def validate_prosemark_format(self, content: str) -> bool:
+            return len(parts) >= min_frontmatter_parts
+
+        except (ValueError, AttributeError) as e:
+            msg = f'Template structure validation failed: {e}'
+            raise TemplateValidationError(msg, template_path='<string>') from e
+
+    @classmethod
+    def validate_prosemark_format(cls, content: str) -> bool:
         """Validate that template follows prosemark node format.
 
         Args:
@@ -359,16 +376,24 @@ class ProsemarkTemplateValidator(TemplateValidatorPort):
         Returns:
             True if format is valid
 
+        Raises:
+            TemplateValidationError: If content violates prosemark format requirements
+
         """
+        from prosemark.templates.domain.exceptions.template_exceptions import (
+            TemplateValidationError,
+        )
+
         try:
             # Basic format validation - should have frontmatter and body
             # Additional prosemark-specific checks could go here
-            return self.validate_template_structure(content)
-        except (ValueError, yaml.YAMLError, AttributeError):
-            return False
+            return cls.validate_template_structure(content)
+        except (ValueError, yaml.YAMLError, AttributeError) as e:
+            msg = f'Prosemark format validation failed: {e}'
+            raise TemplateValidationError(msg, template_path='<string>') from e
 
-    @staticmethod
-    def extract_placeholders(content: str) -> list[Placeholder]:
+    @classmethod
+    def extract_placeholders(cls, content: str) -> list[Placeholder]:
         """Extract all placeholders from template content.
 
         Args:
@@ -377,14 +402,33 @@ class ProsemarkTemplateValidator(TemplateValidatorPort):
         Returns:
             List of Placeholder instances found in content
 
+        Raises:
+            InvalidPlaceholderError: If placeholder syntax is malformed
+
         """
-        from prosemark.templates.domain.services.placeholder_service import PlaceholderService
+        from prosemark.templates.domain.exceptions.template_exceptions import InvalidPlaceholderError
 
-        service = PlaceholderService()
-        return service.extract_placeholders_from_text(content)
+        try:
+            from prosemark.templates.domain.services.placeholder_service import PlaceholderService
 
-    @staticmethod
-    def validate_placeholder_syntax(placeholder_text: str) -> bool:
+            service = PlaceholderService()
+
+            # Check for severely malformed patterns that indicate completely broken content
+            severely_malformed_patterns = [
+                r'\{\{[^}]*\n',          # Unclosed placeholders like {{unclosed
+            ]
+
+            for pattern in severely_malformed_patterns:
+                if re.search(pattern, content):
+                    raise InvalidPlaceholderError('Malformed placeholder pattern detected in content')
+
+            return service.extract_placeholders_from_text(content)
+        except (ValueError, AttributeError) as e:
+            msg = f'Failed to extract placeholders: {e}'
+            raise InvalidPlaceholderError(msg) from e
+
+    @classmethod
+    def validate_placeholder_syntax(cls, placeholder_text: str) -> bool:
         """Validate that a placeholder has correct syntax.
 
         Args:
@@ -393,16 +437,27 @@ class ProsemarkTemplateValidator(TemplateValidatorPort):
         Returns:
             True if syntax is valid
 
+        Raises:
+            InvalidPlaceholderError: If syntax is malformed
+
         """
+        from prosemark.templates.domain.exceptions.template_exceptions import InvalidPlaceholderError
+
         try:
             from prosemark.templates.domain.services.placeholder_service import PlaceholderService
 
             service = PlaceholderService()
-            return service.validate_placeholder_pattern(placeholder_text)
-        except (ValueError, yaml.YAMLError, AttributeError):
-            return False
+            result = service.validate_placeholder_pattern(placeholder_text)
+            if result:
+                return True
+            msg = f'Invalid placeholder syntax: {placeholder_text}'
+            raise InvalidPlaceholderError(msg)
+        except (ValueError, yaml.YAMLError, AttributeError) as e:
+            msg = f'Placeholder validation failed: {e}'
+            raise InvalidPlaceholderError(msg) from e
 
-    def validate_template_dependencies(self, template: Template) -> bool:
+    @classmethod
+    def validate_template_dependencies(cls, template: Template) -> bool:
         """Validate that template dependencies are resolvable.
 
         Args:
@@ -411,9 +466,25 @@ class ProsemarkTemplateValidator(TemplateValidatorPort):
         Returns:
             True if all dependencies are valid
 
+        Raises:
+            TemplateValidationError: If dependencies cannot be resolved
+
         """
+        from prosemark.templates.domain.exceptions.template_exceptions import TemplateValidationError
+
         # Basic dependency validation - check that placeholders are well-formed
         try:
-            return all(self.validate_placeholder_syntax(placeholder.pattern) for placeholder in template.placeholders)
-        except (ValueError, yaml.YAMLError, AttributeError):
-            return False
+            placeholders = template.placeholders
+
+            def validate_placeholders() -> bool:
+                placeholder_list = list(placeholders)
+                for placeholder in placeholder_list:
+                    cls.validate_placeholder_syntax(placeholder.pattern)
+                return True
+
+            if not placeholders:
+                return True
+            return validate_placeholders()
+        except (ValueError, yaml.YAMLError, AttributeError) as e:
+            msg = f'Template dependency validation failed: {e}'
+            raise TemplateValidationError(msg, template_path=str(template.path)) from e

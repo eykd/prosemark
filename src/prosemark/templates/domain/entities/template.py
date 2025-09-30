@@ -8,6 +8,7 @@ import yaml
 
 from prosemark.templates.domain.entities.placeholder import Placeholder
 from prosemark.templates.domain.exceptions.template_exceptions import (
+    InvalidPlaceholderError,
     TemplateParseError,
     TemplateValidationError,
 )
@@ -68,7 +69,7 @@ class Template:
                         raise TemplateParseError('YAML frontmatter must be a dictionary', template_path=str(self.path))
                 except yaml.YAMLError as e:
                     msg = f'Invalid YAML frontmatter: {e}'
-                    raise TemplateValidationError(msg, template_path=str(self.path)) from e
+                    raise TemplateParseError(msg, template_path=str(self.path)) from e
             else:
                 parsed_frontmatter = {}
 
@@ -96,6 +97,9 @@ class Template:
         """
         try:
             patterns = PlaceholderPattern.extract_all_from_text(text)
+        except InvalidPlaceholderError:
+            # Let placeholder errors bubble up as-is
+            raise
         except Exception as e:
             msg = f'Error extracting placeholders: {e}'
             raise TemplateParseError(msg, template_path=str(self.path)) from e

@@ -3,10 +3,12 @@
 from typing import Any
 
 from prosemark.templates.domain.exceptions.template_exceptions import (
+    InvalidPlaceholderError,
     InvalidPlaceholderValueError,
     PlaceholderProcessingError,
     TemplateDirectoryNotFoundError,
     TemplateNotFoundError,
+    TemplateParseError,
     TemplateValidationError,
     UserCancelledError,
 )
@@ -59,13 +61,6 @@ class CreateFromTemplateUseCase:
         Returns:
             Dictionary containing generated content and metadata
 
-        Raises:
-            TemplateNotFoundError: If template doesn't exist
-            InvalidPlaceholderValueError: If required placeholders missing (non-interactive)
-            TemplateValidationError: If template is invalid
-            PlaceholderProcessingError: If placeholder replacement fails
-            UserCancelledError: If user cancels interactive input
-
         """
         try:
             # Generate content using template service
@@ -90,6 +85,8 @@ class CreateFromTemplateUseCase:
             TemplateValidationError,
             PlaceholderProcessingError,
             UserCancelledError,
+            TemplateParseError,
+            InvalidPlaceholderError,
         ) as e:
             return {
                 'success': False,
@@ -128,13 +125,6 @@ class CreateFromTemplateUseCase:
         Returns:
             Dictionary containing generated content and metadata
 
-        Raises:
-            TemplateDirectoryNotFoundError: If template directory doesn't exist
-            InvalidPlaceholderValueError: If required placeholders missing (non-interactive)
-            TemplateValidationError: If any template is invalid
-            PlaceholderProcessingError: If placeholder replacement fails
-            UserCancelledError: If user cancels interactive input
-
         """
         try:
             # Generate content using template service
@@ -163,6 +153,8 @@ class CreateFromTemplateUseCase:
             TemplateValidationError,
             PlaceholderProcessingError,
             UserCancelledError,
+            TemplateParseError,
+            InvalidPlaceholderError,
         ) as e:
             return {
                 'success': False,

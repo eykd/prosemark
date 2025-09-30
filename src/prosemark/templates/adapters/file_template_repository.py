@@ -58,9 +58,10 @@ class FileTemplateRepository(TemplateRepositoryPort):
         try:
             template_path = TemplatePath(template_file)
             return Template.from_file(template_path.value)
-        except Exception as e:
-            # Re-raise as TemplateNotFoundError for consistency
+        except OSError as e:
+            # File system errors should be treated as template not found
             raise TemplateNotFoundError(template_name=template_name, search_path=str(self._templates_root)) from e
+        # Let validation errors bubble up as they are
 
     def get_template_directory(self, directory_name: str) -> TemplateDirectory:
         """Load a template directory by name.
@@ -92,8 +93,8 @@ class FileTemplateRepository(TemplateRepositoryPort):
             msg = f"Failed to load template directory '{directory_name}': {e}"
             raise TemplateDirectoryNotFoundError(msg) from e
 
-    @staticmethod
-    def list_templates(search_path: Path) -> list[Template]:
+    @classmethod
+    def list_templates(cls, search_path: Path) -> list[Template]:
         """List all individual templates in the search path.
 
         Args:
@@ -200,8 +201,8 @@ class FileTemplateRepository(TemplateRepositoryPort):
 
         return sorted(directory_names)
 
-    @staticmethod
-    def find_template_by_name(name: str, search_path: Path) -> Template | None:
+    @classmethod
+    def find_template_by_name(cls, name: str, search_path: Path) -> Template | None:
         """Find a template by name in the given search path.
 
         Args:
@@ -211,7 +212,18 @@ class FileTemplateRepository(TemplateRepositoryPort):
         Returns:
             Template instance if found, None otherwise
 
+        Raises:
+            TemplateDirectoryNotFoundError: If search_path does not exist
+
         """
+        if not search_path.exists():
+            msg = f'Search path does not exist: {search_path}'
+            raise TemplateDirectoryNotFoundError(msg)
+
+        if not search_path.is_dir():
+            msg = f'Search path is not a directory: {search_path}'
+            raise TemplateDirectoryNotFoundError(msg)
+
         template_file = search_path / f'{name}.md'
         if template_file.exists() and template_file.is_file():
             try:
@@ -231,7 +243,18 @@ class FileTemplateRepository(TemplateRepositoryPort):
         Returns:
             TemplateDirectory instance if found, None otherwise
 
+        Raises:
+            TemplateDirectoryNotFoundError: If search_path does not exist
+
         """
+        if not search_path.exists():
+            msg = f'Search path does not exist: {search_path}'
+            raise TemplateDirectoryNotFoundError(msg)
+
+        if not search_path.is_dir():
+            msg = f'Search path is not a directory: {search_path}'
+            raise TemplateDirectoryNotFoundError(msg)
+
         directory_path = search_path / name
         if directory_path.exists() and directory_path.is_dir() and self._directory_contains_templates(directory_path):
             try:
@@ -240,8 +263,8 @@ class FileTemplateRepository(TemplateRepositoryPort):
                 return None
         return None
 
-    @staticmethod
-    def load_template_content(template_path: Path) -> str:
+    @classmethod
+    def load_template_content(cls, template_path: Path) -> str:
         """Load raw content from a template file.
 
         Args:
@@ -264,8 +287,8 @@ class FileTemplateRepository(TemplateRepositoryPort):
             msg = f'Cannot read template file: {template_path}'
             raise PermissionError(msg) from e
 
-    @staticmethod
-    def validate_template_path(path: Path) -> bool:
+    @classmethod
+    def validate_template_path(cls, path: Path) -> bool:
         """Validate that a path points to a valid template location.
 
         Args:
