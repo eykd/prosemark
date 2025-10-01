@@ -35,8 +35,13 @@ def compile_command(
         editor = EditorLauncherSystem()
         node_repo = NodeRepoFs(project_root, editor, clock)
 
+        # Import BinderRepoFs here to avoid circular imports
+        from prosemark.adapters.binder_repo_fs import BinderRepoFs
+
+        binder_repo = BinderRepoFs(project_root)
+
         # Create use case
-        compile_use_case = CompileSubtreeUseCase(node_repo)
+        compile_use_case = CompileSubtreeUseCase(node_repo, binder_repo)
 
         # Create request
         request = CompileRequest(node_id=target_node_id, include_empty=False)

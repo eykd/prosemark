@@ -11,15 +11,16 @@ from prosemark.domain.models import NodeId
 
 @dataclass(frozen=True)
 class CompileRequest:
-    """Request to compile a node and its subtree.
+    """Request to compile a node subtree or all root nodes.
 
     Attributes:
-        node_id: The root node to start compilation from
+        node_id: The root node to start compilation from. If None, compile all
+            materialized root nodes from the binder.
         include_empty: Whether to include empty nodes (default: False)
 
     """
 
-    node_id: NodeId
+    node_id: NodeId | None
     include_empty: bool = False
 
 

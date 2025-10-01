@@ -4,12 +4,12 @@ This module implements the business logic for traversing
 and compiling prosemark node hierarchies.
 """
 
-import re
 from collections.abc import Generator
 from pathlib import Path
 
 from prosemark.domain.compile.models import CompileRequest, CompileResult, NodeContent
 from prosemark.domain.models import NodeId
+from prosemark.ports.binder_repo import BinderRepo
 from prosemark.ports.node_repo import NodeRepo
 
 
@@ -23,14 +23,18 @@ class CompileService:
     - Memory-efficient streaming processing
     """
 
-    def __init__(self, node_repo: NodeRepo) -> None:
+    def __init__(self, node_repo: NodeRepo, binder_repo: BinderRepo) -> None:
         """Initialize the compile service.
 
         Args:
             node_repo: Repository for accessing node data and relationships
+            binder_repo: Repository for accessing binder hierarchy
 
         """
         self._node_repo = node_repo
+        self._binder_repo = binder_repo
+        # Get project path from node_repo if it has one (for file-based implementations)
+        self._project_path = getattr(node_repo, 'project_path', Path.cwd())
 
     def compile_subtree(self, request: CompileRequest) -> CompileResult:
         """Compile a node and all its descendants into plain text.
@@ -48,6 +52,12 @@ class CompileService:
             NodeNotFoundError: If the specified node_id doesn't exist
 
         """
+        # Handle None node_id case
+        if request.node_id is None:
+            from prosemark.ports.compile.service import CompileError
+
+            raise CompileError('node_id cannot be None for single-node compilation')
+
         try:
             # Verify the root node exists by checking if it has frontmatter
             self._node_repo.read_frontmatter(request.node_id)
@@ -119,8 +129,7 @@ class CompileService:
                 # Skip missing child nodes rather than failing the entire compilation
                 continue
 
-    @staticmethod
-    def _read_node_content(node_id: NodeId) -> str:  # pragma: no cover
+    def _read_node_content(self, node_id: NodeId) -> str:
         """Read the content of a node from its draft file.
 
         Args:
@@ -130,8 +139,8 @@ class CompileService:
             The content with frontmatter stripped, empty string if file doesn't exist
 
         """
-        # Construct the draft file path
-        file_path = Path(f'nodes/{node_id}/draft.md')
+        # Construct the draft file path using actual project structure: {node_id}.md
+        file_path = self._project_path / f'{node_id}.md'
 
         try:
             content = file_path.read_text(encoding='utf-8')
@@ -152,30 +161,27 @@ class CompileService:
             # File doesn't exist or can't be read - return empty content
             return ''
 
-    @staticmethod
-    def _get_children_from_binder(node_id: NodeId) -> list[NodeId]:  # pragma: no cover
-        """Get the list of child node IDs from the binder file.
+    def _get_children_from_binder(self, node_id: NodeId) -> list[NodeId]:
+        """Get the list of child node IDs from the binder hierarchy.
 
         Args:
             node_id: The parent node to get children for
 
         Returns:
-            List of child node IDs in binder order, empty list if no binder or errors
+            List of child node IDs in binder order, empty list if node not found or no children
 
         """
-        # Construct the binder file path
-        binder_path = Path(f'nodes/{node_id}/binder.yaml')
-
         try:
-            binder_content = binder_path.read_text(encoding='utf-8')
+            # Load the binder and find the item
+            binder = self._binder_repo.load()
+            item = binder.find_by_id(node_id)
 
-            # Extract node IDs using regex pattern
-            # Look for entries like "- 01923456-789a-7123-8abc-def012345678"
-            uuid_pattern = r'- ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
-            matches = re.findall(uuid_pattern, binder_content)
+            if item is None:
+                return []
 
-            return [NodeId(match) for match in matches]
+            # Extract NodeIds from children, filtering out placeholders
+            return [child.node_id for child in item.children if child.node_id is not None]
 
-        except (FileNotFoundError, PermissionError, OSError):
-            # Binder file doesn't exist or can't be read - return empty list
+        except Exception:  # pragma: no cover  # noqa: BLE001
+            # Any error in binder loading or traversal - return empty list
             return []
