@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from prosemark.domain.compile.models import CompileRequest, CompileResult
-from prosemark.domain.models import NodeId
+from prosemark.domain.models import Binder, BinderItem, NodeId
+from prosemark.ports.binder_repo import BinderRepo
 from prosemark.ports.compile.service import NodeNotFoundError
 from prosemark.ports.node_repo import NodeRepo
 
@@ -79,6 +80,41 @@ class MockNodeRepo(NodeRepo):
         """Create only the notes file for an existing node."""
 
 
+class MockBinderRepo(BinderRepo):
+    """Mock binder repository for testing."""
+
+    def __init__(self, nodes: dict[str, MockNode]) -> None:
+        """Initialize with nodes to build binder hierarchy from."""
+        self._nodes = nodes
+
+    def load(self) -> Binder:
+        """Load binder with hierarchy matching the nodes."""
+        # Build a binder structure from the nodes
+
+        # Create BinderItems for each node
+        items = {}
+        for node_id_str, node in self._nodes.items():
+            node_id = NodeId(node_id_str)
+            item = BinderItem(display_title=node.content or f'Node {node_id_str}', node_id=node_id)
+            items[node_id_str] = item
+
+        # Build hierarchy based on children relationships
+        for node_id_str, node in self._nodes.items():
+            item = items[node_id_str]
+            for child_id in node.children:
+                child_id_str = str(child_id)
+                if child_id_str in items:
+                    item.add_child(items[child_id_str])
+
+        # Find root items (items with no parent)
+        roots = [item for item in items.values() if item.parent is None]
+
+        return Binder(roots=roots)
+
+    def save(self, binder: Binder) -> None:
+        """Save binder to storage (not used in tests)."""
+
+
 @pytest.fixture
 def sample_nodes() -> dict[str, MockNode]:
     """Provide sample nodes for testing."""
@@ -119,11 +155,17 @@ def mock_node_repo(sample_nodes: dict[str, MockNode]) -> MockNodeRepo:
 
 
 @pytest.fixture
-def compile_service(mock_node_repo: MockNodeRepo) -> CompileService:
+def mock_binder_repo(sample_nodes: dict[str, MockNode]) -> MockBinderRepo:
+    """Provide a mock binder repository."""
+    return MockBinderRepo(sample_nodes)
+
+
+@pytest.fixture
+def compile_service(mock_node_repo: MockNodeRepo, mock_binder_repo: MockBinderRepo) -> CompileService:
     """Provide a CompileService instance for testing."""
     if CompileService is None:
         pytest.skip('CompileService not implemented yet')
-    return CompileService(mock_node_repo)
+    return CompileService(mock_node_repo, mock_binder_repo)
 
 
 @pytest.mark.skipif(CompileService is None, reason='CompileService not implemented yet')
@@ -235,9 +277,9 @@ class TestCompileServiceValidation:
     """Test validation and edge cases."""
 
     @pytest.mark.skipif(CompileService is None, reason='CompileService not implemented yet')
-    def test_empty_content_handling(self, mock_node_repo: MockNodeRepo) -> None:
+    def test_empty_content_handling(self, mock_node_repo: MockNodeRepo, mock_binder_repo: MockBinderRepo) -> None:
         """Test handling of nodes with empty content."""
-        service = CompileService(node_repo=mock_node_repo)
+        service = CompileService(node_repo=mock_node_repo, binder_repo=mock_binder_repo)
         request = CompileRequest(node_id=NodeId('01923456-789a-7123-8abc-def012345681'), include_empty=False)
 
         result = service.compile_subtree(request)
@@ -246,13 +288,13 @@ class TestCompileServiceValidation:
         assert '' not in result.content.split('\n\n')
 
     @pytest.mark.skipif(CompileService is None, reason='CompileService not implemented yet')
-    def test_whitespace_preservation(self, mock_node_repo: MockNodeRepo) -> None:
+    def test_whitespace_preservation(self, mock_node_repo: MockNodeRepo, mock_binder_repo: MockBinderRepo) -> None:
         """Test that whitespace within nodes is preserved."""
         # Add a node with internal whitespace
         node_with_whitespace = MockNode('01923456-789a-7123-8abc-def012345700', 'Line 1\n    Indented line\nLine 3')
         mock_node_repo._nodes['01923456-789a-7123-8abc-def012345700'] = node_with_whitespace
 
-        service = CompileService(node_repo=mock_node_repo)
+        service = CompileService(node_repo=mock_node_repo, binder_repo=mock_binder_repo)
         request = CompileRequest(node_id=NodeId('01923456-789a-7123-8abc-def012345700'), include_empty=False)
 
         result = service.compile_subtree(request)

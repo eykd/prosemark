@@ -60,10 +60,12 @@ class TestUseCaseCoverage:
     def test_use_case_import_and_init(self) -> None:
         """Test use case can be imported and initialized."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.app.compile.use_cases import CompileSubtreeUseCase
 
         node_repo = FakeNodeRepo()
-        use_case = CompileSubtreeUseCase(node_repo)
+        binder_repo = FakeBinderRepo()
+        use_case = CompileSubtreeUseCase(node_repo, binder_repo)
 
         # Verify initialization
         assert use_case._compile_service is not None
@@ -72,11 +74,13 @@ class TestUseCaseCoverage:
     def test_use_case_node_not_found(self) -> None:
         """Test use case with node not found error."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.app.compile.use_cases import CompileSubtreeUseCase
         from prosemark.ports.compile.service import NodeNotFoundError
 
         node_repo = FakeNodeRepo()
-        use_case = CompileSubtreeUseCase(node_repo)
+        binder_repo = FakeBinderRepo()
+        use_case = CompileSubtreeUseCase(node_repo, binder_repo)
 
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
         request = CompileRequest(node_id=node_id)
@@ -87,11 +91,13 @@ class TestUseCaseCoverage:
     def test_use_case_exception_handling(self) -> None:
         """Test use case exception handling paths."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.app.compile.use_cases import CompileSubtreeUseCase
         from prosemark.ports.compile.service import NodeNotFoundError
 
         node_repo = FakeNodeRepo()
-        use_case = CompileSubtreeUseCase(node_repo)
+        binder_repo = FakeBinderRepo()
+        use_case = CompileSubtreeUseCase(node_repo, binder_repo)
 
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
         request = CompileRequest(node_id=node_id)
@@ -108,10 +114,12 @@ class TestUseCaseCoverage:
     def test_use_case_generic_exception(self) -> None:
         """Test use case with generic exception (not 'not found')."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.app.compile.use_cases import CompileSubtreeUseCase
 
         node_repo = FakeNodeRepo()
-        use_case = CompileSubtreeUseCase(node_repo)
+        binder_repo = FakeBinderRepo()
+        use_case = CompileSubtreeUseCase(node_repo, binder_repo)
 
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
         request = CompileRequest(node_id=node_id)
@@ -262,20 +270,24 @@ class TestCompileServiceCoverage:
     def test_service_import_and_init(self) -> None:
         """Test service can be imported and initialized."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
         node_repo = FakeNodeRepo()
-        service = CompileService(node_repo)
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
         assert service._node_repo is node_repo
 
     def test_service_node_not_found(self) -> None:
         """Test service with node not found."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
         from prosemark.ports.compile.service import NodeNotFoundError
 
         node_repo = FakeNodeRepo()
-        service = CompileService(node_repo)
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
 
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
         request = CompileRequest(node_id=node_id)
@@ -286,11 +298,13 @@ class TestCompileServiceCoverage:
     def test_service_traverse_node_not_found(self) -> None:
         """Test service depth-first traversal with node not found."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
         from prosemark.ports.compile.service import NodeNotFoundError
 
         node_repo = FakeNodeRepo()
-        service = CompileService(node_repo)
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
 
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
 
@@ -298,69 +312,100 @@ class TestCompileServiceCoverage:
             list(service._traverse_depth_first(node_id))
 
     def test_read_node_content_static_method(self) -> None:
-        """Test static method _read_node_content."""
+        """Test instance method _read_node_content."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
 
-        # Test the static method - it should return empty string for non-existent file
+        # Test the method - it should return empty string for non-existent file
         with patch('pathlib.Path.read_text') as mock_read:
             mock_read.side_effect = FileNotFoundError()
-            result = CompileService._read_node_content(node_id)
+            result = service._read_node_content(node_id)
             assert result == ''
 
     def test_read_node_content_with_frontmatter(self) -> None:
-        """Test static method _read_node_content with frontmatter."""
+        """Test instance method _read_node_content with frontmatter."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
 
         with patch('pathlib.Path.read_text') as mock_read:
             mock_read.return_value = '---\ntitle: Test\n---\nContent here'
-            result = CompileService._read_node_content(node_id)
+            result = service._read_node_content(node_id)
             assert result == 'Content here'
 
     def test_read_node_content_malformed_frontmatter(self) -> None:
-        """Test static method with malformed frontmatter."""
+        """Test instance method with malformed frontmatter."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
 
         with patch('pathlib.Path.read_text') as mock_read:
             mock_read.return_value = '---\ntitle: Test\nno end marker'
-            result = CompileService._read_node_content(node_id)
+            result = service._read_node_content(node_id)
             assert result == '---\ntitle: Test\nno end marker'
 
     def test_get_children_from_binder_static_method(self) -> None:
-        """Test static method _get_children_from_binder."""
+        """Test instance method _get_children_from_binder."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
+        from prosemark.domain.models import Binder, BinderItem
 
-        node_id = NodeId('01923456-789a-7123-8abc-def012345678')
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
 
-        # Test with valid YAML
-        with patch('pathlib.Path.read_text') as mock_read:
-            mock_read.return_value = """---
-- 01923456-789a-7123-8abc-def012345679
-- 01923456-789a-7123-8abc-def012345680
-"""
-            result = CompileService._get_children_from_binder(node_id)
-            assert len(result) == 2
-            assert result[0] == NodeId('01923456-789a-7123-8abc-def012345679')
+        # Set up a binder with parent and children
+        parent_id = NodeId('01923456-789a-7123-8abc-def012345678')
+        child1_id = NodeId('01923456-789a-7123-8abc-def012345679')
+        child2_id = NodeId('01923456-789a-7123-8abc-def012345680')
+
+        child1 = BinderItem(display_title='Child 1', node_id=child1_id)
+        child2 = BinderItem(display_title='Child 2', node_id=child2_id)
+        parent = BinderItem(display_title='Parent', node_id=parent_id, children=[child1, child2])
+        binder = Binder(roots=[parent])
+
+        binder_repo._binder = binder
+        service = CompileService(node_repo, binder_repo)
+
+        result = service._get_children_from_binder(parent_id)
+        assert len(result) == 2
+        assert result[0] == child1_id
+        assert result[1] == child2_id
 
     def test_get_children_file_not_found(self) -> None:
-        """Test get children when file doesn't exist."""
+        """Test get children when node doesn't exist in binder."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
         node_id = NodeId('01923456-789a-7123-8abc-def012345678')
 
-        with patch('pathlib.Path.read_text') as mock_read:
-            mock_read.side_effect = FileNotFoundError()
-            result = CompileService._get_children_from_binder(node_id)
-            assert result == []
+        result = service._get_children_from_binder(node_id)
+        assert result == []
 
     def test_service_compile_subtree_with_mock_content(self) -> None:
         """Test service compile_subtree with working node."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
         node_repo = FakeNodeRepo()
@@ -369,7 +414,8 @@ class TestCompileServiceCoverage:
         # Create a node first
         node_repo.create(node_id, 'Test Node', 'Test synopsis')
 
-        service = CompileService(node_repo)
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
 
         # Mock the traversal to return content
         def mock_traverse(node_id: NodeId) -> Generator[NodeContent, None, None]:
@@ -390,6 +436,7 @@ class TestCompileServiceCoverage:
     def test_service_compile_subtree_with_empty_content(self) -> None:
         """Test service compile_subtree with empty content."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
         node_repo = FakeNodeRepo()
@@ -398,7 +445,8 @@ class TestCompileServiceCoverage:
         # Create a node first
         node_repo.create(node_id, 'Test Node', 'Test synopsis')
 
-        service = CompileService(node_repo)
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
 
         # Mock the traversal to return empty content
         def mock_traverse(node_id: NodeId) -> Generator[NodeContent, None, None]:
@@ -419,6 +467,7 @@ class TestCompileServiceCoverage:
     def test_service_compile_subtree_include_empty(self) -> None:
         """Test service compile_subtree with include_empty=True."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
         node_repo = FakeNodeRepo()
@@ -427,7 +476,8 @@ class TestCompileServiceCoverage:
         # Create a node first
         node_repo.create(node_id, 'Test Node', 'Test synopsis')
 
-        service = CompileService(node_repo)
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
 
         # Mock the traversal to return empty content
         def mock_traverse(node_id: NodeId) -> Generator[NodeContent, None, None]:
@@ -448,6 +498,7 @@ class TestCompileServiceCoverage:
     def test_service_real_traversal_with_mocked_static_methods(self) -> None:
         """Test service real traversal to cover missing lines 106-117."""
         from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
         from prosemark.domain.compile.service import CompileService
 
         node_repo = FakeNodeRepo()
@@ -458,7 +509,8 @@ class TestCompileServiceCoverage:
         node_repo.create(parent_id, 'Parent Node', 'Parent synopsis')
         node_repo.create(child_id, 'Child Node', 'Child synopsis')
 
-        service = CompileService(node_repo)
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
 
         # Mock the static methods to return predictable content
         def mock_read_content(node_id: NodeId) -> str:
@@ -550,3 +602,131 @@ class TestCompileServiceCoverage:
         # Test CompileError exception
         compile_error = CompileError('Some compile error')
         assert str(compile_error) == 'Some compile error'
+
+
+class TestRealCLICompileCommand:
+    """Test real CLI compile command without mocking internals."""
+
+    def test_real_cli_compile_command_success(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
+        """Test real compile command with actual file system."""
+        from prosemark.cli.compile import compile_command
+
+        # Create a real node file with content
+        node_id = NodeId('01923456-789a-7123-8abc-def012345678')
+        node_file = tmp_path / f'{node_id}.md'
+        node_file.write_text('---\ntitle: Test Node\n---\n\nTest content here')
+
+        # Create binder file
+        binder_file = tmp_path / 'binder.yml'
+        binder_file.write_text('roots: []')
+
+        # Execute the real command
+        with patch('prosemark.cli.compile.typer.echo') as mock_echo:
+            compile_command(str(node_id), tmp_path)
+            mock_echo.assert_called_once_with('Test content here')
+
+    def test_real_cli_compile_command_node_not_found(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
+        """Test real compile command with missing node."""
+        import typer
+
+        from prosemark.cli.compile import compile_command
+
+        # Create binder file but no node file
+        binder_file = tmp_path / 'binder.yml'
+        binder_file.write_text('roots: []')
+
+        node_id = NodeId('01923456-789a-7123-8abc-def012345678')
+
+        with patch('prosemark.cli.compile.typer.echo') as mock_echo:
+            with pytest.raises(typer.Exit) as exc_info:
+                compile_command(str(node_id), tmp_path)
+
+            assert exc_info.value.exit_code == 1
+            mock_echo.assert_called_with(f'Error: Node not found: {node_id}', err=True)
+
+    def test_real_cli_compile_command_invalid_node_id_format(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
+        """Test real compile command with invalid node ID format."""
+        import typer
+
+        from prosemark.cli.compile import compile_command
+
+        # Create binder file
+        binder_file = tmp_path / 'binder.yml'
+        binder_file.write_text('roots: []')
+
+        with patch('prosemark.cli.compile.typer.echo') as mock_echo:
+            with pytest.raises(typer.Exit) as exc_info:
+                compile_command('invalid-uuid-format', tmp_path)
+
+            assert exc_info.value.exit_code == 1
+            # Should get error about invalid node ID format
+            # Check that at least one call mentioned invalid format
+            assert mock_echo.call_count >= 1
+            # Find the call with the invalid format message
+            error_calls = [call for call in mock_echo.call_args_list if 'Invalid node ID format' in str(call)]
+            assert len(error_calls) >= 1
+
+
+class TestCompileServiceBranchCoverage:
+    """Test uncovered branches in compile service."""
+
+    def test_read_node_content_malformed_frontmatter_no_end(self) -> None:
+        """Test reading node with malformed frontmatter (no end marker)."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
+        from prosemark.domain.compile.service import CompileService
+
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
+        node_id = NodeId('01923456-789a-7123-8abc-def012345678')
+
+        # Mock read_text to return malformed frontmatter (no closing ---)
+        with patch('pathlib.Path.read_text') as mock_read:
+            mock_read.return_value = '---\ntitle: Test\nno closing marker'
+            result = service._read_node_content(node_id)
+            # Should return the content as-is when frontmatter is malformed
+            assert result == '---\ntitle: Test\nno closing marker'
+
+    def test_get_children_from_binder_node_not_in_binder(self) -> None:
+        """Test getting children when node is not found in binder."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
+        from prosemark.domain.compile.service import CompileService
+        from prosemark.domain.models import Binder, BinderItem
+
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
+
+        # Create a binder with some nodes, but not our target node
+        other_id = NodeId('01923456-789a-7123-8abc-def012345999')
+        other_item = BinderItem(display_title='Other', node_id=other_id)
+        binder = Binder(roots=[other_item])
+        binder_repo._binder = binder
+
+        service = CompileService(node_repo, binder_repo)
+
+        # Try to get children for a node that's not in the binder
+        target_id = NodeId('01923456-789a-7123-8abc-def012345678')
+        result = service._get_children_from_binder(target_id)
+
+        # Should return empty list when node is not found
+        assert result == []
+
+    def test_read_node_content_no_frontmatter(self) -> None:
+        """Test reading node content without frontmatter."""
+        from prosemark.adapters.fake_node_repo import FakeNodeRepo
+        from prosemark.adapters.fake_storage import FakeBinderRepo
+        from prosemark.domain.compile.service import CompileService
+
+        node_repo = FakeNodeRepo()
+        binder_repo = FakeBinderRepo()
+        service = CompileService(node_repo, binder_repo)
+        node_id = NodeId('01923456-789a-7123-8abc-def012345678')
+
+        # Mock read_text to return content without frontmatter
+        with patch('pathlib.Path.read_text') as mock_read:
+            mock_read.return_value = 'Plain content without frontmatter'
+            result = service._read_node_content(node_id)
+            # Should return the content as-is, stripped
+            assert result == 'Plain content without frontmatter'
