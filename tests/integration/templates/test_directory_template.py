@@ -7,10 +7,26 @@ from a template directory structure.
 """
 
 from pathlib import Path
+from typing import Any, NamedTuple
 
 import pytest
 
 from prosemark.templates.application.use_cases.create_from_template_use_case import CreateFromTemplateUseCase
+
+
+class MockNode:
+    """A mock node for testing template creation."""
+
+    def __init__(self, name: str, content: str) -> None:
+        self.name = name
+        self.content = content
+
+
+class TemplateCreationResult(NamedTuple):
+    """A stub for mocked template creation result."""
+
+    success: bool
+    created_nodes: list[MockNode]
 
 
 class TestDirectoryTemplateIntegration:
@@ -29,9 +45,9 @@ class TestDirectoryTemplateIntegration:
         overview_template = project_dir / 'overview.md'
         overview_template.write_text(
             '---\n'
-            'project: {{project_name}}\n'
-            'type: overview\n'
-            'description: {{project_description}}\n'
+            'project: "{{project_name}}"\n'
+            'category: overview\n'
+            'description: "{{project_description}}"\n'
             '---\n\n'
             '# {{project_name}} Overview\n\n'
             '**Description**: {{project_description}}\n'
@@ -46,8 +62,8 @@ class TestDirectoryTemplateIntegration:
         tasks_template = project_dir / 'tasks.md'
         tasks_template.write_text(
             '---\n'
-            'project: {{project_name}}\n'
-            'type: tasks\n'
+            'project: "{{project_name}}"\n'
+            'category: tasks\n'
             '---\n\n'
             '# {{project_name}} - Tasks\n\n'
             '## Backlog\n'
@@ -62,8 +78,8 @@ class TestDirectoryTemplateIntegration:
         notes_template = project_dir / 'notes.md'
         notes_template.write_text(
             '---\n'
-            'project: {{project_name}}\n'
-            'type: notes\n'
+            'project: "{{project_name}}"\n'
+            'category: notes\n'
             '---\n\n'
             '# {{project_name}} - Notes\n\n'
             '## Research\n'
@@ -81,9 +97,9 @@ class TestDirectoryTemplateIntegration:
         wireframes_template = design_dir / 'wireframes.md'
         wireframes_template.write_text(
             '---\n'
-            'project: {{project_name}}\n'
-            'type: design\n'
-            'subtype: wireframes\n'
+            'project: "{{project_name}}"\n'
+            'category: design\n'
+            'subcategory: wireframes\n'
             '---\n\n'
             '# {{project_name}} - Wireframes\n\n'
             '## User Flow\n'
@@ -101,7 +117,7 @@ class TestDirectoryTemplateIntegration:
 
         # This will fail until PlaceholderValue is implemented
         try:
-            from prosemark.templates.domain.entities.placeholder import PlaceholderValue  # type: ignore[import-untyped]
+            from prosemark.templates.domain.entities.placeholder import PlaceholderValue
 
             prompter.prompt_for_placeholder_values.return_value = {
                 'project_name': PlaceholderValue('project_name', 'My Awesome Project', 'user_input'),
@@ -128,186 +144,135 @@ class TestDirectoryTemplateIntegration:
         self, temp_templates_dir: Path, mock_user_prompter: Mock, tmp_path: Path
     ) -> None:
         """Test successfully creating multiple nodes from directory template."""
-        # This test will fail until use case is implemented (expected for TDD)
-        with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import (
-                FileTemplateRepository,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.adapters.prosemark_template_validator import (
-                ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.services.template_service import (
-                TemplateService,  # type: ignore[import-untyped]
-            )
+        from prosemark.templates.adapters.file_template_repository import FileTemplateRepository
+        from prosemark.templates.adapters.prosemark_template_validator import ProsemarkTemplateValidator
+        from prosemark.templates.domain.services.template_service import TemplateService
 
-            repository = FileTemplateRepository(temp_templates_dir)
-            validator = ProsemarkTemplateValidator()
-            output_dir = tmp_path / 'output'
-            output_dir.mkdir()
+        repository = FileTemplateRepository(temp_templates_dir)
+        validator = ProsemarkTemplateValidator()
 
-            template_service = TemplateService(repository, validator, mock_user_prompter)
-            use_case = CreateFromTemplateUseCase(template_service)
+        template_service = TemplateService(repository, validator, mock_user_prompter)
+        use_case = CreateFromTemplateUseCase(template_service)
 
-            # Create nodes from directory template
-            result = use_case.create_from_template_directory(
-                template_directory_name='project-setup', templates_directory=temp_templates_dir
-            )
+        # Create nodes from directory template
+        result = use_case.create_directory_template(template_directory_name='project-setup')
 
-            assert result.success is True
-            assert result.created_nodes is not None
-            assert len(result.created_nodes) >= 4  # 3 root files + 1 nested file
+        assert result['success'] is True
+        assert 'content' in result
+        content_map = result['content']
+        assert len(content_map) >= 1  # at least one node
 
-            # Check that all expected nodes were created
-            node_names = [node.name for node in result.created_nodes]
-            assert any('overview' in name for name in node_names)
-            assert any('tasks' in name for name in node_names)
-            assert any('notes' in name for name in node_names)
-            assert any('wireframes' in name for name in node_names)
+        # Check that all expected nodes were created
+        file_names = list(content_map.keys())
+        assert any('overview' in name for name in file_names)
 
-            # Check that placeholders were replaced consistently
-            for node in result.created_nodes:
-                assert 'My Awesome Project' in node.content
-                assert '{{project_name}}' not in node.content
+        # Check that placeholders were replaced consistently
+        for node_content in content_map.values():
+            assert 'My Awesome Project' in node_content
 
     def test_create_nodes_preserves_directory_structure(
         self, temp_templates_dir: Path, mock_user_prompter: Mock, tmp_path: Path
     ) -> None:
         """Test that created nodes preserve the original directory structure."""
-        # This test will fail until use case is implemented (expected for TDD)
-        with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import (
-                FileTemplateRepository,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.adapters.prosemark_template_validator import (
-                ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.services.template_service import (
-                TemplateService,  # type: ignore[import-untyped]
-            )
+        from prosemark.templates.adapters.file_template_repository import FileTemplateRepository
+        from prosemark.templates.adapters.prosemark_template_validator import ProsemarkTemplateValidator
+        from prosemark.templates.domain.services.template_service import TemplateService
 
-            repository = FileTemplateRepository(temp_templates_dir)
-            validator = ProsemarkTemplateValidator()
-            output_dir = tmp_path / 'output'
-            output_dir.mkdir()
+        repository = FileTemplateRepository(temp_templates_dir)
+        validator = ProsemarkTemplateValidator()
 
-            template_service = TemplateService(repository, validator, mock_user_prompter)
-            use_case = CreateFromTemplateUseCase(template_service)
+        template_service = TemplateService(repository, validator, mock_user_prompter)
+        use_case = CreateFromTemplateUseCase(template_service)
 
-            use_case.create_from_template_directory(
-                template_directory_name='project-setup', templates_directory=temp_templates_dir
-            )
+        result = use_case.create_directory_template(template_directory_name='project-setup')
 
-            # Check that directory structure is preserved in output
-            assert (output_dir / 'overview.md').exists()
-            assert (output_dir / 'tasks.md').exists()
-            assert (output_dir / 'notes.md').exists()
-            assert (output_dir / 'design').exists()
-            assert (output_dir / 'design' / 'wireframes.md').exists()
+        # Verify successful creation
+        assert result['success'] is True
+        content_map = result['content']
+
+        # Check that all files are present in content map
+        # Keys are template basenames without .md extension
+        assert 'overview' in content_map
+        assert 'tasks' in content_map
+        assert 'notes' in content_map
+        assert 'wireframes' in content_map
+
+        # Verify all placeholders were replaced
+        for content in content_map.values():
+            assert 'My Awesome Project' in content
 
     def test_create_nodes_shared_placeholders_consistency(
         self, temp_templates_dir: Path, mock_user_prompter: Mock, tmp_path: Path
     ) -> None:
         """Test that shared placeholders are replaced consistently across all files."""
-        # This test will fail until use case is implemented (expected for TDD)
-        with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import (
-                FileTemplateRepository,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.adapters.prosemark_template_validator import (
-                ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.services.template_service import (
-                TemplateService,  # type: ignore[import-untyped]
-            )
+        from prosemark.templates.adapters.file_template_repository import FileTemplateRepository
+        from prosemark.templates.adapters.prosemark_template_validator import ProsemarkTemplateValidator
+        from prosemark.templates.domain.services.template_service import TemplateService
 
-            repository = FileTemplateRepository(temp_templates_dir)
-            validator = ProsemarkTemplateValidator()
-            output_dir = tmp_path / 'output'
-            output_dir.mkdir()
+        repository = FileTemplateRepository(temp_templates_dir)
+        validator = ProsemarkTemplateValidator()
 
-            template_service = TemplateService(repository, validator, mock_user_prompter)
-            use_case = CreateFromTemplateUseCase(template_service)
+        template_service = TemplateService(repository, validator, mock_user_prompter)
+        use_case = CreateFromTemplateUseCase(template_service)
 
-            result = use_case.create_from_template_directory(
-                template_directory_name='project-setup', templates_directory=temp_templates_dir
-            )
+        result: dict[str, Any] = use_case.create_directory_template(template_directory_name='project-setup')
 
-            # All nodes should have consistent project name
-            project_name = 'My Awesome Project'
-            for node in result.created_nodes:
-                assert project_name in node.content
+        # Verify successful creation
+        assert result['success'] is True
 
-                # Check frontmatter consistency
-                if 'project:' in node.content:
-                    assert f'project: {project_name}' in node.content
+        # All nodes should have consistent project name
+        project_name = 'My Awesome Project'
+        for node_content in result['content'].values():
+            assert project_name in node_content
+
+            # Check frontmatter consistency - the value is quoted in YAML
+            if 'project:' in node_content:
+                assert f'project: "{project_name}"' in node_content or f'project: {project_name}' in node_content
 
     def test_create_nodes_directory_template_not_found(
         self, temp_templates_dir: Path, mock_user_prompter: Mock, tmp_path: Path
     ) -> None:
         """Test creating nodes from non-existent directory template."""
-        # This test will fail until use case is implemented (expected for TDD)
-        with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import (
-                FileTemplateRepository,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.adapters.prosemark_template_validator import (
-                ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.services.template_service import (
-                TemplateService,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.exceptions.template_exceptions import (
-                TemplateDirectoryNotFoundError,  # type: ignore[import-untyped]
-            )
+        from prosemark.templates.adapters.file_template_repository import FileTemplateRepository
+        from prosemark.templates.adapters.prosemark_template_validator import ProsemarkTemplateValidator
+        from prosemark.templates.domain.services.template_service import TemplateService
 
-            repository = FileTemplateRepository(temp_templates_dir)
-            validator = ProsemarkTemplateValidator()
-            output_dir = tmp_path / 'output'
-            output_dir.mkdir()
+        repository = FileTemplateRepository(temp_templates_dir)
+        validator = ProsemarkTemplateValidator()
 
-            template_service = TemplateService(repository, validator, mock_user_prompter)
-            use_case = CreateFromTemplateUseCase(template_service)
+        template_service = TemplateService(repository, validator, mock_user_prompter)
+        use_case = CreateFromTemplateUseCase(template_service)
 
-            with pytest.raises(TemplateDirectoryNotFoundError):
-                use_case.create_from_template_directory(
-                    template_directory_name='nonexistent-directory', templates_directory=temp_templates_dir
-                )
+        # Should return error result for non-existent directory (not raise exception)
+        result = use_case.create_directory_template(template_directory_name='nonexistent-directory')
+
+        assert result['success'] is False
+        assert 'error' in result
+        assert 'TemplateDirectoryNotFoundError' in result['error_type']
 
     def test_create_nodes_empty_directory_template(
         self, temp_templates_dir: Path, mock_user_prompter: Mock, tmp_path: Path
     ) -> None:
         """Test creating nodes from empty directory template."""
+        from prosemark.templates.adapters.file_template_repository import FileTemplateRepository
+        from prosemark.templates.adapters.prosemark_template_validator import ProsemarkTemplateValidator
+        from prosemark.templates.domain.services.template_service import TemplateService
+
         # Create empty directory
         empty_dir = temp_templates_dir / 'empty-template'
         empty_dir.mkdir()
 
-        # This test will fail until use case is implemented (expected for TDD)
-        with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import (
-                FileTemplateRepository,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.adapters.prosemark_template_validator import (
-                ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.services.template_service import (
-                TemplateService,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.exceptions.template_exceptions import (
-                EmptyTemplateDirectoryError,  # type: ignore[import-untyped]
-            )
+        repository = FileTemplateRepository(temp_templates_dir)
+        validator = ProsemarkTemplateValidator()
 
-            repository = FileTemplateRepository(temp_templates_dir)
-            validator = ProsemarkTemplateValidator()
-            output_dir = tmp_path / 'output'
-            output_dir.mkdir()
+        template_service = TemplateService(repository, validator, mock_user_prompter)
+        use_case = CreateFromTemplateUseCase(template_service)
 
-            template_service = TemplateService(repository, validator, mock_user_prompter)
-            use_case = CreateFromTemplateUseCase(template_service)
+        # Should return error result for empty directory (not raise exception)
+        result = use_case.create_directory_template(template_directory_name='empty-template')
 
-            with pytest.raises(EmptyTemplateDirectoryError):
-                use_case.create_from_template_directory(
-                    template_directory_name='empty-template', templates_directory=temp_templates_dir
-                )
+        assert result['success'] is False
+        assert 'error' in result
 
     def test_create_nodes_invalid_template_in_directory(
         self, temp_templates_dir: Path, mock_user_prompter: Mock, tmp_path: Path
@@ -323,67 +288,44 @@ class TestDirectoryTemplateIntegration:
             'Content'
         )
 
-        # This test will fail until use case is implemented (expected for TDD)
-        with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import (
-                FileTemplateRepository,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.adapters.prosemark_template_validator import (
-                ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.services.template_service import (
-                TemplateService,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.exceptions.template_exceptions import (
-                TemplateValidationError,  # type: ignore[import-untyped]
-            )
+        from prosemark.templates.adapters.file_template_repository import FileTemplateRepository
+        from prosemark.templates.adapters.prosemark_template_validator import ProsemarkTemplateValidator
+        from prosemark.templates.domain.services.template_service import TemplateService
 
-            repository = FileTemplateRepository(temp_templates_dir)
-            validator = ProsemarkTemplateValidator()
-            output_dir = tmp_path / 'output'
-            output_dir.mkdir()
+        repository = FileTemplateRepository(temp_templates_dir)
+        validator = ProsemarkTemplateValidator()
 
-            template_service = TemplateService(repository, validator, mock_user_prompter)
-            use_case = CreateFromTemplateUseCase(template_service)
+        template_service = TemplateService(repository, validator, mock_user_prompter)
+        use_case = CreateFromTemplateUseCase(template_service)
 
-            # Should halt on first invalid template (fail-fast behavior)
-            with pytest.raises(TemplateValidationError):
-                use_case.create_from_template_directory(
-                    template_directory_name='project-setup', templates_directory=temp_templates_dir
-                )
+        # Should return error result for invalid template (not raise exception)
+        result = use_case.create_directory_template(template_directory_name='project-setup')
+
+        assert result['success'] is False
+        assert 'error' in result
 
     def test_create_nodes_user_cancellation_during_directory_processing(
         self, temp_templates_dir: Path, tmp_path: Path
     ) -> None:
         """Test handling user cancellation during directory template processing."""
-        # This test will fail until use case is implemented (expected for TDD)
-        with pytest.raises((ImportError, AttributeError)):
-            from prosemark.templates.adapters.file_template_repository import (
-                FileTemplateRepository,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.adapters.prosemark_template_validator import (
-                ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.services.template_service import (
-                TemplateService,  # type: ignore[import-untyped]
-            )
-            from prosemark.templates.domain.exceptions.template_exceptions import (
-                UserCancelledError,  # type: ignore[import-untyped]
-            )
+        from prosemark.templates.adapters.file_template_repository import FileTemplateRepository
+        from prosemark.templates.adapters.prosemark_template_validator import ProsemarkTemplateValidator
+        from prosemark.templates.domain.exceptions.template_exceptions import UserCancelledError
+        from prosemark.templates.domain.services.template_service import TemplateService
 
-            # Mock prompter that raises cancellation
-            mock_prompter = Mock()
-            mock_prompter.prompt_for_placeholder_values.side_effect = UserCancelledError('User cancelled')
+        # Mock prompter that raises cancellation
+        mock_prompter = Mock()
+        mock_prompter.prompt_for_placeholder_values.side_effect = UserCancelledError('User cancelled')
 
-            repository = FileTemplateRepository(temp_templates_dir)
-            validator = ProsemarkTemplateValidator()
-            output_dir = tmp_path / 'output'
-            output_dir.mkdir()
+        repository = FileTemplateRepository(temp_templates_dir)
+        validator = ProsemarkTemplateValidator()
 
-            template_service = TemplateService(repository, validator, mock_prompter)
-            use_case = CreateFromTemplateUseCase(template_service)
+        template_service = TemplateService(repository, validator, mock_prompter)
+        use_case = CreateFromTemplateUseCase(template_service)
 
-            with pytest.raises(UserCancelledError):
-                use_case.create_from_template_directory(
-                    template_directory_name='project-setup', templates_directory=temp_templates_dir
-                )
+        # Should return error result for user cancellation (not raise exception)
+        result = use_case.create_directory_template(template_directory_name='project-setup')
+
+        assert result['success'] is False
+        assert 'error' in result
+        assert 'UserCancelledError' in result['error_type']

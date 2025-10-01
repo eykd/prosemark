@@ -4,6 +4,7 @@ These tests verify that implementations of TemplateValidatorPort
 correctly implement the interface contract.
 """
 
+from pathlib import Path
 from typing import Protocol
 
 import pytest
@@ -14,6 +15,7 @@ from prosemark.templates.domain.exceptions.template_exceptions import (
     TemplateParseError,
     TemplateValidationError,
 )
+from prosemark.templates.domain.values.template_path import TemplatePath
 from prosemark.templates.ports.template_validator_port import TemplateValidatorPort
 
 
@@ -196,7 +198,7 @@ class BaseTemplateValidatorContract:
 
         # Test now passes as Template entity is implemented
         template_content = '---\ntitle: test\n---\n\nTest content'
-        template = Template(name='test', path='/test', content=template_content)  # type: ignore[import-untyped]
+        template = Template(name='test', path=TemplatePath(Path('/test')), content=template_content)
         result = validator.validate_template_dependencies(template)
 
         # Should succeed with valid template content
@@ -206,7 +208,7 @@ class BaseTemplateValidatorContract:
         """Test validating template with invalid dependencies."""
         # Test now passes as Template entity is implemented
         template_content = '---\ntitle: test\n---\n\nTest content'
-        template = Template(name='test', path='/test', content=template_content)  # type: ignore[import-untyped]
+        template = Template(name='test', path=TemplatePath(Path('/test')), content=template_content)
         result = validator.validate_template_dependencies(template)
 
         # Should succeed with valid template content

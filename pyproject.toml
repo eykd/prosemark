@@ -191,6 +191,7 @@ ignore = [
     "TD002",  # https://docs.astral.sh/ruff/rules/missing-todo-author/
     "TD003",  # https://docs.astral.sh/ruff/rules/missing-todo-link/
     "TRY003", # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+    "PT012",  # https://docs.astral.sh/ruff/rules/pytest-raises-multiple-statements/ - acceptable for TDD patterns
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -212,6 +213,15 @@ unfixable = []
     "PLR6301",  # Static method suggestions - acceptable in test methods
     "SLF001",   # Private member access - acceptable for testing private methods
     "PLC0415",  # Import placement - acceptable in test functions
+    "S108",     # Mock paths using /tmp - acceptable in tests
+    "ANN001",   # Missing type annotations - acceptable in test helpers
+    "ANN202",   # Missing return type annotations - acceptable in test helpers
+    "B903",     # Dataclass suggestions - acceptable for simple test mocks
+    "FBT001",   # Boolean positional args - acceptable in test helpers
+    "FBT002",   # Boolean default args - acceptable in test helpers
+    "RUF043",   # Regex patterns in pytest.raises - acceptable test pattern
+    "PT017",    # Assertions on exception in except blocks - acceptable test pattern
+    "RET504",   # Unnecessary assignment before return - acceptable for clarity in tests
 ]
 
 
@@ -225,6 +235,33 @@ unfixable = []
 "tests/helpers/*.py" = [
     "PLR2004",  # Magic value literals - acceptable in test helpers
 ]
+"tests/integration/templates/test_complete_template_workflow.py" = [
+    "E402",   # Module level import not at top of file - acceptable for TDD pattern
+    "C901",   # Function too complex - acceptable for integration tests
+]
+
+"tests/integration/templates/test_directory_template.py" = [
+    "E402",   # Module level import not at top of file - acceptable for TDD pattern
+]
+"tests/contract/templates/test_user_prompter_contract.py" = [
+    "PT012",  # pytest.raises multiple statements - acceptable for TDD patterns
+]
+
+"tests/integration/templates/test_simple_template.py" = [
+    "PT012",  # pytest.raises multiple statements - acceptable for TDD patterns
+    "ANN001", # Missing type annotations - acceptable for mock fixtures
+    "PLR6201", # Set literals - acceptable for error type checking
+]
+
+"tests/integration/templates/test_template_errors.py" = [
+    "SIM105", # contextlib.suppress - acceptable for optional operations
+    "S110",   # try-except-pass - acceptable for optional file operations
+    "BLE001", # Blind except - acceptable for file permission operations
+    "F841",   # Unused variable - acceptable for error-raising patterns
+    "PLR6201", # Set literals - acceptable for error type checking
+]
+
+
 
 # Interface methods that must remain instance methods for protocol compliance
 "src/prosemark/adapters/clock_system.py" = ["PLR6301"]

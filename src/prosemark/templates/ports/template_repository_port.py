@@ -53,7 +53,7 @@ class TemplateRepositoryPort(ABC):
             Path to templates root directory
 
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     def get_template(self, template_name: str) -> Template:

@@ -1,8 +1,15 @@
 """Unit tests for PlaceholderService."""
 
+from typing import Any
+from unittest.mock import patch
+
 import pytest
 
 from prosemark.templates.domain.entities.placeholder import Placeholder
+from prosemark.templates.domain.exceptions.template_exceptions import (
+    InvalidPlaceholderError,
+    InvalidPlaceholderValueError,
+)
 from prosemark.templates.domain.services.placeholder_service import PlaceholderService
 from prosemark.templates.domain.values.placeholder_pattern import PlaceholderPattern
 
@@ -220,7 +227,7 @@ Written by {{author}}.
         """Test creating placeholder with minimal frontmatter."""
         service = PlaceholderService()
         pattern = '{{content}}'
-        frontmatter = {}
+        frontmatter: dict[str, Any] = {}
 
         placeholder = service.create_placeholder_from_pattern(pattern, frontmatter)
 
@@ -305,3 +312,166 @@ Written by {{author}}.
 
         assert len(merged) == 1
         assert merged[0].name == 'title'
+
+    def test_create_placeholder_from_pattern_error(self) -> None:
+        """Test create_placeholder_from_pattern error handling (covers lines 50-52)."""
+        service = PlaceholderService()
+
+        # Test with invalid pattern that will cause an exception
+        with pytest.raises(InvalidPlaceholderError, match='Failed to create placeholder'):
+            service.create_placeholder_from_pattern('{{invalid-dash}}')
+
+    def test_create_placeholder_from_name_error(self) -> None:
+        """Test create_placeholder_from_name error handling (covers lines 77-81)."""
+        service = PlaceholderService()
+
+        # Test with invalid name
+        with pytest.raises(InvalidPlaceholderError, match='Failed to create placeholder from name'):
+            service.create_placeholder_from_name('invalid-name')
+
+    def test_get_placeholder_names_from_text_with_invalid_patterns(self) -> None:
+        """Test get_placeholder_names_from_text skipping invalid patterns (covers lines 170-172)."""
+        service = PlaceholderService()
+        text = 'Valid {{name}} and invalid {{bad-name}} patterns'
+
+        names = service.get_placeholder_names_from_text(text)
+
+        # Should only include valid pattern
+        assert names == {'name'}
+
+    def test_validate_placeholder_value_error(self) -> None:
+        """Test validate_placeholder_value error handling (covers lines 258-260)."""
+        service = PlaceholderService()
+
+        placeholder = Placeholder(
+            name='title',
+            pattern_obj=PlaceholderPattern('{{title}}'),
+            required=True,
+            default_value=None,
+            description=None,
+        )
+
+        # Empty value for required placeholder should raise error
+        with pytest.raises(InvalidPlaceholderValueError, match='Value validation failed'):
+            service.validate_placeholder_value(placeholder, '')
+
+    def test_create_placeholder_value_error(self) -> None:
+        """Test create_placeholder_value error handling (covers lines 278-282)."""
+        service = PlaceholderService()
+
+        # Test with invalid source value that causes exception
+        with (
+            patch(
+                'prosemark.templates.domain.entities.placeholder.PlaceholderValue.__init__',
+                side_effect=Exception('Test error'),
+            ),
+            pytest.raises(InvalidPlaceholderValueError, match='Failed to create placeholder value'),
+        ):
+            service.create_placeholder_value('test', 'value')
+
+    def test_get_effective_value_error(self) -> None:
+        """Test get_effective_value error handling (covers lines 299-303)."""
+        service = PlaceholderService()
+
+        placeholder = Placeholder(
+            name='title',
+            pattern_obj=PlaceholderPattern('{{title}}'),
+            required=True,
+            default_value=None,
+            description=None,
+        )
+
+        # Missing value for required placeholder
+        with pytest.raises(InvalidPlaceholderValueError, match='Failed to get effective value'):
+            service.get_effective_value(placeholder, None)
+
+    def test_replace_placeholder_in_text_validation_error(self) -> None:
+        """Test replace_placeholder_in_text with validation error (covers lines 328-330)."""
+        service = PlaceholderService()
+
+        placeholder = Placeholder(
+            name='title',
+            pattern_obj=PlaceholderPattern('{{title}}'),
+            required=True,
+            default_value=None,
+            description=None,
+        )
+
+        # Mock pattern_obj.replace_in_text to raise an exception
+        with (
+            patch.object(placeholder.pattern_obj, 'replace_in_text', side_effect=Exception('Replacement failed')),
+            pytest.raises(InvalidPlaceholderError, match='Failed to replace placeholder'),
+        ):
+            service.replace_placeholder_in_text('Text with {{title}}', placeholder, 'Test')
+
+    def test_replace_all_placeholders_missing_required(self) -> None:
+        """Test replace_all_placeholders_in_text with missing required placeholder (covers lines 357-359)."""
+        service = PlaceholderService()
+        text = 'Hello {{name}}, welcome to {{project}}!'
+
+        # Only provide one value, leave required placeholder missing
+        with pytest.raises(InvalidPlaceholderValueError, match='Missing value for required placeholder'):
+            service.replace_all_placeholders_in_text(text, {'name': 'Alice'})
+
+    def test_replace_all_placeholders_with_optional_defaults(self) -> None:
+        """Test replace_all_placeholders_in_text using default values (covers lines 360-363)."""
+        service = PlaceholderService()
+
+        # Create text with optional placeholder
+        text = 'Hello {{name}}'
+
+        # Mock the placeholder to have a default value
+        placeholder = Placeholder(
+            name='name',
+            pattern_obj=PlaceholderPattern('{{name}}'),
+            required=False,
+            default_value='Guest',
+            description=None,
+        )
+
+        with patch.object(service, 'extract_placeholders_from_text', return_value=[placeholder]):
+            result = service.replace_all_placeholders_in_text(text, {})
+
+            assert result == 'Hello Guest'
+
+    def test_get_placeholder_summary(self) -> None:
+        """Test get_placeholder_summary method (covers lines 378-390)."""
+        service = PlaceholderService()
+
+        placeholders = [
+            Placeholder(
+                name='title',
+                pattern_obj=PlaceholderPattern('{{title}}'),
+                required=True,
+                default_value=None,
+                description='The title',
+            ),
+            Placeholder(
+                name='author',
+                pattern_obj=PlaceholderPattern('{{author}}'),
+                required=False,
+                default_value='Anonymous',
+                description='The author',
+            ),
+            Placeholder(
+                name='date',
+                pattern_obj=PlaceholderPattern('{{date}}'),
+                required=False,
+                default_value='',
+                description=None,
+            ),
+        ]
+
+        summary = service.get_placeholder_summary(placeholders)
+
+        assert summary['total_count'] == 3
+        assert summary['required_count'] == 1
+        assert summary['optional_count'] == 2
+        assert summary['required_names'] == ['title']
+        assert 'author' in summary['optional_names']
+        assert 'date' in summary['optional_names']
+        assert set(summary['all_names']) == {'title', 'author', 'date'}
+        assert 'author' in summary['placeholders_with_defaults']
+        assert 'date' in summary['placeholders_with_defaults']
+        assert 'title' in summary['placeholders_with_descriptions']
+        assert 'author' in summary['placeholders_with_descriptions']

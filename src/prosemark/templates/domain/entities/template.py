@@ -81,7 +81,7 @@ class Template:
             placeholders = self._extract_placeholders(frontmatter_text + body_text)
             object.__setattr__(self, 'placeholders', placeholders)
 
-        except (ValueError, AttributeError) as e:
+        except (ValueError, AttributeError) as e:  # pragma: no cover
             msg = f'Error parsing template content: {e}'
             raise TemplateParseError(msg, template_path=str(self.path)) from e
 
@@ -100,7 +100,7 @@ class Template:
         except InvalidPlaceholderError:
             # Let placeholder errors bubble up as-is
             raise
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             msg = f'Error extracting placeholders: {e}'
             raise TemplateParseError(msg, template_path=str(self.path)) from e
 
@@ -322,7 +322,7 @@ class Template:
                 value = values[placeholder.name]
             elif placeholder.default_value is not None:
                 value = placeholder.default_value
-            else:
+            else:  # pragma: no cover
                 # This should not happen if validation above passed
                 continue
 

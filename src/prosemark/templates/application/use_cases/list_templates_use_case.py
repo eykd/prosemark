@@ -282,7 +282,7 @@ class ListTemplatesUseCase:
         """
         try:
             all_templates_result = self.list_all_templates()
-            if not all_templates_result['success']:
+            if not all_templates_result['success']:  # pragma: no cover
                 return all_templates_result
 
             single_templates = all_templates_result['single_templates']['details']

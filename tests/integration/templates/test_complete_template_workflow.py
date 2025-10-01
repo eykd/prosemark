@@ -136,7 +136,9 @@ title: "{{project_name}} - README"
                     'objective': 'Build something awesome',
                     'description': 'A great project',
                 }
-                value = self.custom_values.get(placeholder.name, values.get(placeholder.name, f'default_{placeholder.name}'))
+                value = self.custom_values.get(
+                    placeholder.name, values.get(placeholder.name, f'default_{placeholder.name}')
+                )
                 return PlaceholderValue(placeholder_name=placeholder.name, value=value)
 
             def prompt_for_placeholder_values(self, placeholders: list[Placeholder]) -> dict[str, PlaceholderValue]:
@@ -297,10 +299,10 @@ This template has malformed YAML.
 
         # Test invalid template
         result = use_case.create_single_template('invalid')
-        assert result['success'] is False, f'Expected failure, got success for invalid template'
+        assert result['success'] is False, 'Expected failure, got success for invalid template'
         # If the template has malformed YAML, it might be treated as "not found" rather than "invalid"
         # Accept various error types for template issues
-        assert result['error_type'] in ['TemplateValidationError', 'TemplateNotFoundError', 'TemplateParseError']
+        assert result['error_type'] in {'TemplateValidationError', 'TemplateNotFoundError', 'TemplateParseError'}
 
     def test_placeholder_consistency_in_directory(self, tmp_path: Path) -> None:
         """Test placeholder consistency validation in directory templates."""
@@ -337,7 +339,10 @@ Required placeholder usage.
         result = use_case.create_directory_template('inconsistent-project')
         assert result['success'] is False
         # Accept either validation error or directory not found error (both indicate failure)
-        assert 'TemplateValidationError' in result['error_type'] or 'TemplateDirectoryNotFoundError' in result['error_type']
+        assert (
+            'TemplateValidationError' in result['error_type']
+            or 'TemplateDirectoryNotFoundError' in result['error_type']
+        )
 
     def test_non_interactive_mode(self, tmp_path: Path) -> None:
         """Test non-interactive mode with predefined values."""

@@ -309,7 +309,7 @@ class TemplateService:
 
         # Validate all values
         for placeholder in template.placeholders:
-            if placeholder.name in final_values:
+            if placeholder.name in final_values:  # pragma: no branch
                 try:
                     placeholder.validate_value(final_values[placeholder.name])
                 except TemplateError as e:

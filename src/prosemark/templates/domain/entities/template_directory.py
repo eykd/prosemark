@@ -63,14 +63,14 @@ class TemplateDirectory:
         if invalid_templates:
             raise InvalidTemplateDirectoryError(str(self.path), invalid_templates)
 
-        if not templates:
+        if not templates:  # pragma: no cover - defensive check, already validated by is_valid_template_directory
             raise EmptyTemplateDirectoryError(str(self.path))
 
         object.__setattr__(self, 'templates', templates)
 
     def _validate(self) -> None:
         """Validate the template directory."""
-        if not self.templates:
+        if not self.templates:  # pragma: no cover - defensive check, templates loaded by __post_init__
             raise EmptyTemplateDirectoryError(str(self.path))
 
         # Validate that all templates are valid
@@ -136,7 +136,7 @@ class TemplateDirectory:
 
                 # Navigate to the correct subdirectory level
                 for part in parts[:-1]:  # All parts except the filename
-                    if 'subdirectories' not in current_level:
+                    if 'subdirectories' not in current_level:  # pragma: no cover - defensive check, always initialized
                         current_level['subdirectories'] = {}
 
                     current_subdirs: dict[str, dict[str, Any]] = current_level['subdirectories']
@@ -153,7 +153,7 @@ class TemplateDirectory:
                     'required_placeholders': [p.name for p in template.required_placeholders],
                 }
 
-                if 'templates' not in current_level:
+                if 'templates' not in current_level:  # pragma: no cover - defensive check, always initialized
                     current_level['templates'] = []
                 current_level['templates'].append(template_info)
 

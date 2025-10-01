@@ -1,5 +1,3 @@
-import contextlib
-
 """Integration tests for template validation and error handling.
 
 These tests verify the complete workflow of template validation
@@ -75,29 +73,26 @@ class TestTemplateErrorIntegration:
         readonly_template = templates_dir / 'readonly.md'
         readonly_template.write_text('---\ntitle: {{title}}\n---\n\n# {{title}}\n\nContent: {{content}}')
         # Make it read-only (this might not work on all systems)
-        try:
-            readonly_template.chmod(0o444)
-        except Exception:
-            pass  # Ignore if chmod fails
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            readonly_template.chmod(0o444)  # Ignore if chmod fails
 
         return templates_dir
 
     def test_template_validation_invalid_yaml_error(self, temp_templates_dir: Path, tmp_path: Path) -> None:
         """Test validation error for template with invalid YAML frontmatter."""
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
+        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            ProsemarkTemplateValidator,
         )
         from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            TemplateService,
         )
-        from prosemark.templates.domain.exceptions.template_exceptions import (
-                TemplateParseError,  # type: ignore[import-untyped]
-            )
 
         repository = FileTemplateRepository(templates_root=temp_templates_dir)
         validator = ProsemarkTemplateValidator()
@@ -122,19 +117,16 @@ class TestTemplateErrorIntegration:
     def test_template_validation_no_frontmatter_error(self, temp_templates_dir: Path, tmp_path: Path) -> None:
         """Test validation error for template without frontmatter."""
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
+        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            ProsemarkTemplateValidator,
         )
         from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            TemplateService,
         )
-        from prosemark.templates.domain.exceptions.template_exceptions import (
-                TemplateValidationError,  # type: ignore[import-untyped]
-            )
 
         repository = FileTemplateRepository(templates_root=temp_templates_dir)
         validator = ProsemarkTemplateValidator()
@@ -158,19 +150,16 @@ class TestTemplateErrorIntegration:
     def test_template_validation_invalid_placeholder_error(self, temp_templates_dir: Path, tmp_path: Path) -> None:
         """Test validation error for template with malformed placeholders."""
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
+        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            ProsemarkTemplateValidator,
         )
         from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            TemplateService,
         )
-        from prosemark.templates.domain.exceptions.template_exceptions import (
-                InvalidPlaceholderError,  # type: ignore[import-untyped]
-            )
 
         repository = FileTemplateRepository(templates_root=temp_templates_dir)
         validator = ProsemarkTemplateValidator()
@@ -194,19 +183,16 @@ class TestTemplateErrorIntegration:
     def test_template_not_found_error(self, temp_templates_dir: Path, tmp_path: Path) -> None:
         """Test error handling for non-existent template."""
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
+        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            ProsemarkTemplateValidator,
         )
         from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            TemplateService,
         )
-        from prosemark.templates.domain.exceptions.template_exceptions import (
-                TemplateNotFoundError,  # type: ignore[import-untyped]
-            )
 
         repository = FileTemplateRepository(templates_root=temp_templates_dir)
         validator = ProsemarkTemplateValidator()
@@ -233,23 +219,16 @@ class TestTemplateErrorIntegration:
         nonexistent_dir = tmp_path / 'nonexistent'
 
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
-        )
-        from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
-        )
-        from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.domain.exceptions.template_exceptions import (
-            TemplateDirectoryNotFoundError,  # type: ignore[import-untyped]
+            TemplateDirectoryNotFoundError,
         )
 
         # Should raise TemplateDirectoryNotFoundError when creating repository
         with pytest.raises(TemplateDirectoryNotFoundError) as exc_info:
-            repository = FileTemplateRepository(templates_root=nonexistent_dir)
+            FileTemplateRepository(templates_root=nonexistent_dir)
 
         error_message = str(exc_info.value)
         assert 'directory' in error_message.lower()
@@ -258,19 +237,16 @@ class TestTemplateErrorIntegration:
     def test_template_dependency_validation_error(self, temp_templates_dir: Path, tmp_path: Path) -> None:
         """Test error handling for templates with invalid dependencies."""
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
+        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            ProsemarkTemplateValidator,
         )
         from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            TemplateService,
         )
-        from prosemark.templates.domain.exceptions.template_exceptions import (
-                TemplateValidationError,  # type: ignore[import-untyped]
-            )
 
         repository = FileTemplateRepository(templates_root=temp_templates_dir)
         validator = ProsemarkTemplateValidator()
@@ -285,7 +261,7 @@ class TestTemplateErrorIntegration:
         result = use_case.create_single_template(template_name='circular1', interactive=False)
 
         assert result['success'] is False
-        assert result['error_type'] in ['TemplateValidationError', 'TemplateParseError']
+        assert result['error_type'] in {'TemplateValidationError', 'TemplateParseError'}
 
         error_message = result['error']
         assert 'circular' in error_message.lower() or 'dependency' in error_message.lower()
@@ -293,19 +269,16 @@ class TestTemplateErrorIntegration:
     def test_error_messages_are_helpful(self, temp_templates_dir: Path, tmp_path: Path) -> None:
         """Test that error messages provide helpful information for debugging."""
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
+        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            ProsemarkTemplateValidator,
         )
         from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            TemplateService,
         )
-        from prosemark.templates.domain.exceptions.template_exceptions import (
-                TemplateParseError,  # type: ignore[import-untyped]
-            )
 
         repository = FileTemplateRepository(templates_root=temp_templates_dir)
         validator = ProsemarkTemplateValidator()
@@ -334,15 +307,15 @@ class TestTemplateErrorIntegration:
     def test_error_handling_preserves_system_state(self, temp_templates_dir: Path, tmp_path: Path) -> None:
         """Test that errors don't leave system in inconsistent state."""
         # Test now passes as use case is implemented
-        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter  # type: ignore[import-untyped]
+        from prosemark.templates.adapters.cli_user_prompter import CLIUserPrompter
         from prosemark.templates.adapters.file_template_repository import (
-            FileTemplateRepository,  # type: ignore[import-untyped]
+            FileTemplateRepository,
         )
         from prosemark.templates.adapters.prosemark_template_validator import (
-            ProsemarkTemplateValidator,  # type: ignore[import-untyped]
+            ProsemarkTemplateValidator,
         )
         from prosemark.templates.domain.services.template_service import (
-            TemplateService,  # type: ignore[import-untyped]
+            TemplateService,
         )
 
         repository = FileTemplateRepository(templates_root=temp_templates_dir)

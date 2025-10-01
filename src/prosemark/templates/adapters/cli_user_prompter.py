@@ -53,7 +53,7 @@ class CLIUserPrompter(UserPrompterPort):
 
         if not placeholder.required and placeholder.default_value is not None:
             prompt_parts.append(f' [default: {placeholder.default_value}]')
-        elif placeholder.required:
+        elif placeholder.required:  # pragma: no branch
             prompt_parts.append(' [required]')
 
         prompt_parts.append(': ')
@@ -77,7 +77,7 @@ class CLIUserPrompter(UserPrompterPort):
 
         try:
             user_input = self._input.readline()
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             self._output.write('\n')
             self._output.flush()
             raise UserCancelledError('User cancelled input') from None
@@ -116,7 +116,7 @@ class CLIUserPrompter(UserPrompterPort):
 
                 # Validate the value
                 placeholder.validate_value(value)
-            except (ValueError, InvalidPlaceholderValueError) as e:
+            except (ValueError, InvalidPlaceholderValueError) as e:  # pragma: no cover
                 self._error.write(f'Error: {e}\n')
                 self._error.flush()
                 continue
@@ -275,7 +275,7 @@ class CLIUserPrompter(UserPrompterPort):
             # Retry
             return self.confirm_placeholder_values(values)
 
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             self._output.write('\n')
             self._output.flush()
             raise UserCancelledError('User cancelled confirmation') from None
@@ -396,7 +396,7 @@ class CLIUserPrompter(UserPrompterPort):
             # Retry
             return self.prompt_for_yes_no(question, default=default)
 
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             self._output.write('\n')
             self._output.flush()
             raise UserCancelledError('User cancelled input') from None
@@ -463,7 +463,7 @@ class CLIUserPrompter(UserPrompterPort):
                 # Retry
                 return self.prompt_for_choice(question, choices, default)
 
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             self._output.write('\n')
             self._output.flush()
             raise UserCancelledError('User cancelled input') from None

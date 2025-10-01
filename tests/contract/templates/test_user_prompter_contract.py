@@ -13,6 +13,7 @@ from prosemark.templates.domain.exceptions.template_exceptions import (
     InvalidPlaceholderValueError,
     UserCancelledError,
 )
+from prosemark.templates.domain.values.placeholder_pattern import PlaceholderPattern
 from prosemark.templates.ports.user_prompter_port import UserPrompterPort
 
 
@@ -33,8 +34,13 @@ class BaseUserPrompterContract:
         # This test will fail until entities are implemented (expected for TDD)
         with pytest.raises((AttributeError, ImportError)):
             placeholders = [
-                Placeholder(name='title', pattern='{{title}}', required=True),  # type: ignore[import-untyped]
-                Placeholder(name='author', pattern='{{author}}', required=False, default_value='Anonymous'),  # type: ignore[import-untyped]
+                Placeholder(name='title', pattern_obj=PlaceholderPattern('{{title}}'), required=True),
+                Placeholder(
+                    name='author',
+                    pattern_obj=PlaceholderPattern('{{author}}'),
+                    required=False,
+                    default_value='Anonymous',
+                ),
             ]
 
             result = prompter.prompt_for_placeholder_values(placeholders)
@@ -57,9 +63,7 @@ class BaseUserPrompterContract:
         """Test user cancelling placeholder value prompts."""
         # This test will fail until entities are implemented
         with pytest.raises((AttributeError, ImportError, UserCancelledError)):
-            placeholders = [
-                Placeholder(name='title', pattern='{{title}}', required=True),  # type: ignore[import-untyped]
-            ]
+            placeholders = [Placeholder(name='title', pattern_obj=PlaceholderPattern('{{title}}'), required=True)]
 
             # In a real implementation, this would simulate user cancellation
             prompter.prompt_for_placeholder_values(placeholders)
@@ -68,7 +72,7 @@ class BaseUserPrompterContract:
         """Test prompting for a single placeholder value successfully."""
         # This test will fail until entities are implemented
         with pytest.raises((AttributeError, ImportError)):
-            placeholder = Placeholder(name='title', pattern='{{title}}', required=True)  # type: ignore[import-untyped]
+            placeholder = Placeholder(name='title', pattern_obj=PlaceholderPattern('{{title}}'), required=True)
 
             result = prompter.prompt_for_single_value(placeholder)
 
@@ -81,7 +85,9 @@ class BaseUserPrompterContract:
         """Test prompting for placeholder with default value."""
         # This test will fail until entities are implemented
         with pytest.raises((AttributeError, ImportError)):
-            placeholder = Placeholder(name='author', pattern='{{author}}', required=False, default_value='Anonymous')  # type: ignore[import-untyped]
+            placeholder = Placeholder(
+                name='author', pattern_obj=PlaceholderPattern('{{author}}'), required=False, default_value='Anonymous'
+            )
 
             result = prompter.prompt_for_single_value(placeholder)
 
@@ -93,7 +99,7 @@ class BaseUserPrompterContract:
         """Test user cancelling single placeholder value prompt."""
         # This test will fail until entities are implemented
         with pytest.raises((AttributeError, ImportError, UserCancelledError)):
-            placeholder = Placeholder(name='title', pattern='{{title}}', required=True)  # type: ignore[import-untyped]
+            placeholder = Placeholder(name='title', pattern_obj=PlaceholderPattern('{{title}}'), required=True)
 
             # In a real implementation, this would simulate user cancellation
             prompter.prompt_for_single_value(placeholder)
@@ -102,7 +108,7 @@ class BaseUserPrompterContract:
         """Test handling invalid user input for placeholder."""
         # This test will fail until entities are implemented
         with pytest.raises((AttributeError, ImportError, InvalidPlaceholderValueError)):
-            placeholder = Placeholder(name='title', pattern='{{title}}', required=True)  # type: ignore[import-untyped]
+            placeholder = Placeholder(name='title', pattern_obj=PlaceholderPattern('{{title}}'), required=True)
 
             # In a real implementation, this would simulate invalid input
             prompter.prompt_for_single_value(placeholder)
@@ -125,21 +131,21 @@ class BaseUserPrompterContract:
 
     def test_display_template_list_multiple_templates(self, prompter: UserPrompterPort) -> None:
         """Test displaying multiple templates."""
-        templates = ['meeting-notes', 'project-setup', 'daily-journal']
+        templates: list[str] = ['meeting-notes', 'project-setup', 'daily-journal']
 
         # This should not raise an exception
         prompter.display_template_list(templates)
 
     def test_display_template_list_empty_list(self, prompter: UserPrompterPort) -> None:
         """Test displaying empty template list."""
-        templates = []
+        templates: list[str] = []
 
         # This should not raise an exception
         prompter.display_template_list(templates)
 
     def test_display_template_list_single_template(self, prompter: UserPrompterPort) -> None:
         """Test displaying single template."""
-        templates = ['meeting-notes']
+        templates: list[str] = ['meeting-notes']
 
         # This should not raise an exception
         prompter.display_template_list(templates)

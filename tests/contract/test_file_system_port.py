@@ -147,7 +147,7 @@ Currency symbols: $100, €50, ¥1000"""
         deep_paths = [
             '/home/user/projects/prosemark/sessions/2024/03/15/freewrite-1430.md',
             '/var/data/application/backups/daily/2024-03-15/session-backup.md',
-            '/tmp/prosemark/temp/sessions/user123/write-session-456.md',  # noqa: S108
+            '/tmp/prosemark/temp/sessions/user123/write-session-456.md',
         ]
         content = 'Content for deeply nested file'
         mock_fs.write_file.return_value = None
@@ -218,7 +218,7 @@ Currency symbols: $100, €50, ¥1000"""
         existing_files = [
             '/home/user/existing-file.md',
             '/project/notes/session-log.txt',
-            '/tmp/temp-file.md',  # noqa: S108
+            '/tmp/temp-file.md',
         ]
         mock_fs.file_exists.return_value = True
 
@@ -288,7 +288,7 @@ Currency symbols: $100, €50, ¥1000"""
         expected_paths = [
             '/home/user/current-project',
             '/workspace/prosemark',
-            '/tmp/working-directory',  # noqa: S108
+            '/tmp/working-directory',
             '/var/data/application',
         ]
 
@@ -326,7 +326,7 @@ Currency symbols: $100, €50, ¥1000"""
         mock_fs = Mock(spec=FileSystemPort)
         writable_directories = [
             '/home/user/writable-directory',
-            '/tmp/temp-directory',  # noqa: S108
+            '/tmp/temp-directory',
             '/var/data/user-space',
             '/project/output',
         ]
