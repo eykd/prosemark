@@ -150,7 +150,7 @@ class TestCLICompileCoverage:
 
             compile_cmd('01923456-789a-7123-8abc-def012345678', None)
 
-            mock_compile.assert_called_once_with('01923456-789a-7123-8abc-def012345678', None)
+            mock_compile.assert_called_once_with('01923456-789a-7123-8abc-def012345678', None, include_empty=False)
 
     @patch('prosemark.cli.compile.CompileSubtreeUseCase')
     @patch('prosemark.cli.compile.NodeRepoFs')
