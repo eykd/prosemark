@@ -67,7 +67,10 @@ def compile_command(
         typer.echo(result.content)
 
     except (NodeNotFoundError, CompileNodeNotFoundError) as e:
-        typer.echo(f'Error: Node not found: {node_id}', err=True)
+        if node_id is not None:
+            typer.echo(f'Error: Node not found: {node_id}', err=True)
+        else:
+            typer.echo(f'Error: Compilation failed: {e}', err=True)
         raise typer.Exit(1) from e
 
     except Exception as e:
