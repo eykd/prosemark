@@ -128,6 +128,11 @@ class CompileService:
             except (FileNotFoundError, PermissionError, OSError):  # pragma: no cover
                 # Skip missing child nodes rather than failing the entire compilation
                 continue
+            except Exception as e:  # pragma: no cover
+                # Also skip NodeNotFoundError and other exceptions for missing children
+                if 'not found' in str(e).lower():
+                    continue
+                raise
 
     def _read_node_content(self, node_id: NodeId) -> str:
         """Read the content of a node from its draft file.
