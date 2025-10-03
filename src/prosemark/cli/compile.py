@@ -16,19 +16,22 @@ from prosemark.ports.compile.service import NodeNotFoundError as CompileNodeNotF
 
 
 def compile_command(
-    node_id: Annotated[str, typer.Argument(help='Node ID to compile')],
+    node_id: Annotated[
+        str | None,
+        typer.Argument(help='Node ID to compile. Omit to compile all root nodes.'),
+    ] = None,
     path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
+    include_empty: Annotated[  # noqa: FBT002
+        bool, typer.Option('--include-empty', help='Include nodes with empty content')
+    ] = False,
 ) -> None:
-    """Compile a node and its subtree into concatenated plain text."""
+    """Compile a node subtree or all root nodes into concatenated plain text.
+
+    If NODE_ID is provided, compiles that specific node and its descendants.
+    If NODE_ID is omitted, compiles all materialized root nodes in binder order.
+    """
     try:
         project_root = path or Path.cwd()
-
-        # Validate the node ID format
-        try:
-            target_node_id = NodeId(node_id)
-        except Exception as e:
-            typer.echo(f'Error: Invalid node ID format: {node_id}', err=True)
-            raise typer.Exit(1) from e
 
         # Wire up dependencies
         clock = ClockSystem()
@@ -43,8 +46,19 @@ def compile_command(
         # Create use case
         compile_use_case = CompileSubtreeUseCase(node_repo, binder_repo)
 
-        # Create request
-        request = CompileRequest(node_id=target_node_id, include_empty=False)
+        # Handle optional node_id
+        if node_id is None:
+            # Compile all roots
+            request = CompileRequest(node_id=None, include_empty=include_empty)
+        else:
+            # Validate and compile specific node
+            try:
+                target_node_id = NodeId(node_id)
+            except Exception as e:
+                typer.echo(f'Error: Invalid node ID format: {node_id}', err=True)
+                raise typer.Exit(1) from e
+
+            request = CompileRequest(node_id=target_node_id, include_empty=include_empty)
 
         # Execute compilation
         result = compile_use_case.compile_subtree(request)
@@ -53,7 +67,10 @@ def compile_command(
         typer.echo(result.content)
 
     except (NodeNotFoundError, CompileNodeNotFoundError) as e:
-        typer.echo(f'Error: Node not found: {node_id}', err=True)
+        if node_id is not None:
+            typer.echo(f'Error: Node not found: {node_id}', err=True)
+        else:
+            typer.echo(f'Error: Compilation failed: {e}', err=True)
         raise typer.Exit(1) from e
 
     except Exception as e:

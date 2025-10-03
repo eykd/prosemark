@@ -4,21 +4,16 @@ These tests verify the core compilation algorithm including
 depth-first traversal, content concatenation, and statistics.
 """
 
-# This import will fail until we implement the service
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
 
 from prosemark.domain.compile.models import CompileRequest, CompileResult
+from prosemark.domain.compile.service import CompileService
 from prosemark.domain.models import Binder, BinderItem, NodeId
 from prosemark.ports.binder_repo import BinderRepo
 from prosemark.ports.compile.service import NodeNotFoundError
 from prosemark.ports.node_repo import NodeRepo
-
-if TYPE_CHECKING:
-    from prosemark.domain.compile.service import CompileService
-else:
-    CompileService: type['CompileService'] | None = None
 
 
 class MockNode:
@@ -33,8 +28,15 @@ class MockNode:
 class MockNodeRepo(NodeRepo):
     """Mock node repository for testing."""
 
-    def __init__(self, nodes: dict[str, MockNode]) -> None:
+    def __init__(self, nodes: dict[str, MockNode], project_path: Path) -> None:
         self._nodes = nodes
+        self.project_path = project_path
+        # Create actual files for each node
+        for node_id_str, node in nodes.items():
+            file_path = project_path / f'{node_id_str}.md'
+            # Write frontmatter and content
+            frontmatter = f'---\nid: {node_id_str}\ntitle: Node {node_id_str}\n---\n'
+            file_path.write_text(f'{frontmatter}\n{node.content}', encoding='utf-8')
 
     def get_node(self, node_id: NodeId) -> MockNode:
         """Get node by ID."""
@@ -149,9 +151,9 @@ def sample_nodes() -> dict[str, MockNode]:
 
 
 @pytest.fixture
-def mock_node_repo(sample_nodes: dict[str, MockNode]) -> MockNodeRepo:
+def mock_node_repo(sample_nodes: dict[str, MockNode], tmp_path: Path) -> MockNodeRepo:
     """Provide a mock node repository."""
-    return MockNodeRepo(sample_nodes)
+    return MockNodeRepo(sample_nodes, tmp_path)
 
 
 @pytest.fixture
@@ -163,12 +165,9 @@ def mock_binder_repo(sample_nodes: dict[str, MockNode]) -> MockBinderRepo:
 @pytest.fixture
 def compile_service(mock_node_repo: MockNodeRepo, mock_binder_repo: MockBinderRepo) -> CompileService:
     """Provide a CompileService instance for testing."""
-    if CompileService is None:
-        pytest.skip('CompileService not implemented yet')
     return CompileService(mock_node_repo, mock_binder_repo)
 
 
-@pytest.mark.skipif(CompileService is None, reason='CompileService not implemented yet')
 class TestCompileServiceDomain:
     """Test the CompileService domain logic."""
 
@@ -272,11 +271,22 @@ class TestCompileServiceDomain:
         # Should raise NodeNotFoundError
         assert 'not found' in str(exc_info.value).lower()
 
+    def test_none_node_id_error(self, compile_service: CompileService) -> None:
+        """Test error handling when node_id is None."""
+        from prosemark.ports.compile.service import CompileError
+
+        request = CompileRequest(node_id=None, include_empty=False)
+
+        with pytest.raises(CompileError) as exc_info:
+            compile_service.compile_subtree(request)
+
+        # Should raise CompileError with specific message
+        assert 'node_id cannot be None' in str(exc_info.value)
+
 
 class TestCompileServiceValidation:
     """Test validation and edge cases."""
 
-    @pytest.mark.skipif(CompileService is None, reason='CompileService not implemented yet')
     def test_empty_content_handling(self, mock_node_repo: MockNodeRepo, mock_binder_repo: MockBinderRepo) -> None:
         """Test handling of nodes with empty content."""
         service = CompileService(node_repo=mock_node_repo, binder_repo=mock_binder_repo)
@@ -287,12 +297,17 @@ class TestCompileServiceValidation:
         # Empty nodes should be skipped completely
         assert '' not in result.content.split('\n\n')
 
-    @pytest.mark.skipif(CompileService is None, reason='CompileService not implemented yet')
     def test_whitespace_preservation(self, mock_node_repo: MockNodeRepo, mock_binder_repo: MockBinderRepo) -> None:
         """Test that whitespace within nodes is preserved."""
         # Add a node with internal whitespace
         node_with_whitespace = MockNode('01923456-789a-7123-8abc-def012345700', 'Line 1\n    Indented line\nLine 3')
         mock_node_repo._nodes['01923456-789a-7123-8abc-def012345700'] = node_with_whitespace
+        # Create the file for this new node
+        file_path = mock_node_repo.project_path / '01923456-789a-7123-8abc-def012345700.md'
+        frontmatter = (
+            '---\nid: 01923456-789a-7123-8abc-def012345700\ntitle: Node 01923456-789a-7123-8abc-def012345700\n---\n'
+        )
+        file_path.write_text(f'{frontmatter}\n{node_with_whitespace.content}', encoding='utf-8')
 
         service = CompileService(node_repo=mock_node_repo, binder_repo=mock_binder_repo)
         request = CompileRequest(node_id=NodeId('01923456-789a-7123-8abc-def012345700'), include_empty=False)

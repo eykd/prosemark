@@ -22,6 +22,11 @@ class MockCompileService(CompileServicePort):
 
     def compile_subtree(self, request: CompileRequest) -> CompileResult:
         if self.should_fail:
+            # Type guard: In the mock, we assume node_id is not None for error testing
+            if request.node_id is None:
+                from prosemark.ports.compile.service import CompileError
+
+                raise CompileError('node_id cannot be None')
             raise NodeNotFoundError(request.node_id)
 
         # This will fail until real implementation is created

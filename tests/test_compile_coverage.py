@@ -150,7 +150,7 @@ class TestCLICompileCoverage:
 
             compile_cmd('01923456-789a-7123-8abc-def012345678', None)
 
-            mock_compile.assert_called_once_with('01923456-789a-7123-8abc-def012345678', None)
+            mock_compile.assert_called_once_with('01923456-789a-7123-8abc-def012345678', None, include_empty=False)
 
     @patch('prosemark.cli.compile.CompileSubtreeUseCase')
     @patch('prosemark.cli.compile.NodeRepoFs')
@@ -262,6 +262,32 @@ class TestCLICompileCoverage:
 
             assert exc_info.value.exit_code == 1
             mock_echo.assert_called_with('Error: Compilation failed: Some error', err=True)
+
+    @patch('prosemark.cli.compile.CompileSubtreeUseCase')
+    @patch('prosemark.cli.compile.NodeRepoFs')
+    @patch('prosemark.cli.compile.EditorLauncherSystem')
+    @patch('prosemark.cli.compile.ClockSystem')
+    def test_cli_compile_command_node_not_found_with_none_node_id(
+        self, mock_clock: Mock, mock_editor: Mock, mock_node_repo: Mock, mock_use_case_class: Mock
+    ) -> None:
+        """Test CLI compile command with NodeNotFoundError when node_id is None."""
+        import typer
+
+        from prosemark.cli.compile import compile_command
+        from prosemark.exceptions import NodeNotFoundError
+
+        # Setup mocks to raise NodeNotFoundError when compiling all roots
+        mock_use_case = Mock()
+        mock_use_case_class.return_value = mock_use_case
+        mock_use_case.compile_subtree.side_effect = NodeNotFoundError('some-node-id')
+
+        with patch('prosemark.cli.compile.typer.echo') as mock_echo:
+            with pytest.raises(typer.Exit) as exc_info:
+                compile_command(None, None)  # None node_id = compile all roots
+
+            assert exc_info.value.exit_code == 1
+            # When node_id is None, should show generic compilation failed message
+            mock_echo.assert_called_with('Error: Compilation failed: some-node-id', err=True)
 
 
 class TestCompileServiceCoverage:

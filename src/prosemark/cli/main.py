@@ -867,10 +867,17 @@ if __name__ == '__main__':  # pragma: no cover
 
 @app.command(name='compile')
 def compile_cmd(
-    node_id: Annotated[str, typer.Argument(help='Node ID to compile')],
+    node_id: Annotated[str | None, typer.Argument(help='Node ID to compile. Omit to compile all root nodes.')] = None,
     path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
+    include_empty: Annotated[  # noqa: FBT002
+        bool, typer.Option('--include-empty', help='Include nodes with empty content')
+    ] = False,
 ) -> None:
-    """Compile a node and its subtree into concatenated plain text."""
+    """Compile a node subtree or all root nodes into concatenated plain text.
+
+    If NODE_ID is provided, compiles that specific node and its descendants.
+    If NODE_ID is omitted, compiles all materialized root nodes in binder order.
+    """
     from prosemark.cli.compile import compile_command
 
-    compile_command(node_id, path)
+    compile_command(node_id, path, include_empty=include_empty)
