@@ -76,4 +76,56 @@ Written by {{author}}.
 - Interactive prompting during node creation
 - Support for descriptions via `name_description: "help text"`
 
+### Current Feature: 009-subtree-word-count (Planning Phase)
+
+**Branch**: `009-subtree-word-count`
+**Status**: Planning Complete - Ready for /tasks
+
+**Feature Summary**: Add `pmk wc` subcommand to count words in compiled node subtrees using US English word-splitting conventions.
+
+**Technology Stack**:
+- Python 3.13
+- Click 8.1.8+, Typer 0.12.0+ (CLI)
+- PyYAML 6.0.2+ (storage)
+- Pydantic 2.11.4+ (validation)
+- pytest 8.3.5+ with coverage
+- mypy 1.15.0+ strict mode
+- ruff 0.11.8+ linting
+
+**Architecture**: Hexagonal (extends existing pattern)
+- Domain: `domain/wordcount/` - Pure word counting logic
+- Ports: `ports/wordcount/` - WordCounterPort protocol
+- Adapters: `adapters/wordcount/` - Regex-based counter
+- Use Cases: `app/wordcount/` - WordCountUseCase orchestration
+- CLI: `cli/wc.py` - Command entry point
+
+**Key Design Decisions**:
+1. Reuse existing `CompileSubtreeUseCase` for text compilation
+2. Regex-based word-splitting with US English conventions
+3. Error handling matches `compile` command patterns
+4. Plain number output to stdout for scriptability
+
+**Word Counting Rules**:
+- Contractions count as one word (don't, it's)
+- Hyphenated compounds count as one word (well-known)
+- Numbers count as words (123, 3.14)
+- URLs count as single words (https://example.com)
+- Emails count as single words (user@example.com)
+- Split on whitespace, normalize multiple spaces/newlines
+
+**Models**:
+- `WordCountRequest(node_id, include_empty)` - Input
+- `WordCountResult(count, content)` - Output
+- `WordCounterPort` - Port interface for counting implementations
+
+**File Locations**:
+- Specs: `/workspace/specs/009-subtree-word-count/`
+- Implementation: `/workspace/src/prosemark/wordcount/` (pending)
+- Tests: `/workspace/tests/{unit,contract,integration}/wordcount/` (pending)
+
+**Next Steps**:
+- Run `/tasks` to generate task list
+- Implement following TDD approach
+- Ensure 100% coverage, mypy, ruff compliance
+
 ### Previous Feature: 003-write-only-freewriting (Design Phase)

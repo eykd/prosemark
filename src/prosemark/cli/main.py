@@ -881,3 +881,23 @@ def compile_cmd(
     from prosemark.cli.compile import compile_command
 
     compile_command(node_id, path, include_empty=include_empty)
+
+
+@app.command(name='wc')
+def wc_cmd(
+    node_id: Annotated[
+        str | None, typer.Argument(help='Node ID to count words in. Omit to count all root nodes.')
+    ] = None,
+    path: Annotated[Path | None, typer.Option('--path', '-p', help='Project directory')] = None,
+    include_empty: Annotated[  # noqa: FBT002
+        bool, typer.Option('--include-empty', help='Include nodes with empty content')
+    ] = False,
+) -> None:
+    """Count words in a node subtree or all root nodes.
+
+    If NODE_ID is provided, counts words in that specific node and its descendants.
+    If NODE_ID is omitted, counts words in all materialized root nodes in binder order.
+    """
+    from prosemark.cli.wc import wc_command
+
+    wc_command(node_id, path, include_empty=include_empty)
